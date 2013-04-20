@@ -9,6 +9,6 @@
 
 int main()
 {
-	puts("Hola grupo!\n");
+	puts("Hola grupo!!!\n");
 	return 0;
 }
