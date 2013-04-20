@@ -10,5 +10,6 @@
 int main()
 {
 	puts("Hola grupo!!!\n");
+	printf("Esta linea genera conflictos\n");
 	return 0;
 }
