@@ -8,11 +8,12 @@
 #include <stdio.h>
 
 int main()
+<<<<<<< HEAD
 
 
 {
 	puts("Hola grupo!!!\n");
     printf("hola gente\n");
 
-	return 0;
+return 0;
 }
