@@ -8,12 +8,10 @@
 #include <stdio.h>
 
 int main()
-
-
 {
 	puts("Hola grupo!!!\n");
     printf("hola gente\n");
     printf("hola gente como estan?\n");
-
-return 0;
+    printf("que estan haciendo ?\n");
+    return 0;
 }
