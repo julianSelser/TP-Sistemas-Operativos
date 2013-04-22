@@ -14,6 +14,7 @@ int main()
 {
 	puts("Hola grupo!!!\n");
     printf("hola gente\n");
+    printf("hola gente como estan?\n");
 
 return 0;
 }
