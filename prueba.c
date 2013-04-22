@@ -8,8 +8,6 @@
 #include <stdio.h>
 
 int main()
-<<<<<<< HEAD
-
 
 {
 	puts("Hola grupo!!!\n");
