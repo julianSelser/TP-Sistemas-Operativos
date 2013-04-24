@@ -2,22 +2,28 @@
  * prueba.c
  *
  *  Created on: 19/04/2013
- *      Author: utnso
+ *      Author: Kernighan
+ *
  */
 
 #include <stdio.h>
 #include <malloc.h>
 
-int main()
-{
-	char * nombre;
+void ingresarNombre(char*);
 
-	if(!(nombre=(char *)malloc(20))) return 1;
-	puts("Hola grupo!!!\n");
-    printf("hola gente, como estan?\n");
+int main(){
+    char c,*nombre;
+    int m = 0;
+
+    puts("Hola grupo!!!\n");
     printf("Cual es tu nombre?\n");
-    scanf("%s",nombre);
-    printf("Tu nombre es %s",nombre);
+
+   	while( (c = getchar()) !='\n'){
+		if( (nombre = (m == 0)? malloc(sizeof(char)) : realloc( nombre,m*sizeof(char) )) == NULL) return 1;
+		*(nombre + m++) = c;		
+	}
+
+    printf("\nTu nombre es %s\n\n",nombre);
     free(nombre);
     return 0;
 }
