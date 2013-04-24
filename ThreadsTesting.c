@@ -15,7 +15,7 @@
 
 pthread_mutex_t semaforo;
 
-int main()
+int threads_testing()
 {
 	//el hilo principal debería lanzar los otros dos hilos
 	return 0;
