@@ -34,14 +34,16 @@ int main()
 	return 0;
 }
 
+// por ahora pruebo que se lancen bien los hilos...
+
 void * rutina_productor()
 {
-	while(1) puts("Ola\n");
+	while(1) puts("Hola\n");
 	return 0;
 }
 
 void * rutina_consumidor()
 {
-	while(1) puts("Ke ase\n");
+	while(1) puts("Que tal\n");
 	return 0;
 }
