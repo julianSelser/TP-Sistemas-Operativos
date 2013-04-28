@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 int main(){
-    char c,*nombre;
+    char * nombre;
     int m = 0;
     puts("Hola grupo!!!\n");
     printf("Cual es tu nombre?\n");
