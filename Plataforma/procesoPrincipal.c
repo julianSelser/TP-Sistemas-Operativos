@@ -46,6 +46,8 @@ int main()
 	log_debug(logger_plataforma, "Se lanza el hilo consumidor!", "DEBUG");
 	//el hilo principal debería lanzar los otros dos hilos
 
+	//por ahora de todas formas son loops infinitos
+
 	pthread_join(Productor, NULL);
 	pthread_join(Consumidor, NULL);
 
