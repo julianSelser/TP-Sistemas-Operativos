@@ -15,7 +15,7 @@
 #define PUERTO 5000
 #define BUFF_SIZE 1024
 
-void *manejoCliente(void * socketCliente); // funcion que recibe datos desde el socket de un cliente.
+void manejoCliente(void * socketCliente); // funcion que recibe datos desde el socket de un cliente.
 
 int main() {
 
@@ -66,7 +66,7 @@ int main() {
 		} 
 		else {
 			pthread_t hiloCliente; // hilo que interactuará con UN cliente
-			pthread_create(&hiloCliente,NULL,manejoCliente,(void *)socketNuevaConexion);
+			pthread_create(&hiloCliente,NULL,(void *)manejoCliente,(void *)socketNuevaConexion);
 		}		
 	}//fin while
 
@@ -74,7 +74,7 @@ int main() {
 	return EXIT_SUCCESS;
 }
 
-void *manejoCliente(void *socketCliente){
+void manejoCliente(void *socketCliente){
 	int nbytesRecibidos;
 	char buffer[BUFF_SIZE];
 
