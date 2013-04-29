@@ -10,8 +10,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <pthread.h>
-#include <log.h>
 #include <unistd.h>
+#include <commons/log.h>
+
 
 #define BUFFER_SIZE 20
 
@@ -25,7 +26,7 @@ int8_t shared_var = 0;
 char shared_buffer[BUFFER_SIZE];
 
 
-int procesoPrincipal() //main()
+int procesoPrincipal() // main
 {
 	pthread_t Productor, Consumidor;
 	char n_productor[20] = "Thread_Productor";
