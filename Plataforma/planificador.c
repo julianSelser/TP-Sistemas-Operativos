@@ -19,7 +19,7 @@ void manejoCliente(void * socketCliente); // funcion que recibe datos desde el s
 
 int main() {
 
-	int socketEscucha, socketNuevaConexion;
+		int socketEscucha, socketNuevaConexion;
 	struct sockaddr_in socketInfo;
 	int optval = 1;
 
@@ -47,7 +47,7 @@ int main() {
 		return EXIT_FAILURE;
 	}
 
-// Escuchar nuevas conexiones entrantes.
+	// Escuchar nuevas conexiones entrantes.
 	if (listen(socketEscucha, 10) != 0)
 	{
 		perror("Error al poner a escuchar socket");
@@ -95,7 +95,7 @@ void manejoCliente(void *socketCliente){
 					break;
 
 				}
-				printf("\n"); //OJO ACA: SI SACAN ESTA LINEA EL ELSE SE ASOCIA AL IF MAS INTERNO, la cátedra no lo vio.
+				printf("\n");
 			} else {
 			perror("Error al recibir datos");
 			break;
