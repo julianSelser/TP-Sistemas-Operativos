@@ -25,7 +25,7 @@ int8_t shared_var = 0;
 char shared_buffer[BUFFER_SIZE];
 
 
-int main()
+int procesoPrincipal() //main()
 {
 	pthread_t Productor, Consumidor;
 	char n_productor[20] = "Thread_Productor";
