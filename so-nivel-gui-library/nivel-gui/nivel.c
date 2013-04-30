@@ -22,7 +22,6 @@ void nivel_gui_print_perror(const char* message);
 
 
 
-
 int nivel_gui_inicializar(void) {
 
 	if (nivel_gui_int_validar_inicializado()){

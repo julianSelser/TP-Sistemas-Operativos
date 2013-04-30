@@ -10,6 +10,7 @@ struct item {
 	struct item *next;
 };
 
+
 typedef struct item ITEM_NIVEL;
 
 int nivel_gui_dibujar(ITEM_NIVEL* items);
