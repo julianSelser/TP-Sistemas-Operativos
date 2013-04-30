@@ -34,6 +34,7 @@
 									<listOptionValue builtIn="false" value="/usr/lib/gcc/i686-linux-gnu/4.7/include-fixed"/>
 									<listOptionValue builtIn="false" value="/usr/local/include"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/so-commons-library/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/so-nivel-gui-library}&quot;"/>
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.1627202756" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -pthread -fmessage-length=0" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.70312768" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>

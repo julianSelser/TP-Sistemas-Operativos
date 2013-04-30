@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>Pruebas</name>
+	<name>memoria</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -31,7 +31,7 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildLocation</key>
-					<value>${workspace_loc:/Pruebas}/Debug</value>
+					<value>${workspace_loc:/memoria/Debug}</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.cleanBuildTarget</key>
@@ -81,8 +81,8 @@
 	</natures>
 	<variableList>
 		<variable>
-			<name>COMMONS</name>
-			<value>$%7BPARENT-1-PROJECT_LOC%7D/so-commons-library/src</value>
+			<name>commons</name>
+			<value>file:/home/julian/Desktop/WorkSpace/commons-library/src/commons</value>
 		</variable>
 	</variableList>
 </projectDescription>
