@@ -41,6 +41,7 @@
 									<listOptionValue builtIn="false" value="/usr/local/include"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/so-commons-library/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/so-nivel-gui-library}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/memoria}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.753290781" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

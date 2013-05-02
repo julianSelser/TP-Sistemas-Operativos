@@ -34,6 +34,8 @@
 									<listOptionValue builtIn="false" value="/usr/lib/gcc/i686-linux-gnu/4.7/include-fixed"/>
 									<listOptionValue builtIn="false" value="/usr/local/include"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/so-commons-library/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/so-nivel-gui-library/nivel-gui}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/tad_items}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/so-nivel-gui-library}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/memoria}&quot;"/>
 								</option>
