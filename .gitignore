@@ -1,3 +1,7 @@
+#archivos de proyecto (TP JUANITO ya no es un proyecto)
+.project
+.cproject
+
 # Object files
 *.o
 
