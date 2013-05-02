@@ -31,7 +31,7 @@ int procesoPrincipal() // main
 	pthread_t Productor, Consumidor;
 	char n_productor[20] = "Thread_Productor";
 	char n_consumidor[20] = "Thread_Consumidor";
-	int r_prod, r_cons;
+
 	t_log * logger_plataforma;
 
 	logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
@@ -40,10 +40,10 @@ int procesoPrincipal() // main
 
 	pthread_mutex_lock(&habilitar_consumidor); //el consumidor empieza bloqueado
 
-	r_prod = pthread_create(&Productor, NULL, rutina_productor, (void *) n_productor);
+	pthread_create(&Productor, NULL, rutina_productor, (void *) n_productor);
 	log_debug(logger_plataforma, "Se lanza el hilo productor!", "DEBUG");
 
-	r_cons = pthread_create(&Consumidor, NULL, rutina_consumidor, (void *) n_consumidor);
+	pthread_create(&Consumidor, NULL, rutina_consumidor, (void *) n_consumidor);
 	log_debug(logger_plataforma, "Se lanza el hilo consumidor!", "DEBUG");
 	//el hilo principal debería lanzar los otros dos hilos
 
