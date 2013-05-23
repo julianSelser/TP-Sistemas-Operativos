@@ -16,6 +16,8 @@
 
 t_log * logger_personaje;
 int termino_plan_niveles;
+int game_over = 0;
+int contador_vidas;
 
 
 int main()
@@ -39,7 +41,7 @@ int main()
 
 	while (!termino_plan_niveles)
 	{
-		int destino[2];
+		//int destino[2]; por ahora comentado porque no se usa y tira warning
 		int sabe_donde_ir, consiguio_total_recursos;
 
 		//ACCION: UBICAR EL PROXIMO NIVEL A PEDIR
@@ -69,7 +71,27 @@ int main()
 
 		while(1)
 		{
-			//recibir(socket_planificador, ID_INFO_NIVEL_Y_PLANIFICADOR)
+			uint8_t mje_a_recibir = 255;
+
+			//IMPORTANTE, ACÁ PUEDEN PASAR UNA DE DOS COSAS:
+			//1. EL PROCESO ESTÁ LISTO Y RECIBE LA NOTIFICACIÓN DE MOVIMIENTO PERMITIDO
+			//2. EL PROCESO ESTÁ BLOQUEADO Y RECIBE LA NOTIFICACIÓN DE PERSONAJE CONDENADO
+			//EL PJ VA A PENSAR QUE RECIBE ESTA ÚLTIMA POR PARTE DEL PLANIFICADOR, AUNQUE EN REALIDAD LO ESTÉ ENVIANDO EL ORQUESTADOR
+
+
+			//mje_a_recibir = getnextmsg(socket_planificador) //getnextmsg es una función que informa qué tipo de mensaje es el próximo que hay en el socket (hace un peek del header). es bloqueante
+
+			if(mje_a_recibir == 17) //NOTIF_PERSONAJE_CONDENADO
+			{
+				//recibir(socket_planificador, NOTIF_PERSONAJE_CONDENADO);
+				//log_info(logger_personaje, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
+				//morir() //morir se encarga de setear game_over si es necesario
+				break; //sale del nivel
+			}
+
+			//recibir(socket_planificador, ID_NOTIF_MOVIMIENTO_PERMITIDO)
+
+
 			//el propósito de este "recibir" es puramente que el personaje se bloquee, no necesita ninguna información. De hecho, el mensaje podría ser solamente el header y nada de datos.
 			//recibir este mensaje significa que es el turno del personaje
 
@@ -141,16 +163,26 @@ int main()
 				//log_info(logger_personaje, "Nivel finalizado!", "INFO");
 				//ACCION: ELABORAR NOTIFICACION NIVEL CONCLUIDO
 				//ACCION: SERIALIZAR NOTIFICACION NIVEL CONCLUIDO
+				//ACCION: MARCAR NIVEL COMO CONCLUIDO
 				//send(socket_nivel, msj_notif_nivel_concluido, longitud, 0);
 
-				//ACCION: DESCONECTAR DEL NIVEL
-				//ACCION: DESCONECTAR DEL HILO PLANIFICADOR DEL NIVEL
-
-				break;
+				break; //por acá se sale del while(1) [personaje sale del nivel]
 			}
 
-		}
+		} //fin while(1) [personaje en nivel]
+		//en este punto es donde definitivamente se sale de un nivel. esto significa desconectarse del hilo planificador y del nivel
 
+		//ACCION: DESCONECTAR DEL NIVEL
+		//ACCION: DESCONECTAR DEL HILO PLANIFICADOR DEL NIVEL
+
+
+		//después del fin while(1), el personaje pide info del próximo nivel
+		//si el personaje murió, entonces no marcó el nivel como concludio, y va a pedir la info del nivel en el que estaba. esto es dudoso, ya que la consigna dice que "notifica su intención de reiniciar el nivel"
+		if(game_over) //a menos que el personaje haya perdido todas sus vidas
+		{
+			//REINICIAR PLAN DE NIVELES
+			//log_info(logger_personaje, "Game over - reiniciando plan de niveles". "INFO");
+		}
 	}
 
 	//el personaje, al terminar su plan de niveles, se conecta al hilo orquestador y se lo notifica
@@ -166,4 +198,19 @@ int main()
 	return 0; //para evitar el warning, igual no se si tienen que ser tipo int o si pueden ser tipo void nuestros main
 }
 
+void morir()
+{
+	//ELABORAR NOTIFICACION DE MUERTE PERSONAJE
+	//SERIALIZAR NOTFICACION DE MUERTE PERSONAJE
 
+	//send(socket_nivel, ID_NOTIF_MUERTE_PERSONAJE);
+
+	if(contador_vidas > 0) contador_vidas--;
+
+	else
+	{
+		//VOLVER VIDAS AL VALOR INICIAL LEIDO EN EL ARCHIVO DE CONFIG
+		//REINICIAR PLAN DE NIVELES
+		game_over = 1;
+	}
+}
