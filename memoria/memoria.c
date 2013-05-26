@@ -5,11 +5,11 @@
 #include <commons/string.h>
 										
 static t_list *mem_manager;					// lista que administra las particiones del segmento de memoria
-static int memoria_total;					// el "tamanio" de la memoria que pasa a koopa por parametro
+static int memoria_libre_total;					// el "tamanio" de la memoria que pasa a koopa por parametro
 										
 t_memoria crear_memoria(int tamanio) {
 	t_memoria segmento = malloc(sizeof(char)*tamanio);
-	memoria_total = tamanio;
+	memoria_libre_total = tamanio;
 	inicializar_particiones(segmento); 	// prepara mem_manager: creando la lista y la primera particion que tendra toda la memoria
 	return segmento;
 }
@@ -18,7 +18,7 @@ int almacenar_particion(t_memoria segmento, char id, int tamanio, char* contenid
 	t_link_element *nodo_best_fit;
 	t_particion *best_fit;
 
-	if( memoria_total<tamanio || es_id_duplicado(id) ) return -1; 	 //comprueba si el pedido de memoria es mayor que el total y si id es repetido
+	if( memoria_libre_total<tamanio || es_id_duplicado(id) ) return -1; 	 //comprueba si el pedido de memoria es mayor que el total y si id es repetido
 	if( (nodo_best_fit = buscar_best_fit(tamanio) )==NULL) return 0; //retorna 0 si no habia particion util(si nodo==NULL ciclo la lista y no encontro)
 
 	best_fit = nodo_best_fit->data; // la data del NODO best fit es la PARTICION best fit
@@ -29,13 +29,17 @@ int almacenar_particion(t_memoria segmento, char id, int tamanio, char* contenid
 	else {
 		dividir_particion(nodo_best_fit, best_fit, segmento, id, tamanio, contenido);
 	}
+	memoria_libre_total-=tamanio; //almacenar la particion significa menos memoria libre
 	return 1;
 }
 
 int eliminar_particion(t_memoria segmento, char id) {
 	t_particion *particion = buscar_particion_por_id(id);	//inicializa la particion con la encontrada por id, si no existe trae NULL
 	if(particion == NULL) return 0; 						//si particion es NULL, la particion mandada a eliminar no existia
-	else  particion->libre = true;							//si particion NO es NULL: marcar la particion como libre
+	else  {particion->libre = true;							//si particion NO es NULL: marcar la particion como libre
+	particion->id=' ';
+	}
+	memoria_libre_total+=particion->tamanio;  //eliminar la particion significa mas memoria libre
 	return 1;
 }
 
@@ -66,7 +70,7 @@ static t_link_element *buscar_best_fit(int tamanio){//busca best fit en mem_mana
 }
 
 static void inicializar_particiones(t_memoria segmento){//crea la lista que manejara las particiones con la primera particion con toda la memoria
-	t_particion *primera_particion = crear_particion(true,0,segmento,' ',memoria_total,string_repeat('0',memoria_total));
+	t_particion *primera_particion = crear_particion(true,0,segmento,' ',memoria_libre_total,string_repeat('0',memoria_libre_total));
 	mem_manager = list_create();
 	list_add(mem_manager,primera_particion);
 }
@@ -94,7 +98,7 @@ static void dividir_particion(t_link_element *nodo_best_fit, t_particion *best_f
 	//se calculan los valores de tamaño e inicio para la nueva aprticion libre a crear, y se crea
 	int tam_nueva_particion_libre = best_fit->tamanio - tamanio;
 	int inicio_nueva_particion_libre = best_fit->inicio+tamanio;
-	t_particion *nueva_particion_libre = crear_particion(true,inicio_nueva_particion_libre,segmento,'0',tam_nueva_particion_libre,string_repeat('0',tam_nueva_particion_libre));
+	t_particion *nueva_particion_libre = crear_particion(true,inicio_nueva_particion_libre,segmento,' ',tam_nueva_particion_libre,string_repeat('0',tam_nueva_particion_libre));
 
 	//se sobrescribe la particion que quedo por arriba de la libre y se inserta antes de la nueva libre creada
 	sobrescribir_particion(best_fit,segmento,id,tamanio,contenido);
@@ -104,7 +108,8 @@ static void dividir_particion(t_link_element *nodo_best_fit, t_particion *best_f
 static t_particion *buscar_particion_por_id(char id){
 	//busca y devuelve una particion por id, devuelve NULL si no encuentra
 	t_link_element *aux = mem_manager->head;
-	while( aux!=NULL && ((t_particion*)aux->data)->id!=id ) aux = aux->next;
+	//cicla mientras no se haya llegado al final y no se encuentre una particion con el id que no este libre
+	while( aux!=NULL && !( ((t_particion*)aux->data)->id==id && !((t_particion*)aux->data)->libre) ) aux = aux->next;
 	return aux==NULL? NULL : aux->data;
 }
 

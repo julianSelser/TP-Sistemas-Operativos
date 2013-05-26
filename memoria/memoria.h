@@ -19,9 +19,7 @@
     void liberar_memoria(t_memoria segmento);
     t_list* particiones(t_memoria segmento);
 
-
 /***************************************  Funciones adicionales  ****************************************/
-
 
     static void sobrescribir_particion(t_particion *particion, t_memoria segmento, char id, int tamanio , char* contenido);
     static void dividir_particion(t_link_element *nodo_best_fit, t_particion *best_fit, t_memoria segmento, char id, int tamanio, char* contenido);
