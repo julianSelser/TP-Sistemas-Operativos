@@ -18,8 +18,8 @@ int almacenar_particion(t_memoria segmento, char id, int tamanio, char* contenid
 	t_link_element *nodo_best_fit;
 	t_particion *best_fit;
 
-	if( memoria_libre_total<tamanio || es_id_duplicado(id) ) return -1; 	 //comprueba si el pedido de memoria es mayor que el total y si id es repetido
-	if( (nodo_best_fit = buscar_best_fit(tamanio) )==NULL) return 0; //retorna 0 si no habia particion util(si nodo==NULL ciclo la lista y no encontro)
+	if( memoria_libre_total<tamanio || es_id_duplicado(id) ) return -1; //comprueba si el pedido de memoria es mayor que el total y si id es repetido
+	if( (nodo_best_fit = buscar_best_fit(tamanio) )==NULL) return 0; 	//retorna 0 si no habia particion util(si nodo==NULL ciclo la lista y no encontro)
 
 	best_fit = nodo_best_fit->data; // la data del NODO best fit es la PARTICION best fit
 
@@ -36,9 +36,7 @@ int almacenar_particion(t_memoria segmento, char id, int tamanio, char* contenid
 int eliminar_particion(t_memoria segmento, char id) {
 	t_particion *particion = buscar_particion_por_id(id);	//inicializa la particion con la encontrada por id, si no existe trae NULL
 	if(particion == NULL) return 0; 						//si particion es NULL, la particion mandada a eliminar no existia
-	else  {particion->libre = true;							//si particion NO es NULL: marcar la particion como libre
-	particion->id=' ';
-	}
+	else  particion->libre = true;							//si particion NO es NULL: marcar la particion como libre
 	memoria_libre_total+=particion->tamanio;  //eliminar la particion significa mas memoria libre
 	return 1;
 }
@@ -61,7 +59,7 @@ static t_link_element *buscar_best_fit(int tamanio){//busca best fit en mem_mana
 	t_link_element *aux = mem_manager->head;
 
 	for( nodo_best_fit=NULL ; aux!=NULL ; aux = aux->next){
-		// si la particion esta libre y su tamaño es mayor o igual al necesitado es candidata...
+		//si la particion esta libre y su tamaño es mayor o igual al necesitado es candidata...
 		if( ((t_particion*)aux->data)->libre && ((t_particion*)aux->data)->tamanio>=tamanio)
 			//si todavia el nodo best fit esta vacio se llena con la candidata O si la candidata es menor que la best fit, pasa a ser la best fit
 			if(nodo_best_fit==NULL || ((t_particion*)nodo_best_fit->data)->tamanio > ((t_particion*)aux->data)->tamanio) nodo_best_fit = aux;
@@ -109,7 +107,7 @@ static t_particion *buscar_particion_por_id(char id){
 	//busca y devuelve una particion por id, devuelve NULL si no encuentra
 	t_link_element *aux = mem_manager->head;
 	//cicla mientras no se haya llegado al final y no se encuentre una particion con el id que no este libre
-	while( aux!=NULL && !( ((t_particion*)aux->data)->id==id && !((t_particion*)aux->data)->libre) ) aux = aux->next;
+	while( aux!=NULL && (((t_particion*)aux->data)->id!=id || ((t_particion*)aux->data)->libre) ) aux = aux->next;
 	return aux==NULL? NULL : aux->data;
 }
 
