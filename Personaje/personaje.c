@@ -14,7 +14,7 @@
 #include <commons/log.h>
 
 
-t_log * logger_personaje;
+t_log * logger;
 int termino_plan_niveles;
 int game_over = 0;
 int contador_vidas;
@@ -23,10 +23,11 @@ int contador_vidas;
 int main()
 {
 
-	logger_personaje = log_create("personaje.log", "PERSONAJE", 0, LOG_LEVEL_TRACE);
+	logger = log_create("personaje.log", "PERSONAJE", 0, LOG_LEVEL_TRACE);
 	//se crea una instancia del logger
 	//se va a crear un logger por personaje. por lo tanto, deberiamos crear un archivo .log por personaje?
 	//crear un solo archivo de log o varios segun el nivel de logueo?
+	//mas copado seria que despues de leer el archivo de config, podamos crear el archivo de log segun el nombre del personaje
 
 
 	//ACCION: ESTABLECER HANDLERS DE SEÑALES
@@ -56,7 +57,7 @@ int main()
 		//send (socket_orquestador, msj_solicitud_datos_nivel, longitud_msj, 0);
 		//info_nivel_y_planificador = (t_info_nivel_y_planificador *) recibir(socket_orquestador, ID_INFO_NIVEL_Y_PLANIFICADOR); //ID_INFO_NIVEL Y PLANIFICADOR ES EL ID DEL TIPO DE MENSAJE, SE PUEDE DEFINIR EN UN .h, LO ENVIAMOS A LA FUNCION RECIBIR PARA VALIDAR QUE SE RECIBA LO QUE ESPERAMOS
 		//recibir es la función mágica que, dado un socket, devuelve como puntero a void la dirección del struct que armó des-serializando lo que había en el socket
-		//log_debug(logger_personaje, "Recibida la información del nivel y el planificador", "DEBUG");
+		//log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
 
 		//ACCION: DESCONECTARSE DEL HILO ORQUESTADOR
 		//log_debug(logger_personaje, "Desconectado del hilo orquestador", "DEBUG");
@@ -142,7 +143,7 @@ int main()
 				//{
 						//ACCION: ACTUALIZAR RECURSOS OBTENIDOS. SI CONSIGUIO EL TOTAL, INDICAR consiguio_total_recursos = 1
 						//sabe_donde_ir = 0;
-						//log_info(logger_personaje, "Se obtuvo el recurso!", "INFO);
+						//log_info(logger, "Se obtuvo el recurso!", "INFO);
 				//}
 
 				//else if (!rta_solicitud_instancia_recurso.concedido)
