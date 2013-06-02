@@ -20,8 +20,17 @@ int game_over = 0;
 int contador_vidas;
 
 
-int main()
+int main(int argc, char** argv)
 {
+	if(argc != 2) //controlar que haya exactamente un parámetro
+	{
+		puts("Uso: personaje <arch.conf>\n");
+		return -1;
+	}
+
+
+
+	//ACCION: LEER EL ARCHIVO DE CONFIGURACION
 
 	logger = log_create("personaje.log", "PERSONAJE", 0, LOG_LEVEL_TRACE);
 	//se crea una instancia del logger
@@ -34,8 +43,6 @@ int main()
 	//log_debug(logger_personaje, "Handlers de señales establecidos", "DEBUG");
 
 
-	//ACCION: LEER EL ARCHIVO DE CONFIGURACION
-	//log_debug(logger_personaje, "Archivo de configuración leido", "DEBUG")
 
 	termino_plan_niveles = 0;
 	//hay que ver cómo determinamos si el personaje terminó o no su plan, y evaluarlo acá, en vez de inicializar esto en 0
