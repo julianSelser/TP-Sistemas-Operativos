@@ -12,9 +12,10 @@
 #include <string.h>
 #include <signal.h>
 #include <commons/log.h>
-
+#include <commons/config.h>
 
 t_log * logger;
+t_config * configuracion;
 int termino_plan_niveles;
 int game_over = 0;
 int contador_vidas;
@@ -28,6 +29,18 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
+	configuracion = config_create(argv); //qué devuelve en caso de error?
+
+	if(!( config_has_property(configuracion, "nombre") &&
+		  config_has_property(configuracion, "simbolo") &&
+		  config_has_property(configuracion, "planDeNiveles") &&
+		  config_has_property(configuracion, "vidas") &&
+		  config_has_property(configuracion, "orquestador")
+		)) //si no están todos los campos necesarios de la configuración
+	{
+		puts("Archivo de configuración incompleto o inválido\n");
+		return -2;
+	}
 
 
 	//ACCION: LEER EL ARCHIVO DE CONFIGURACION
