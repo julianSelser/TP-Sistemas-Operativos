@@ -26,10 +26,10 @@ int almacenar_particion(t_memoria segmento, char id, int tamanio, char* contenid
 	//si el fit es exacto: reusa la particion sobrescribiendola
 	//sino en "else" se usa la parte de arriba de la particion, dejando el resto libre
 	if( best_fit->tamanio == tamanio ) 	sobrescribir_particion(best_fit, segmento, id, tamanio, contenido);
-	else {
-		dividir_particion(nodo_best_fit, best_fit, segmento, id, tamanio, contenido);
-	}
+	else dividir_particion(nodo_best_fit, best_fit, segmento, id, tamanio, contenido);
+
 	memoria_libre_total-=tamanio; //almacenar la particion significa menos memoria libre
+
 	return 1;
 }
 
@@ -88,7 +88,7 @@ static void sobrescribir_particion(t_particion *particion, t_memoria segmento, c
 	particion->id = id;
 	particion->tamanio = tamanio;
 	particion->libre = false;
-	particion->dato = memmove(segmento+(particion->inicio),contenido,particion->tamanio);
+	particion->dato = memmove(segmento+(particion->inicio),contenido,tamanio);
 }
 
 static void dividir_particion(t_link_element *nodo_best_fit, t_particion *best_fit, t_memoria segmento, char id, int tamanio, char* contenido){
