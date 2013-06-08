@@ -34,6 +34,8 @@ t_list * lista_cajas; //mehea
 
 int conf_es_valida(t_config * configuracion);
 
+int imprimir_nodo(t_caja * nodo_caja);
+
 int main(int argc, char ** argv)
 {
 	t_config * configuracion;
@@ -73,12 +75,12 @@ int main(int argc, char ** argv)
 
 	lista_cajas = list_create();
 
-	for(i=1; i<cantidad_de_recursos; i++)
+	for(i=1; i<=cantidad_de_recursos; i++)
 	{
 		char ** datos_caja;
 		char * nombre_caja;
 		char numero_caja[2];
-		t_caja nodo_caja;
+		t_caja * nodo_caja;
 
 		//todo revisar condiciones de error de malloc?
 
@@ -91,17 +93,22 @@ int main(int argc, char ** argv)
 
 		datos_caja = config_get_array_value(configuracion, nombre_caja);
 
-		nodo_caja.nombre = malloc (strlen(datos_caja[0]));
-		strcpy(nodo_caja.nombre, datos_caja[0]); //nombre es un puntero
+		nodo_caja = malloc(sizeof(t_caja));
 
-		nodo_caja.ID = datos_caja[1][0];
-		nodo_caja.disp = nodo_caja.total = atoi(datos_caja[2]); //todo verificar condicion de error de atoi?
-		nodo_caja.x = atoi(datos_caja[3]); //todo idem
-		nodo_caja.y = atoi(datos_caja[4]); //todo idem
+		nodo_caja->nombre = malloc (strlen(datos_caja[0]));
+		strcpy(nodo_caja->nombre, datos_caja[0]); //nombre es un puntero
 
-		list_add(lista_cajas, &nodo_caja);
+		nodo_caja->ID = datos_caja[1][0];
+		nodo_caja->disp = nodo_caja->total = atoi(datos_caja[2]); //todo verificar condicion de error de atoi?
+		nodo_caja->x = atoi(datos_caja[3]); //todo idem
+		nodo_caja->y = atoi(datos_caja[4]); //todo idem
+
+		list_add(lista_cajas, (void *) nodo_caja);
 		free(datos_caja);
 	}
+
+
+	imprimir_nodo((t_caja *)list_get(lista_cajas, 2));
 
 	//en este punto, se termino de leer el archivo de config y se enlistaron todos los recursos
 	config_destroy(configuracion);
@@ -117,4 +124,10 @@ int conf_es_valida(t_config * configuracion)
 			config_has_property(configuracion, "Caja1") && //al menos una caja de recursos
 			config_has_property(configuracion, "orquestador")
 			);
+}
+
+int imprimir_nodo(t_caja * nodo_caja)
+{
+	printf("Esta caja contiene %d %s de %d, su símbolo es %c y se encuentra en la posición (%d,%d)\n", nodo_caja->disp, nodo_caja->nombre, nodo_caja->disp, nodo_caja->ID, nodo_caja->x, nodo_caja->y);
+	return 0;
 }
