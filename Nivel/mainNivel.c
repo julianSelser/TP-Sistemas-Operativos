@@ -108,7 +108,7 @@ int main(int argc, char ** argv)
 	}
 
 
-	imprimir_nodo((t_caja *)list_get(lista_cajas, 2));
+	for (i=0; i< cantidad_de_recursos; i++)	imprimir_nodo((t_caja *)list_get(lista_cajas, 2));
 
 	//en este punto, se termino de leer el archivo de config y se enlistaron todos los recursos
 	config_destroy(configuracion);
