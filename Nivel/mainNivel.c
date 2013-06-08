@@ -106,8 +106,12 @@ int main(int argc, char ** argv)
 	return 0; //para evitar el warning
 }
 
-int conf_es_valida(t_config * configuracion) //todo
+int conf_es_valida(t_config * configuracion)
 {
-	; //placeholder
-	return 1;
+	return(config_has_property(configuracion, "Nombre") &&
+			config_has_property(configuracion, "TiempoChequeoDeadlock") &&
+			config_has_property(configuracion, "Recovery") &&
+			config_has_property(configuracion, "Caja1") && //al menos una caja de recursos
+			config_has_property(configuracion, "orquestador")
+			);
 }
