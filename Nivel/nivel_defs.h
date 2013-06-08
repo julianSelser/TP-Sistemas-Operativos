@@ -10,6 +10,8 @@
 
 	#include <stdint.h>
 
+	//-----TYPEDEFS-----//
+
 	typedef struct
 	{
 		uint8_t asig;
@@ -36,5 +38,17 @@
 		t_necesidad * necesidades;
 	} t_personaje;
 
+
+	//-----VARIABLES GLOBALES----//
+
+	char * nombre;
+	char * ip_puerto_orquestador;
+	int tiempo_chequeo_deadlock;
+	int recovery;
+	uint8_t cantidad_de_recursos;
+
+	t_log * logger;
+
+	t_list * lista_cajas;
 
 #endif /* NIVEL_DEFS_H_ */

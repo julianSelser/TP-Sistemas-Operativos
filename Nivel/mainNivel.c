@@ -11,10 +11,13 @@
 #include <malloc.h>
 #include <string.h>
 #include <pthread.h>
+
 #include <commons/config.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/collections/queue.h>
+#include <tad_items.h>
+#include <nivel.h> //nivel gui de la catedra
 
 #include "nivel_defs.h"
 
@@ -22,19 +25,8 @@
 //lee el archivo de configuración, crea el logger y lanza los demás hilos
 //tambien inicializa los contadores de recursos
 
-
-char * nombre;
-char * ip_puerto_orquestador;
-int tiempo_chequeo_deadlock;
-int recovery;
-uint8_t cantidad_de_recursos;
-t_log * logger;
-
-t_list * lista_cajas; //mehea
-
 int conf_es_valida(t_config * configuracion);
-
-int imprimir_nodo(t_caja * nodo_caja);
+int imprimir_nodo_caja(t_caja * nodo_caja);
 
 int main(int argc, char ** argv)
 {
@@ -107,11 +99,12 @@ int main(int argc, char ** argv)
 		free(datos_caja);
 	}
 
-
-	for (i=0; i< cantidad_de_recursos; i++)	imprimir_nodo((t_caja *)list_get(lista_cajas, 2));
-
 	//en este punto, se termino de leer el archivo de config y se enlistaron todos los recursos
 	config_destroy(configuracion);
+
+	//for (i=0; i< cantidad_de_recursos; i++)	imprimir_nodo((t_caja *)list_get(lista_cajas, i));
+	//linea para controlar que se haya enlistado todito bien
+
 
 	return 0; //para evitar el warning
 }
@@ -126,8 +119,15 @@ int conf_es_valida(t_config * configuracion)
 			);
 }
 
-int imprimir_nodo(t_caja * nodo_caja)
+int imprimir_nodo_caja(t_caja * nodo_caja)
 {
 	printf("Esta caja contiene %d %s de %d, su símbolo es %c y se encuentra en la posición (%d,%d)\n", nodo_caja->disp, nodo_caja->nombre, nodo_caja->disp, nodo_caja->ID, nodo_caja->x, nodo_caja->y);
 	return 0;
+}
+
+
+
+
+//--------------FIN MAIN--------------//
+
 }
