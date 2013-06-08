@@ -58,7 +58,9 @@ int main(int argc, char ** argv)
 	nombre = config_get_string_value(configuracion, "Nombre");
 
 	//ahora que ya se como se llama el nivel, puedo crear el log
-	log_name = nombre;
+	log_name = malloc(strlen(nombre)+1);
+	strcpy(log_name, nombre);
+
 	string_append(&log_name, ".log");
 	logger = log_create(log_name, "NIVEL", 0, LOG_LEVEL_TRACE);
 
@@ -71,16 +73,17 @@ int main(int argc, char ** argv)
 
 	lista_cajas = list_create();
 
-	for(i=1; i==cantidad_de_recursos; i++)
+	for(i=1; i<cantidad_de_recursos; i++)
 	{
 		char ** datos_caja;
 		char * nombre_caja;
-		char numero_caja[1];
+		char numero_caja[2];
 		t_caja nodo_caja;
 
 		//todo revisar condiciones de error de malloc?
 
 		numero_caja[0] = i+0x30; //quick fix a falta de itoa
+		numero_caja[1] = '\0';
 
 		nombre_caja = malloc(5); //porque la palabra Caja ocupa 4 bytes
 		strcpy(nombre_caja, "Caja");
