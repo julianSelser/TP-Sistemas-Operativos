@@ -68,7 +68,7 @@ static t_link_element *buscar_best_fit(int tamanio){//busca best fit en mem_mana
 }
 
 static void inicializar_particiones(t_memoria segmento){//crea la lista que manejara las particiones con la primera particion con toda la memoria
-	t_particion *primera_particion = crear_particion(true,0,segmento,' ',memoria_libre_total,string_repeat('0',memoria_libre_total));
+	t_particion *primera_particion = crear_particion(true,0,segmento,' ',memoria_libre_total,"");
 	mem_manager = list_create();
 	list_add(mem_manager,primera_particion);
 }
@@ -79,7 +79,7 @@ static t_particion *crear_particion(bool disponibilidad, int inicio, t_memoria s
 	nueva_particion->id = id;
 	nueva_particion->inicio = inicio;
 	nueva_particion->tamanio = tamanio;
-	nueva_particion->dato = memmove(segmento+inicio,contenido,tamanio);
+	nueva_particion->dato = memmove(segmento+inicio,contenido,strlen(contenido));
 	nueva_particion->libre = disponibilidad;
 	return nueva_particion;
 }
@@ -88,7 +88,7 @@ static void sobrescribir_particion(t_particion *particion, t_memoria segmento, c
 	particion->id = id;
 	particion->tamanio = tamanio;
 	particion->libre = false;
-	particion->dato = memmove(segmento+(particion->inicio),contenido,tamanio);
+	particion->dato = memmove(segmento+(particion->inicio),contenido,strlen(contenido));
 }
 
 static void dividir_particion(t_link_element *nodo_best_fit, t_particion *best_fit, t_memoria segmento, char id, int tamanio, char* contenido){
@@ -96,7 +96,7 @@ static void dividir_particion(t_link_element *nodo_best_fit, t_particion *best_f
 	//se calculan los valores de tamaño e inicio para la nueva aprticion libre a crear, y se crea
 	int tam_nueva_particion_libre = best_fit->tamanio - tamanio;
 	int inicio_nueva_particion_libre = best_fit->inicio+tamanio;
-	t_particion *nueva_particion_libre = crear_particion(true,inicio_nueva_particion_libre,segmento,' ',tam_nueva_particion_libre,string_repeat('0',tam_nueva_particion_libre));
+	t_particion *nueva_particion_libre = crear_particion(true,inicio_nueva_particion_libre,segmento,' ',tam_nueva_particion_libre,"");
 
 	//se sobrescribe la particion que quedo por arriba de la libre y se inserta antes de la nueva libre creada
 	sobrescribir_particion(best_fit,segmento,id,tamanio,contenido);
