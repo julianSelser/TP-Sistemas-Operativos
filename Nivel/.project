@@ -4,6 +4,8 @@
 	<comment></comment>
 	<projects>
 		<project>so-commons-library</project>
+		<project>so-nivel-gui-library</project>
+		<project>tad_items</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
