@@ -58,6 +58,7 @@
 
 	extern t_list * lista_cajas;
 	extern t_list * lista_personajes;
+	extern ITEM_NIVEL * lista_items;
 
 
 #endif /* NIVEL_DEFS_H_ */

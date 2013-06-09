@@ -24,21 +24,22 @@
 //hilo principal del proceso nivel
 //lee el archivo de configuración, crea el logger y lanza los demás hilos
 //tambien inicializa los contadores de recursos
-	char * nombre;
-	char * ip_orquestador;
-	int puerto_orquestador;
-	int tiempo_chequeo_deadlock;
-	int recovery;
-	uint8_t cantidad_de_recursos;
+char * nombre;
+char * ip_orquestador;
+int puerto_orquestador;
+int tiempo_chequeo_deadlock;
+int recovery;
+uint8_t cantidad_de_recursos;
 
 
-	t_log * logger;
-
-	t_list * lista_cajas;
+t_log * logger;
+t_list * lista_cajas;
+ITEM_NIVEL * lista_items;
 
 
 int conf_es_valida(t_config * configuracion);
 int imprimir_nodo_caja(t_caja * nodo_caja);
+int crear_item_caja_desde_nodo(t_caja * nodo_caja);
 
 int main(int argc, char ** argv)
 {
@@ -75,7 +76,7 @@ int main(int argc, char ** argv)
 
 	//podra el personaje reutilizar este codigo?
 	temp_ip_puerto_orq = config_get_string_value(configuracion, "orquestador");
-	ip_puerto_orquestador = malloc(strlen(temp_ip_puerto_orq));
+	ip_puerto_orquestador = malloc(strlen(temp_ip_puerto_orq)+1);
 	strcpy(ip_puerto_orquestador, temp_ip_puerto_orq);
 	ip_puerto_separados = string_split(ip_puerto_orquestador, ":");
 	free(ip_puerto_orquestador);
@@ -92,6 +93,7 @@ int main(int argc, char ** argv)
 	cantidad_de_recursos = config_keys_amount(configuracion) - 4; //este 4 esta hardcodeado, pero la realidad es que siempre el archivo de config tiene la cantidad de cajas y cuatro entradas más
 
 	lista_cajas = list_create();
+	lista_items = NULL;// no requiere inicializacion?
 
 	for(i=1; i<=cantidad_de_recursos; i++)
 	{
@@ -121,14 +123,16 @@ int main(int argc, char ** argv)
 		nodo_caja->x = atoi(datos_caja[3]); //todo idem
 		nodo_caja->y = atoi(datos_caja[4]); //todo idem
 
+		crear_item_caja_desde_nodo(nodo_caja);
 		list_add(lista_cajas, (void *) nodo_caja);
+
 		free(datos_caja);
 	}
 
 	//en este punto, se termino de leer el archivo de config y se enlistaron todos los recursos
 	config_destroy(configuracion);
 
-	//for (i=0; i< cantidad_de_recursos; i++)	imprimir_nodo((t_caja *)list_get(lista_cajas, i));
+	for (i=0; i< cantidad_de_recursos; i++)	imprimir_nodo_caja((t_caja *)list_get(lista_cajas, i));
 	//linea para controlar que se haya enlistado todito bien
 
 
@@ -148,5 +152,12 @@ int conf_es_valida(t_config * configuracion)
 int imprimir_nodo_caja(t_caja * nodo_caja)
 {
 	printf("Esta caja contiene %d %s de %d, su símbolo es %c y se encuentra en la posición (%d,%d)\n", nodo_caja->disp, nodo_caja->nombre, nodo_caja->disp, nodo_caja->ID, nodo_caja->x, nodo_caja->y);
+	return 0;
+}
+
+int crear_item_caja_desde_nodo(t_caja * nodo_caja)
+//permite pasar desde NUESTRA estructura de caja, a la estructura NIVEL_ITEMS requerida para dibujar
+{
+	CrearCaja(&lista_items, nodo_caja->ID, nodo_caja->x, nodo_caja->y, nodo_caja->disp);
 	return 0;
 }
