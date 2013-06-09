@@ -34,6 +34,7 @@ void * iniciarEscucha(int puerto)
 	struct sockaddr_in infoEscucha;
 	int puerto_escucha;
 	char buffer[BUFF_SIZE];
+	int optval = 1;
 
 	lista_personajes = list_create();
 	//primero se comporta como un cliente
@@ -71,6 +72,20 @@ void * iniciarEscucha(int puerto)
 	infoEscucha.sin_family = AF_INET;
 	infoEscucha.sin_addr.s_addr = INADDR_ANY;
 	infoEscucha.sin_port = htons(puerto_escucha); //escucho por la dirección que me dijo el orquestador
+
+	if(bind(socket_escucha, (struct sockaddr*) &infoEscucha, sizeof(infoEscucha)) !=0 )
+	{
+		printf("No se pudo bindear el socket escucha\n");
+		exit(-4);
+	}
+
+	if (listen(socket_escucha, 15) !=0)
+	{
+		printf("Error al ponerse a escuchar conexiones\n");
+		exit(-5);
+	}
+
+
 
 
 	return NULL; //para evitar el warning
