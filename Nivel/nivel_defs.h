@@ -10,6 +10,10 @@
 
 	#include <stdint.h>
 
+	#include <nivel.h> //nivel gui de la catedra
+	#include <commons/log.h>
+	#include <commons/collections/list.h>
+
 	//-----TYPEDEFS-----//
 
 	typedef struct
@@ -41,14 +45,19 @@
 
 	//-----VARIABLES GLOBALES----//
 
-	char * nombre;
-	char * ip_puerto_orquestador;
-	int tiempo_chequeo_deadlock;
-	int recovery;
-	uint8_t cantidad_de_recursos;
+	//configuracion:
+	extern char * nombre;
+	extern char * ip_orquestador;
+	extern int puerto_orquestador;
+	extern int tiempo_chequeo_deadlock;
+	extern int recovery;
+	extern uint8_t cantidad_de_recursos;
 
-	t_log * logger;
 
-	t_list * lista_cajas;
+	extern t_log * logger;
+
+	extern t_list * lista_cajas;
+	extern t_list * lista_personajes;
+
 
 #endif /* NIVEL_DEFS_H_ */
