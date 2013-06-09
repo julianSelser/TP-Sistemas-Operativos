@@ -20,14 +20,15 @@
 
 #include "serial.h"
 
-
+// falta setear los sockets para cerrarse con execve
 #define N_MENSAJES 20 //por ahora son 20
 
 static p_funcion_deserial vec_deserializador[N_MENSAJES];
 static p_funcion_serial vec_serializador[N_MENSAJES];
 
-/******************************************* FUNCIONES DE INICIALIZADO ********************************************/
 
+/******************************************* FUNCIONES DE INICIALIZADO ********************************************/
+/*									ESTO ES TEMPORAL; HAY UNA MEJOR MANERA DE HACERLO							  */
 
 
 //setea los vec de la serializadora
@@ -93,17 +94,11 @@ void *recibir(int socket, int tipo)
 	return cabecera->tipo==tipo? vec_deserializador[tipo](buffer_cuerpo) : NULL ;
 }
 
-
-
-/********************************************* FUNCIONES DE ENVIO *****************************************************/
-
-
-
 //funcion que recibe un socket, un tipo de mensaje, un struct y un logger
 //envia un mensaje de un tipo serializando un struct al socket
 void enviar(int socket, int tipo, void *struct_mensaje, t_log *logger)
 {
-	char *serializado = (char*)vec_serializador[tipo];
+	char *serializado = vec_serializador[tipo](struct_mensaje);
 	char buffer[sizeof(t_cabecera)+strlen(serializado)];
 	uint16_t len_cast = strlen(serializado);
 	uint8_t tipo_cast = tipo;
