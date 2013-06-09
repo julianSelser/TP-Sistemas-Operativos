@@ -43,13 +43,13 @@
 	char *srlz_movimiento_permitido(void* data);
 
 	//funciones de-serializadoras
-	void *deserializar_cabecera(char *buffer);
 	void *deserializar_turno_concluido(char *buffer);
 
 	//funciones de envio/recepcion
+	int getnextmsg(int socket);
 	void *recibir(int socket, int tipo);
 	void enviar(int socket, int tipo, void *struct_mensaje, t_log *logger);
-	int getnextmsg(int socket);
+	t_cabecera deserializar_cabecera(char *buffer);
 
 	//funciones de socket
 	int init_socket_externo(int puerto, char *direccion, t_log *logger);

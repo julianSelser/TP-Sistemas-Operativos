@@ -64,7 +64,7 @@ int getnextmsg(int socket){
 		exit(1);
 	}
 
-	memcpy(&tipo,buffer,sizeof(uint8_t));
+	memcpy(&tipo, buffer, sizeof(uint8_t));
 
 	return tipo;
 }
@@ -81,38 +81,54 @@ void *recibir(int socket, int tipo)
 	}
 
 	// Segundo: Alocar memoria suficiente para el payload.
-	t_cabecera *cabecera = deserializar_cabecera(buffer_cabecera);
-
-	char buffer_cuerpo[cabecera->len];
+	t_cabecera cabecera = deserializar_cabecera(buffer_cabecera);
+	char buffer_cuerpo[cabecera.len];
 
 	// Tercero: Recibir el payload.
-	if(recv(socket, buffer_cuerpo, cabecera->len, MSG_WAITALL) < 0){
+	if(recv(socket, buffer_cuerpo, cabecera.len, MSG_WAITALL) < 0){
 		/*todo logear*/;
 		exit(1);
 	}
 
-	return cabecera->tipo==tipo? vec_deserializador[tipo](buffer_cuerpo) : NULL ;
+	return cabecera.tipo==tipo? vec_deserializador[tipo](buffer_cuerpo) : NULL ;
 }
 
 //funcion que recibe un socket, un tipo de mensaje, un struct y un logger
 //envia un mensaje de un tipo serializando un struct al socket
 void enviar(int socket, int tipo, void *struct_mensaje, t_log *logger)
 {
+	int tmp,offset = 0;
 	char *serializado = vec_serializador[tipo](struct_mensaje);
 	char buffer[sizeof(t_cabecera)+strlen(serializado)];
+
+	//variables para castear
 	uint16_t len_cast = strlen(serializado);
 	uint8_t tipo_cast = tipo;
 
-	memmove(buffer, &tipo_cast,sizeof(uint8_t));
-	memmove(buffer, &len_cast,sizeof(uint16_t));
-	memmove(buffer, serializado, strlen(serializado));
+	//armado del buffer  con cabecera y lo serializado por vec_serializador
+	memmove(buffer, &tipo_cast, tmp = sizeof(uint8_t));
+	memmove(buffer + offset, &len_cast, tmp = sizeof(uint16_t));
+	offset += tmp;
+	memmove(buffer + offset, serializado, strlen(serializado));
 
+	//envio de mensaje y limpieza de mallocs
 	if(send(socket, buffer, strlen(buffer), 0) < 0){
 		/*todo: logear*/
 		exit(1);
 	}
 	free(struct_mensaje);
 	free(serializado);
+}
+
+//OJO ACA:  deserializar cabecera no es parte del vector de de-serializacion y se usa en recibir
+//			no necesitamos tenerla en memoria ni pasarla como void*
+t_cabecera deserializar_cabecera(char *buffer){
+	t_cabecera cabecera;
+
+	memcpy(&cabecera.tipo, buffer, sizeof(uint8_t));
+	memcpy(&cabecera.len, buffer, sizeof(uint16_t));
+
+	return cabecera;
 }
 
 
@@ -122,21 +138,14 @@ void enviar(int socket, int tipo, void *struct_mensaje, t_log *logger)
 
 
 
-void *deserializar_cabecera(char *buffer){
-	t_cabecera *cabecera = malloc(sizeof(t_cabecera));
-
-	memcpy(&cabecera->tipo, buffer, sizeof(uint8_t));
-	memcpy(&cabecera->len, buffer, sizeof(uint16_t));
-
-	return cabecera;
-}
-
 void *deserializar_turno_concluido(char *buffer){
+	int tmp,offset = 0;
 	t_turno_concluido *turno_fin = malloc(sizeof(t_turno_concluido));
 
-	memcpy(&turno_fin->bloqueado, buffer, sizeof(uint8_t));
-	memcpy(&turno_fin->caracter, buffer, sizeof(uint8_t));
-	memcpy(&turno_fin->termino, buffer, sizeof(uint8_t));
+	memcpy(&turno_fin->bloqueado, buffer, offset = sizeof(uint8_t));
+	memcpy(&turno_fin->caracter, buffer + offset, tmp = sizeof(uint8_t));
+	offset += tmp;
+	memcpy(&turno_fin->termino, buffer + offset, sizeof(uint8_t));
 
 	return turno_fin;
 }
@@ -144,7 +153,7 @@ void *deserializar_turno_concluido(char *buffer){
 
 
 /********************************************** FUNCIONES SERIALIZADORAS *********************************************/
-/*		 TODOS LOS MALLOCS SE LIBERAN EN LA FUNCION ENVIAR, TODOS: LOS DEL BUFFER Y LOS PASADOS COMO ESTRUCT		 */
+/*  LOS MALLOCS SE LIBERAN EN LA FUNCION ENVIAR, TODOS: LOS DEL BUFFER Y LOS PASADOS COMO ESTRUCT PORQUE SE USAN AHI */
 
 
 
