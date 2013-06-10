@@ -14,6 +14,14 @@
 #include <commons/log.h>
 #include <commons/config.h>
 
+
+#include <unistd.h>
+#include <errno.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 t_log * logger;
 t_config * configuracion;
 int termino_plan_niveles;
@@ -29,13 +37,16 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	configuracion = config_create(argv); //qué devuelve en caso de error?
+	//configuracion = config_create(argv); //qué devuelve en caso de error?
+	t_config * configuracion = config_create(argv[1]);
+
 
 	if(!( config_has_property(configuracion, "nombre") &&
 		  config_has_property(configuracion, "simbolo") &&
 		  config_has_property(configuracion, "planDeNiveles") &&
 		  config_has_property(configuracion, "vidas") &&
-		  config_has_property(configuracion, "orquestador")
+		  config_has_property(configuracion, "ip_orquestador")&&
+		  config_has_property(configuracion, "puerto_orquestador")
 		)) //si no están todos los campos necesarios de la configuración
 	{
 		puts("Archivo de configuración incompleto o inválido\n");
@@ -43,6 +54,27 @@ int main(int argc, char** argv)
 	}
 
 
+	  typedef struct {
+
+		  char *nombre;
+		  char *simbolo;
+		  char ** plan_de_niveles ;
+		  int  vidas;
+		  char * ip_orquestador ;
+		  int puerto_orquestador;
+
+	  } arch_personaje;
+
+	  arch_personaje * personaje = malloc(sizeof(arch_personaje));
+	     personaje->simbolo=config_get_string_value(configuracion,"simbolo");
+	     personaje->nombre=config_get_string_value(configuracion,"nombre");
+	     personaje->ip_orquestador=config_get_string_value(configuracion,"ip_orquestador");
+	     personaje->vidas=config_get_int_value(configuracion,"vidas");
+	     personaje->puerto_orquestador=config_get_int_value(configuracion,"puerto_orquestador");
+	     personaje->plan_de_niveles=config_get_array_value(configuracion,"planDeNiveles");
+  //char ** niveles = personaje->plan_de_niveles;
+
+  contador_vidas=personaje->vidas;
 	//ACCION: LEER EL ARCHIVO DE CONFIGURACION
 
 	logger = log_create("personaje.log", "PERSONAJE", 0, LOG_LEVEL_TRACE);
@@ -59,17 +91,47 @@ int main(int argc, char** argv)
 
 	termino_plan_niveles = 0;
 	//hay que ver cómo determinamos si el personaje terminó o no su plan, y evaluarlo acá, en vez de inicializar esto en 0
-
+	//int i=0;
 	while (!termino_plan_niveles)
 	{
+
+		// niveles[i];
+		// int nivel_a_pedir;
+
 		//int destino[2]; por ahora comentado porque no se usa y tira warning
 		int sabe_donde_ir, consiguio_total_recursos;
+
+
+
+		//nivel_a_pedir=niveles[i];
 
 		//ACCION: UBICAR EL PROXIMO NIVEL A PEDIR
 		//log_info(logger_personaje, strcat("Próximo nivel", nivel_a_pedir), "INFO");
 
 		//ACCION: CONECTAR CON EL HILO ORQUESTADOR
 		//log_debug(logger_personaje, "Conexión con hilo orquestador establecida", "DEBUG");
+
+		  int unSocket;
+		  struct sockaddr_in el_orquestador;
+		  if((unSocket = socket(AF_INET, SOCK_STREAM,0))==-1){
+		          	perror("socket");
+		          	exit(1);
+		          }
+
+		  	  	  el_orquestador.sin_family=AF_INET;
+		          el_orquestador.sin_port= htons(personaje->puerto_orquestador);
+		          el_orquestador.sin_addr.s_addr=inet_addr(personaje->ip_orquestador); // aca puede ir inet_addr(DIRECCION)
+		         // memset(&(el_orquestador.sin_zero),8);
+
+
+
+		          if(connect(unSocket,(struct sockaddr *) & el_orquestador,sizeof(struct sockaddr))==-1){
+
+		         	 perror("connect");
+		         	 exit(1);
+		          }
+
+
 
 		//ACCION: ELABORAR SOLICITUD DE DATOS DE NIVEL
 		//ACCION: SERIALIZAR SOLICITUD DE DATOS DE NIVEL
