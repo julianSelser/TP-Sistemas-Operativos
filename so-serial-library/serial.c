@@ -17,21 +17,20 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <pthread.h>
-
+#include <stdbool.h>
 #include "serial.h"
 
 // falta setear los sockets para cerrarse con execve
 #define N_MENSAJES 20 //por ahora son 20
 
 
-static p_funcion_deserial vec_deserializador[N_MENSAJES];
+static p_funcion_deserial vec_deserializador[N_MENSAJES]; // funcion esttic es q solo puede ser usado en el mismo archivo
 static p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 
 /******************************************* FUNCIONES DE INICIALIZADO ********************************************/
 /*									ESTO ES TEMPORAL; HAY UNA MEJOR MANERA DE HACERLO							  */
-
 
 
 //setea los vec de la serializadora
@@ -46,7 +45,14 @@ static void init_vec_serial(){
 	//todo ir agregando a medida que se escriben
 	vec_serializador[NOTIF_MOVIMIENTO_PERMITIDO] = srlz_movimiento_permitido;
 	vec_serializador[NOTIF_TURNO_CONCLUIDO] = srlz_turno_concluido;
+    vec_serializador[INFO_NIVEL_Y_PLANIFICADOR] = srlz_info_nivel_y_planificador;
+    vec_serializador[NOTIF_PERSONAJE_CONDENADO] = srlz_personaje_condenado;
+	vec_serializador[SOLICITUD_UBICACION_RECURSO] = srlz_ubicacion_de_recurso;
+	vec_serializador[SOLICITUD_MOVIMIENTO_XY]=srlz_solicitud_de_movimiento;
+    vec_serializador[RTA_SOLICITUD_MOVIMIENTO_XY]=srlz_resp_a_solicitud_movimiento;
+    vec_serializador[SOLICITUD_INSTANCIA_RECURSO]=srlz_solicitud_de_recurso;
 }
+
 
 
 //setea el vector de de-serializadores
@@ -55,6 +61,12 @@ static void init_vec_deserial(){
 	vec_deserializador[NOTIF_TURNO_CONCLUIDO] = deserializar_turno_concluido;
 	vec_deserializador[ENVIO_DE_DATOS_AL_PLANIFICADOR] = deserializar_datos_delPersonaje_alPlanificador;
 	vec_deserializador[NOTIF_MOVIMIENTO_PERMITIDO] = deserializar_movimiento_permitido;
+	vec_deserializador[INFO_NIVEL_Y_PLANIFICADOR] = deserializar_info_nivel_planificador;
+	vec_deserializador[NOTIF_PERSONAJE_CONDENADO] = deserializar_personaje_condenado;
+	vec_deserializador[SOLICITUD_UBICACION_RECURSO] = deserializar_ubicacion_de_recurso;
+	vec_deserializador[SOLICITUD_MOVIMIENTO_XY]=deserializar_solicitud_de_movimiento;
+    vec_deserializador[RTA_SOLICITUD_MOVIMIENTO_XY]=deserializar_solicitud_de_movimiento;
+    vec_deserializador[SOLICITUD_INSTANCIA_RECURSO]=deserializar_solicitud_de_recurso;
 }
 
 
@@ -69,6 +81,7 @@ static void init_vec_deserial(){
 int getnextmsg(int socket){
 	uint8_t tipo;
 	char buffer[sizeof(uint8_t)];
+
 
 	if(recv(socket, buffer, sizeof(t_cabecera), MSG_PEEK) < 0){
 		/*todo logear*/;
@@ -112,7 +125,8 @@ void *recibir(int socket, int tipo)
 	free(buffer_cuerpo);
 	free(buffer_cabecera);
 
-	return tipo_valido? deserializado : NULL ;
+	return tipo_valido? deserializado : NULL ; // return el deserializado correspondiente
+	//al tipo validado
 }
 
 
@@ -134,6 +148,7 @@ void enviar(int socket, int tipo, void *struct_mensaje, t_log *logger)
 	memcpy(buffer + offset, &len_cast, tmp = sizeof(uint16_t));
 	offset += tmp;
 	memcpy(buffer + offset -1, serializado, strlen(serializado));
+
 
 	//envio de mensaje y checkeo de errores
 	if(send(socket, buffer, strlen(buffer), 0) < 0){
@@ -164,7 +179,66 @@ t_cabecera *deserializar_cabecera(char *buffer){
 /*  ATENCION: siempre las funciones para deserializar deben ser de la forma:  void *deserializar_algo(char *buffer); */
 
 
+///////////////////////////////
+void *deserializar_solicitud_de_recurso(char *buffer){
 
+	t_solcitud_instancia_recurso * instancia = malloc(sizeof(t_solcitud_instancia_recurso));
+	memcpy(&instancia,buffer,sizeof(uint8_t));
+	return instancia;
+
+}
+
+void *deserializar_resp_a_solicitud_movimiento(char* buffer){
+
+	t_resp_solicitud_movimiento * resp = malloc(sizeof(t_resp_solicitud_movimiento));
+	memcpy(&resp,buffer,sizeof(uint8_t));
+	return resp;
+}
+
+void *deserializar_solicitud_de_movimiento(char *buffer){
+
+   t_solicitud_movimiento * solicitud = malloc(sizeof(t_solicitud_movimiento));
+   memcpy(&solicitud,buffer,sizeof(uint8_t));
+   return solicitud;
+}
+
+
+void *deserializar_ubicacion_de_recurso(char *buffer){
+	  int tmp=0,offset=0;
+
+	t_ubicacion_recurso * ubicacion = malloc(sizeof(t_ubicacion_recurso));
+	memcpy(&ubicacion->x,buffer,tmp=sizeof(uint8_t));
+	offset+=tmp;
+	memcpy(&ubicacion->y,buffer+offset,sizeof(uint8_t));
+
+	return ubicacion;
+
+  }
+
+void *deserializar_personaje_condenado(char *buffer){
+
+
+	t_personaje_condenado *per = malloc(sizeof(t_personaje_condenado));
+	memcpy(&per->condenado,buffer,sizeof(uint8_t));
+
+	return per;
+
+}
+
+
+void * deserializar_info_nivel_planificador(char *buffer){
+
+	int tmp =0,offset=0;
+
+	t_info_nivel_planificador *info = malloc(sizeof(t_info_nivel_planificador));
+	memcpy(&info->info_nivel,buffer,tmp=sizeof(uint16_t));
+	offset+=tmp;
+	memcpy(&info->info_planificador,buffer + offset,sizeof(uint16_t));
+
+	return info;  // devuelve el struct de t_info_nivel_planificador
+}
+
+//////////////////////////
 void *deserializar_turno_concluido(char *buffer){
 	int tmp = 0,offset = 0;
 	t_turno_concluido *turno_fin = malloc(sizeof(t_turno_concluido));
@@ -201,7 +275,72 @@ void *deserializar_movimiento_permitido(char *buffer){
 /********************************************** FUNCIONES SERIALIZADORAS *********************************************/
 /*  LOS MALLOCS SE LIBERAN EN LA FUNCION ENVIAR, TODOS: LOS DEL BUFFER Y LOS PASADOS COMO STRUCT PORQUE SE USAN AHI  */
 
+/////
+char *srlz_solicitud_de_recurso(void *data){
 
+	char* buffer = malloc(sizeof(uint8_t));
+	t_solcitud_instancia_recurso * inst = data;
+	memcpy(buffer,&inst->recurso,sizeof(uint8_t));
+	return buffer;
+
+}
+char *srlz_resp_a_solicitud_movimiento(void *data){
+
+	char * buffer = malloc(sizeof(uint8_t));
+	t_resp_solicitud_movimiento *resp = data;
+	memcpy(buffer,&resp->resp_solicitud,sizeof(uint8_t));
+
+	return buffer;
+
+}
+
+
+
+char *srlz_solicitud_de_movimiento(void *data){
+
+	char *buffer = malloc(sizeof(uint8_t));
+	t_solicitud_movimiento *solicitud = data;
+	memcpy(buffer,&solicitud->solicito_moverme,sizeof(uint8_t));
+
+	return buffer;
+}
+char *srlz_ubicacion_de_recurso(void *data){
+	int tmp=0,offset=0;
+
+	t_ubicacion_recurso *ubicacion = data;
+	char *buffer = malloc(sizeof(uint16_t));
+	memcpy(buffer,&ubicacion->x,tmp=sizeof(uint8_t));
+	offset+=tmp;
+	memcpy(buffer+offset,&ubicacion->y,sizeof(uint8_t));
+	return buffer;
+}
+
+
+
+char *srlz_personaje_condenado(void *data){
+
+	t_personaje_condenado *per = data;
+	char *buffer =malloc(sizeof(uint8_t));
+
+	memcpy(buffer,&per->condenado,sizeof(uint8_t));
+
+	return buffer;
+}
+
+
+char *srlz_info_nivel_y_planificador(void *data){
+   int tmp =0,offset=0;
+
+	t_info_nivel_planificador *d = data;
+	char *buffer = malloc(sizeof(uint32_t));
+
+	memcpy(buffer,&d->info_nivel,tmp=sizeof(uint16_t));
+    offset+=tmp;
+    memcpy(buffer+offset,&d->info_planificador,sizeof(uint16_t));
+
+	return buffer;
+}
+//////////////////
 
 char *srlz_movimiento_permitido(void* data){
 	t_mov_permitido *d = data;
