@@ -43,7 +43,8 @@ int conf_es_valida(t_config * configuracion);
 int main(int argc, char** argv)
 {
 	char * ip_puerto_orquestador;
-	char * temp_ip_puerto_orquestador;
+	char * temp_ip_puerto_orq;
+	char * ip_puerto_separados;
 	char * temp_nombre;
 	char ** temp_plan_niveles;
 	
@@ -78,7 +79,7 @@ int main(int argc, char** argv)
 	nombre = malloc(strlen(temp_nombre)+1);
 	strcpy(nombre, temp_nombre);
 	
-	vidas = max_vidas = config_get_int_value(configuracion, "vidas");
+	contador_vidas = max_vidas = config_get_int_value(configuracion, "vidas");
 	simbolo = config_get_int_value(configuracion, "simbolo");
 	
 	/*temp_plan_niveles = config_get_array_value(configuracion, "planDeNiveles");
@@ -103,6 +104,9 @@ int main(int argc, char** argv)
 	//int i=0;
 	while (!termino_plan_niveles)
 	{
+		static int unSocket;
+		static struct sockaddr_in el_orquestador;
+
 
 		// niveles[i];
 		// int nivel_a_pedir;
@@ -120,16 +124,15 @@ int main(int argc, char** argv)
 		//ACCION: CONECTAR CON EL HILO ORQUESTADOR
 		//log_debug(logger_personaje, "Conexión con hilo orquestador establecida", "DEBUG");
 
-		  int unSocket;
-		  struct sockaddr_in el_orquestador;
+
 		  if((unSocket = socket(AF_INET, SOCK_STREAM,0))==-1){
 		          	perror("socket");
 		          	exit(1);
 		          }
 
 		  	  	  el_orquestador.sin_family=AF_INET;
-		          el_orquestador.sin_port= htons(personaje->puerto_orquestador);
-		          el_orquestador.sin_addr.s_addr=inet_addr(personaje->ip_orquestador); // aca puede ir inet_addr(DIRECCION)
+		          el_orquestador.sin_port= htons(puerto_orquestador);
+		          el_orquestador.sin_addr.s_addr=inet_addr(ip_orquestador); // aca puede ir inet_addr(DIRECCION)
 		         // memset(&(el_orquestador.sin_zero),8);
 
 
