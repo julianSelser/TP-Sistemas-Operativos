@@ -83,7 +83,7 @@ int main(int argc, char** argv)
 	
 	/*temp_plan_niveles = config_get_array_value(configuracion, "planDeNiveles");
 	plan_de_niveles = malloc(sizeof(temp_plan_niveles));
-	*/memcpy(plan_de_niveles, temp_plan_de_niveles);
+	memcpy(plan_de_niveles, temp_plan_de_niveles);*/
 
 
 	logger = log_create("personaje.log", "PERSONAJE", 0, LOG_LEVEL_TRACE);
