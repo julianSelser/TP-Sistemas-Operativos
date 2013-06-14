@@ -24,13 +24,29 @@
 
 t_log * logger;
 t_config * configuracion;
+
+
+char * nombre;
+char simbolo;
+char * ip_orquestador;
+int puerto_orquestador;
+int max_vidas;
+
+char ** plan_de_niveles;
 int termino_plan_niveles;
 int game_over = 0;
 int contador_vidas;
 
+int conf_es_valida(t_config * configuracion);
+
 
 int main(int argc, char** argv)
 {
+	char * ip_puerto_orquestador;
+	char * temp_ip_puerto_orquestador;
+	char * temp_nombre;
+	char ** temp_plan_niveles;
+	
 	if(argc != 2) //controlar que haya exactamente un parámetro
 	{
 		puts("Uso: personaje <arch.conf>\n");
@@ -40,42 +56,35 @@ int main(int argc, char** argv)
 	//configuracion = config_create(argv); //qué devuelve en caso de error?
 	t_config * configuracion = config_create(argv[1]);
 
-
-	if(!( config_has_property(configuracion, "nombre") &&
-		  config_has_property(configuracion, "simbolo") &&
-		  config_has_property(configuracion, "planDeNiveles") &&
-		  config_has_property(configuracion, "vidas") &&
-		  config_has_property(configuracion, "ip_orquestador")&&
-		  config_has_property(configuracion, "puerto_orquestador")
-		)) //si no están todos los campos necesarios de la configuración
+	if (!conf_es_valida(configuracion)) //ver que el archivo de config tenga todito
 	{
-		puts("Archivo de configuración incompleto o inválido\n");
-		return -2;
+	puts("Archivo de configuración incompleto o inválido.\n");
+	return -2;
 	}
 
+	
+	temp_ip_puerto_orq = config_get_string_value(configuracion, "orquestador");
+	ip_puerto_orquestador = malloc(strlen(temp_ip_puerto_orq)+1);
+	strcpy(ip_puerto_orquestador, temp_ip_puerto_orq);
+	ip_puerto_separados = string_split(ip_puerto_orquestador, ":");
+	free(ip_puerto_orquestador);
+	
+	ip_orquestador = malloc(strlen(ip_puerto_separados[0]+1));
+	strcpy(ip_orquestador, ip_puerto_separados[0]);
+	puerto_orquestador = atoi(ip_puerto_separados[1]);
+	free(ip_puerto_separados);
 
-	  typedef struct {
+	temp_nombre = config_get_string_value(configuracion, "nombre");
+	nombre = malloc(strlen(temp_nombre)+1);
+	strcpy(nombre, temp_nombre);
+	
+	vidas = max_vidas = config_get_int_value(configuracion, "vidas");
+	simbolo = config_get_int_value(configuracion, "simbolo");
+	
+	/*temp_plan_niveles = config_get_array_value(configuracion, "planDeNiveles");
+	plan_de_niveles = malloc(sizeof(temp_plan_niveles));
+	*/memcpy(plan_de_niveles, temp_plan_de_niveles);
 
-		  char *nombre;
-		  char *simbolo;
-		  char ** plan_de_niveles ;
-		  int  vidas;
-		  char * ip_orquestador ;
-		  int puerto_orquestador;
-
-	  } arch_personaje;
-
-	  arch_personaje * personaje = malloc(sizeof(arch_personaje));
-	     personaje->simbolo=config_get_string_value(configuracion,"simbolo");
-	     personaje->nombre=config_get_string_value(configuracion,"nombre");
-	     personaje->ip_orquestador=config_get_string_value(configuracion,"ip_orquestador");
-	     personaje->vidas=config_get_int_value(configuracion,"vidas");
-	     personaje->puerto_orquestador=config_get_int_value(configuracion,"puerto_orquestador");
-	     personaje->plan_de_niveles=config_get_array_value(configuracion,"planDeNiveles");
-  //char ** niveles = personaje->plan_de_niveles;
-
-  contador_vidas=personaje->vidas;
-	//ACCION: LEER EL ARCHIVO DE CONFIGURACION
 
 	logger = log_create("personaje.log", "PERSONAJE", 0, LOG_LEVEL_TRACE);
 	//se crea una instancia del logger
@@ -296,4 +305,13 @@ void morir()
 		//REINICIAR PLAN DE NIVELES
 		game_over = 1;
 	}
+}
+
+int conf_es_valida(t_config * configuracion)
+{
+	return( config_has_property(configuracion, "nombre") &&
+		  config_has_property(configuracion, "simbolo") &&
+		  config_has_property(configuracion, "planDeNiveles") &&
+		  config_has_property(configuracion, "vidas") &&
+		  config_has_property(configuracion, "orquestador"));
 }
