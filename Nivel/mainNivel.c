@@ -45,6 +45,7 @@ int main(int argc, char ** argv)
 {
 	t_config * configuracion;
 	char * log_name;
+	char * temp_nombre;
 	char ** ip_puerto_separados;
 	char * ip_puerto_orquestador;
 	char * temp_ip_puerto_orq;
@@ -65,7 +66,10 @@ int main(int argc, char ** argv)
 		return -2;
 	}
 
-	nombre = config_get_string_value(configuracion, "Nombre");
+	temp_nombre = config_get_string_value(configuracion, "Nombre");
+	
+	nombre = malloc(strlen(temp_nombre)+1);
+	strcpy(nombre, temp_nombre);
 
 	//ahora que ya se como se llama el nivel, puedo crear el log
 	log_name = malloc(strlen(nombre)+1);
@@ -81,7 +85,7 @@ int main(int argc, char ** argv)
 	ip_puerto_separados = string_split(ip_puerto_orquestador, ":");
 	free(ip_puerto_orquestador);
 
-	ip_orquestador = malloc(strlen(ip_puerto_separados[0]));
+	ip_orquestador = malloc(strlen(ip_puerto_separados[0]+1));
 	strcpy(ip_orquestador, ip_puerto_separados[0]);
 	puerto_orquestador = atoi(ip_puerto_separados[1]);
 	free(ip_puerto_separados);
