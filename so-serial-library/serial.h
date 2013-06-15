@@ -6,7 +6,7 @@
  */
 
 #include <stdint.h>
-#include "commons/log.h"
+#include <commons/log.h>
 
 #ifndef SERIAL_H_
 #define SERIAL_H_
@@ -17,6 +17,7 @@
 	#define SOLICITUD_MOVIMIENTO_XY 4
 	#define RTA_SOLICITUD_MOVIMIENTO_XY 5
 	#define SOLICITUD_UBICACION_RECURSO 6
+	#define INFO_UBICACION_RECURSO 20
 	#define SOLICITUD_INSTANCIA_RECURSO 7
 	#define RTA_SOLICITUD_INSTANCIA_RECURSO 8
 	#define NOTIF_TURNO_CONCLUIDO 9						//PP->HP
@@ -67,6 +68,7 @@
 	typedef struct{
 
 		uint8_t condenado ; // lo tratamos como booleano
+		// creo que también es simbólico porque ni bien recibe esto, el personaje va y se muere
 
 	} __attribute__((packed)) t_personaje_condenado;
 
@@ -88,6 +90,12 @@
 
 	} __attribute__((packed)) t_resp_solicitud_movimiento;
 
+	typedef struct{
+
+		uint8_t recurso;
+
+	} __attribute__((packed)) t_solicitud_ubicacion_recurso;
+	//estos dos structs son iguales pero tienen que tener distintos nombres. tiene que haber una forma de definirlo una sola vez
 	typedef struct{
 
 		uint8_t recurso;
