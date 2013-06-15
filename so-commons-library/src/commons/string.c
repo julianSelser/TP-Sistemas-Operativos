@@ -334,6 +334,27 @@ void string_iterate_lines(char** strings, void (*closure)(char*)) {
 	}
 }
 
+/**
+ * @NAME: string_count
+ * @DESC: devuelve la cantidad de ocurrencias del caracter c en el string text
+ */
+
+
+int	string_count(char * text, char c)
+{
+	int i=0;
+	int pos=0;
+
+	while(text[pos]!='\0')
+	{
+		if (text[pos] == c) i++;
+		pos++;
+	}
+
+	return i;
+}
+
+
 
 /** PRIVATE FUNCTIONS **/
 

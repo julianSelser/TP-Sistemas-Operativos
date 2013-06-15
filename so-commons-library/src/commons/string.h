@@ -36,6 +36,7 @@
 	void 	string_trim_right(char ** text);
 
 	int 	string_length(char * text);
+	int		string_count(char * text, char c);
 	bool 	string_is_empty(char * text);
 	bool 	string_starts_with(char * text, char * begin);
 	bool	string_ends_with(char* text, char* end);
