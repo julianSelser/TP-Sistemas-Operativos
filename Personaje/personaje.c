@@ -113,7 +113,8 @@ int main(int argc, char** argv)
 		static int socket_orquestador;
 		static struct sockaddr_in el_orquestador;
 		char * nivel_a_pedir;
-
+		t_info_nivel_planificador info_nivel_y_planificador;
+		int socket_nivel;
 
 		// niveles[i];
 		// int nivel_a_pedir;
@@ -153,17 +154,20 @@ int main(int argc, char** argv)
 
 		enviar(socket_orquestador, SOLICITUD_INFO_NIVEL, nivel_a_pedir, logger);
 		info_nivel_y_planificador = recibir(socket_orquestador, INFO_NIVEL_Y_PLANIFICADOR);
+		log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
 
-		//info_nivel_y_planificador = (t_info_nivel_y_planificador *) recibir(socket_orquestador, ID_INFO_NIVEL_Y_PLANIFICADOR); //ID_INFO_NIVEL Y PLANIFICADOR ES EL ID DEL TIPO DE MENSAJE, SE PUEDE DEFINIR EN UN .h, LO ENVIAMOS A LA FUNCION RECIBIR PARA VALIDAR QUE SE RECIBA LO QUE ESPERAMOS
-		//recibir es la función mágica que, dado un socket, devuelve como puntero a void la dirección del struct que armó des-serializando lo que había en el socket
-		//log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
+		close(socket_orquestador);
+		log_debug(logger, "Desconectado del hilo orquestador", "DEBUG");
 
-		//ACCION: DESCONECTARSE DEL HILO ORQUESTADOR
-		//log_debug(logger_personaje, "Desconectado del hilo orquestador", "DEBUG");
+		//socket_nivel = init_socket_externo(info_nivel_y_planificador->puerto_nivel, info_nivel_y_planificador->ip_nivel, logger);
+		//comentado hasta que se refaccione el struct de la info
 
-		//ACCION: CONECTAR CON EL NIVEL
+
 		//log_info(logger_personaje, "Entrando al nivel...", "INFO");
-		//ACCION: CONECTAR CON EL PLANIFICADOR DEL NIVEL
+
+		//socket_planificador = init_socket_externo(info_nivel_y_planificador->puerto_planif, info_nivel_y_planificador->ip_planif, logger);
+		//comentado hasta que se refaccione el struct de la info
+
 		//log_debug(logger_personaje, "Conectado al hilo planificador del nivel", "DEBUG);
 
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no. Se pone en Falso al entrar a un nivel
