@@ -11,9 +11,12 @@
 #include <malloc.h>
 #include <string.h>
 #include <signal.h>
+
 #include <commons/log.h>
 #include <commons/config.h>
+#include <commons/string.h>
 
+#include <serial.h>
 
 #include <unistd.h>
 #include <errno.h>
@@ -23,7 +26,7 @@
 #include <arpa/inet.h>
 
 t_log * logger;
-t_config * configuracion;
+
 
 
 char * nombre;
@@ -42,9 +45,12 @@ int conf_es_valida(t_config * configuracion);
 
 int main(int argc, char** argv)
 {
+	t_config * configuracion;
+	char * log_name;
+
 	char * ip_puerto_orquestador;
 	char * temp_ip_puerto_orq;
-	char * ip_puerto_separados;
+	char ** ip_puerto_separados;
 	char * temp_nombre;
 	char ** temp_plan_niveles;
 	
@@ -55,7 +61,7 @@ int main(int argc, char** argv)
 	}
 
 	//configuracion = config_create(argv); //qué devuelve en caso de error?
-	t_config * configuracion = config_create(argv[1]);
+	configuracion = config_create(argv[1]);
 
 	if (!conf_es_valida(configuracion)) //ver que el archivo de config tenga todito
 	{
@@ -86,13 +92,13 @@ int main(int argc, char** argv)
 	plan_de_niveles = malloc(sizeof(temp_plan_niveles));
 	memcpy(plan_de_niveles, temp_plan_de_niveles);*/
 
+	log_name = malloc(strlen(nombre)+1);
+	strcpy(log_name, nombre);
+	string_append(&log_name, ".log");
 
-	logger = log_create("personaje.log", "PERSONAJE", 0, LOG_LEVEL_TRACE);
+	logger = log_create(log_name, "PERSONAJE", 0, LOG_LEVEL_TRACE);
 	//se crea una instancia del logger
-	//se va a crear un logger por personaje. por lo tanto, deberiamos crear un archivo .log por personaje?
-	//crear un solo archivo de log o varios segun el nivel de logueo?
-	//mas copado seria que despues de leer el archivo de config, podamos crear el archivo de log segun el nombre del personaje
-
+	//se loguea sobre <personaje>.log
 
 	//ACCION: ESTABLECER HANDLERS DE SEÑALES
 	//log_debug(logger_personaje, "Handlers de señales establecidos", "DEBUG");
@@ -104,8 +110,9 @@ int main(int argc, char** argv)
 	//int i=0;
 	while (!termino_plan_niveles)
 	{
-		static int unSocket;
+		static int socket_orquestador;
 		static struct sockaddr_in el_orquestador;
+		char * nivel_a_pedir;
 
 
 		// niveles[i];
@@ -121,11 +128,10 @@ int main(int argc, char** argv)
 		//ACCION: UBICAR EL PROXIMO NIVEL A PEDIR
 		//log_info(logger_personaje, strcat("Próximo nivel", nivel_a_pedir), "INFO");
 
-		//ACCION: CONECTAR CON EL HILO ORQUESTADOR
-		//log_debug(logger_personaje, "Conexión con hilo orquestador establecida", "DEBUG");
+		//log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 
-		  if((unSocket = socket(AF_INET, SOCK_STREAM,0))==-1){
+		  if((socket_orquestador = socket(AF_INET, SOCK_STREAM,0))==-1){
 		          	perror("socket");
 		          	exit(1);
 		          }
@@ -137,7 +143,7 @@ int main(int argc, char** argv)
 
 
 
-		          if(connect(unSocket,(struct sockaddr *) & el_orquestador,sizeof(struct sockaddr))==-1){
+		          if(connect(socket_orquestador,(struct sockaddr *) & el_orquestador,sizeof(struct sockaddr))==-1){
 
 		         	 perror("connect");
 		         	 exit(1);
@@ -145,10 +151,9 @@ int main(int argc, char** argv)
 
 
 
-		//ACCION: ELABORAR SOLICITUD DE DATOS DE NIVEL
-		//ACCION: SERIALIZAR SOLICITUD DE DATOS DE NIVEL
+		enviar(socket_orquestador, SOLICITUD_INFO_NIVEL, nivel_a_pedir, logger);
+		info_nivel_y_planificador = recibir(socket_orquestador, INFO_NIVEL_Y_PLANIFICADOR);
 
-		//send (socket_orquestador, msj_solicitud_datos_nivel, longitud_msj, 0);
 		//info_nivel_y_planificador = (t_info_nivel_y_planificador *) recibir(socket_orquestador, ID_INFO_NIVEL_Y_PLANIFICADOR); //ID_INFO_NIVEL Y PLANIFICADOR ES EL ID DEL TIPO DE MENSAJE, SE PUEDE DEFINIR EN UN .h, LO ENVIAMOS A LA FUNCION RECIBIR PARA VALIDAR QUE SE RECIBA LO QUE ESPERAMOS
 		//recibir es la función mágica que, dado un socket, devuelve como puntero a void la dirección del struct que armó des-serializando lo que había en el socket
 		//log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
