@@ -47,7 +47,7 @@ static void init_vec_serial(){
 	vec_serializador[NOTIF_TURNO_CONCLUIDO] = srlz_turno_concluido;
     vec_serializador[INFO_NIVEL_Y_PLANIFICADOR] = srlz_info_nivel_y_planificador;
     vec_serializador[NOTIF_PERSONAJE_CONDENADO] = srlz_personaje_condenado;
-	vec_serializador[SOLICITUD_UBICACION_RECURSO] = srlz_ubicacion_de_recurso;
+	vec_serializador[INFO_UBICACION_RECURSO] = srlz_ubicacion_de_recurso;
 	vec_serializador[SOLICITUD_MOVIMIENTO_XY]=srlz_solicitud_de_movimiento;
     vec_serializador[RTA_SOLICITUD_MOVIMIENTO_XY]=srlz_resp_a_solicitud_movimiento;
     vec_serializador[SOLICITUD_INSTANCIA_RECURSO]=srlz_solicitud_de_recurso;
@@ -63,7 +63,7 @@ static void init_vec_deserial(){
 	vec_deserializador[NOTIF_MOVIMIENTO_PERMITIDO] = deserializar_movimiento_permitido;
 	vec_deserializador[INFO_NIVEL_Y_PLANIFICADOR] = deserializar_info_nivel_planificador;
 	vec_deserializador[NOTIF_PERSONAJE_CONDENADO] = deserializar_personaje_condenado;
-	vec_deserializador[SOLICITUD_UBICACION_RECURSO] = deserializar_ubicacion_de_recurso;
+	vec_deserializador[INFO_UBICACION_RECURSO] = deserializar_ubicacion_de_recurso;
 	vec_deserializador[SOLICITUD_MOVIMIENTO_XY]=deserializar_solicitud_de_movimiento;
     vec_deserializador[RTA_SOLICITUD_MOVIMIENTO_XY]=deserializar_solicitud_de_movimiento;
     vec_deserializador[SOLICITUD_INSTANCIA_RECURSO]=deserializar_solicitud_de_recurso;
