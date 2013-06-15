@@ -11,9 +11,12 @@
 #include <malloc.h>
 #include <string.h>
 #include <signal.h>
+
 #include <commons/log.h>
 #include <commons/config.h>
+#include <commons/string.h>
 
+#include <serial.h>
 
 #include <unistd.h>
 #include <errno.h>
@@ -23,14 +26,35 @@
 #include <arpa/inet.h>
 
 t_log * logger;
-t_config * configuracion;
+
+
+
+char * nombre;
+char simbolo;
+char * ip_orquestador;
+int puerto_orquestador;
+int max_vidas;
+
+char ** plan_de_niveles;
 int termino_plan_niveles;
 int game_over = 0;
 int contador_vidas;
 
+int conf_es_valida(t_config * configuracion);
+void morir();
+
 
 int main(int argc, char** argv)
 {
+	t_config * configuracion;
+	char * log_name;
+
+	char * ip_puerto_orquestador;
+	char * temp_ip_puerto_orq;
+	char ** ip_puerto_separados;
+	char * temp_nombre;
+	char ** temp_plan_niveles;
+	
 	if(argc != 2) //controlar que haya exactamente un parámetro
 	{
 		puts("Uso: personaje <arch.conf>\n");
@@ -38,51 +62,46 @@ int main(int argc, char** argv)
 	}
 
 	//configuracion = config_create(argv); //qué devuelve en caso de error?
-	t_config * configuracion = config_create(argv[1]);
+	configuracion = config_create(argv[1]);
 
-
-	if(!( config_has_property(configuracion, "nombre") &&
-		  config_has_property(configuracion, "simbolo") &&
-		  config_has_property(configuracion, "planDeNiveles") &&
-		  config_has_property(configuracion, "vidas") &&
-		  config_has_property(configuracion, "ip_orquestador")&&
-		  config_has_property(configuracion, "puerto_orquestador")
-		)) //si no están todos los campos necesarios de la configuración
+	if (!conf_es_valida(configuracion)) //ver que el archivo de config tenga todito
 	{
-		puts("Archivo de configuración incompleto o inválido\n");
-		return -2;
+	puts("Archivo de configuración incompleto o inválido.\n");
+	return -2;
 	}
 
+	
+	temp_ip_puerto_orq = config_get_string_value(configuracion, "orquestador");
+	ip_puerto_orquestador = malloc(strlen(temp_ip_puerto_orq)+1);
+	strcpy(ip_puerto_orquestador, temp_ip_puerto_orq);
+	ip_puerto_separados = string_split(ip_puerto_orquestador, ":");
+	free(ip_puerto_orquestador);
+	
+	ip_orquestador = malloc(strlen(ip_puerto_separados[0]+1));
+	strcpy(ip_orquestador, ip_puerto_separados[0]);
+	puerto_orquestador = atoi(ip_puerto_separados[1]);
+	free(ip_puerto_separados);
 
-	  typedef struct {
+	temp_nombre = config_get_string_value(configuracion, "nombre");
+	nombre = malloc(strlen(temp_nombre)+1);
+	strcpy(nombre, temp_nombre);
+	
+	contador_vidas = max_vidas = config_get_int_value(configuracion, "vidas");
+	simbolo = config_get_int_value(configuracion, "simbolo");
+	
+	/*temp_plan_niveles = config_get_array_value(configuracion, "planDeNiveles");
+	plan_de_niveles = malloc(sizeof(temp_plan_niveles));
+	memcpy(plan_de_niveles, temp_plan_de_niveles);*/
 
-		  char *nombre;
-		  char *simbolo;
-		  char ** plan_de_niveles ;
-		  int  vidas;
-		  char * ip_orquestador ;
-		  int puerto_orquestador;
+	//TAMBIÉN LEER LOS OBJETIVOS POR NIVEL
 
-	  } arch_personaje;
+	log_name = malloc(strlen(nombre)+1);
+	strcpy(log_name, nombre);
+	string_append(&log_name, ".log");
 
-	  arch_personaje * personaje = malloc(sizeof(arch_personaje));
-	     personaje->simbolo=config_get_string_value(configuracion,"simbolo");
-	     personaje->nombre=config_get_string_value(configuracion,"nombre");
-	     personaje->ip_orquestador=config_get_string_value(configuracion,"ip_orquestador");
-	     personaje->vidas=config_get_int_value(configuracion,"vidas");
-	     personaje->puerto_orquestador=config_get_int_value(configuracion,"puerto_orquestador");
-	     personaje->plan_de_niveles=config_get_array_value(configuracion,"planDeNiveles");
-  //char ** niveles = personaje->plan_de_niveles;
-
-  contador_vidas=personaje->vidas;
-	//ACCION: LEER EL ARCHIVO DE CONFIGURACION
-
-	logger = log_create("personaje.log", "PERSONAJE", 0, LOG_LEVEL_TRACE);
+	logger = log_create(log_name, "PERSONAJE", 0, LOG_LEVEL_TRACE);
 	//se crea una instancia del logger
-	//se va a crear un logger por personaje. por lo tanto, deberiamos crear un archivo .log por personaje?
-	//crear un solo archivo de log o varios segun el nivel de logueo?
-	//mas copado seria que despues de leer el archivo de config, podamos crear el archivo de log segun el nombre del personaje
-
+	//se loguea sobre <personaje>.log
 
 	//ACCION: ESTABLECER HANDLERS DE SEÑALES
 	//log_debug(logger_personaje, "Handlers de señales establecidos", "DEBUG");
@@ -94,6 +113,11 @@ int main(int argc, char** argv)
 	//int i=0;
 	while (!termino_plan_niveles)
 	{
+		static int socket_orquestador;
+		char * nivel_a_pedir;
+		t_info_nivel_planificador * info_nivel_y_planificador;
+		int socket_nivel;
+		int socket_planificador;
 
 		// niveles[i];
 		// int nivel_a_pedir;
@@ -108,46 +132,22 @@ int main(int argc, char** argv)
 		//ACCION: UBICAR EL PROXIMO NIVEL A PEDIR
 		//log_info(logger_personaje, strcat("Próximo nivel", nivel_a_pedir), "INFO");
 
-		//ACCION: CONECTAR CON EL HILO ORQUESTADOR
-		//log_debug(logger_personaje, "Conexión con hilo orquestador establecida", "DEBUG");
 
-		  int unSocket;
-		  struct sockaddr_in el_orquestador;
-		  if((unSocket = socket(AF_INET, SOCK_STREAM,0))==-1){
-		          	perror("socket");
-		          	exit(1);
-		          }
+		socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
+		log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
-		  	  	  el_orquestador.sin_family=AF_INET;
-		          el_orquestador.sin_port= htons(personaje->puerto_orquestador);
-		          el_orquestador.sin_addr.s_addr=inet_addr(personaje->ip_orquestador); // aca puede ir inet_addr(DIRECCION)
-		         // memset(&(el_orquestador.sin_zero),8);
+		enviar(socket_orquestador, SOLICITUD_INFO_NIVEL, nivel_a_pedir, logger);
+		info_nivel_y_planificador = recibir(socket_orquestador, INFO_NIVEL_Y_PLANIFICADOR);
+		log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
 
+		close(socket_orquestador);
+		log_debug(logger, "Desconectado del hilo orquestador", "DEBUG");
 
+		socket_nivel = init_socket_externo(info_nivel_y_planificador->puerto_nivel, info_nivel_y_planificador->ip_nivel, logger);
+		log_info(logger, "Entrando al nivel...", "INFO");
 
-		          if(connect(unSocket,(struct sockaddr *) & el_orquestador,sizeof(struct sockaddr))==-1){
-
-		         	 perror("connect");
-		         	 exit(1);
-		          }
-
-
-
-		//ACCION: ELABORAR SOLICITUD DE DATOS DE NIVEL
-		//ACCION: SERIALIZAR SOLICITUD DE DATOS DE NIVEL
-
-		//send (socket_orquestador, msj_solicitud_datos_nivel, longitud_msj, 0);
-		//info_nivel_y_planificador = (t_info_nivel_y_planificador *) recibir(socket_orquestador, ID_INFO_NIVEL_Y_PLANIFICADOR); //ID_INFO_NIVEL Y PLANIFICADOR ES EL ID DEL TIPO DE MENSAJE, SE PUEDE DEFINIR EN UN .h, LO ENVIAMOS A LA FUNCION RECIBIR PARA VALIDAR QUE SE RECIBA LO QUE ESPERAMOS
-		//recibir es la función mágica que, dado un socket, devuelve como puntero a void la dirección del struct que armó des-serializando lo que había en el socket
-		//log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
-
-		//ACCION: DESCONECTARSE DEL HILO ORQUESTADOR
-		//log_debug(logger_personaje, "Desconectado del hilo orquestador", "DEBUG");
-
-		//ACCION: CONECTAR CON EL NIVEL
-		//log_info(logger_personaje, "Entrando al nivel...", "INFO");
-		//ACCION: CONECTAR CON EL PLANIFICADOR DEL NIVEL
-		//log_debug(logger_personaje, "Conectado al hilo planificador del nivel", "DEBUG);
+		socket_planificador = init_socket_externo(info_nivel_y_planificador->puerto_planificador, info_nivel_y_planificador->ip_planificador, logger);
+		log_debug(logger, "Conectado al hilo planificador del nivel", "DEBUG");
 
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no. Se pone en Falso al entrar a un nivel
 		consiguio_total_recursos = 0;
@@ -161,31 +161,30 @@ int main(int argc, char** argv)
 			//2. EL PROCESO ESTÁ BLOQUEADO Y RECIBE LA NOTIFICACIÓN DE PERSONAJE CONDENADO
 			//EL PJ VA A PENSAR QUE RECIBE ESTA ÚLTIMA POR PARTE DEL PLANIFICADOR, AUNQUE EN REALIDAD LO ESTÉ ENVIANDO EL ORQUESTADOR
 
+			mje_a_recibir = getnextmsg(socket_planificador); //getnextmsg es una función que informa qué tipo de mensaje es el próximo que hay en el socket (hace un peek del header). es bloqueante
 
-			//mje_a_recibir = getnextmsg(socket_planificador) //getnextmsg es una función que informa qué tipo de mensaje es el próximo que hay en el socket (hace un peek del header). es bloqueante
-
-			if(mje_a_recibir == 17) //NOTIF_PERSONAJE_CONDENADO
+			if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO) //NOTIF_PERSONAJE_CONDENADO
 			{
-				//recibir(socket_planificador, NOTIF_PERSONAJE_CONDENADO);
-				//log_info(logger_personaje, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
-				//morir() //morir se encarga de setear game_over si es necesario
+				recibir(socket_planificador, NOTIF_PERSONAJE_CONDENADO);
+				log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
+				morir(); //morir se encarga de setear game_over si es necesario
 				break; //sale del nivel
 			}
 
-			//recibir(socket_planificador, ID_NOTIF_MOVIMIENTO_PERMITIDO)
-
-
+			recibir(socket_planificador, NOTIF_MOVIMIENTO_PERMITIDO);
 			//el propósito de este "recibir" es puramente que el personaje se bloquee, no necesita ninguna información. De hecho, el mensaje podría ser solamente el header y nada de datos.
 			//recibir este mensaje significa que es el turno del personaje
 
 			if(!sabe_donde_ir)
 			{
+				//t_solicitud_ubicacion_recurso sol_ubicacion_recurso;
+				//t_ubicacion_recurso * ubicacion_recursos;
+
 				//ACCION: AVERIGUAR CUÁL ES EL PROXIMO RECURSO A OBTENER
 				//ACCION: ELABORAR SOLICITUD DE UBICACION DEL PROXIMO RECURSO
-				//ACCION: SERIALIZAR SOLICITUD DE UBICACION DEL PROXIMO RECURSO
 
-				//send(socket_nivel, msj_solicitud_ubicacion_recurso, longitud_msj, 0);
-				//ubicacion_recursos = recibir(socket_nivel, ID_INFO_UBICACION_RECURSOS);
+				//enviar(socket_nivel, SOLICITUD_UBICACION_RECURSO, &sol_ubicacion_recurso, logger);
+				//ubicacion_recursos = recibir(socket_nivel, INFO_UBICACION_RECURSO);
 
 				//destino[0]=ubicacion_recursos.x //esto podría ser más prolijo si destino lo hicieramos un struct en vez de un vector
 				//destino[1]=ubicacion_recursos.y //idem
@@ -296,4 +295,13 @@ void morir()
 		//REINICIAR PLAN DE NIVELES
 		game_over = 1;
 	}
+}
+
+int conf_es_valida(t_config * configuracion)
+{
+	return( config_has_property(configuracion, "nombre") &&
+		  config_has_property(configuracion, "simbolo") &&
+		  config_has_property(configuracion, "planDeNiveles") &&
+		  config_has_property(configuracion, "vidas") &&
+		  config_has_property(configuracion, "orquestador"));
 }

@@ -24,14 +24,13 @@
 #define N_MENSAJES 20 //por ahora son 20
 
 
-static p_funcion_deserial vec_deserializador[N_MENSAJES];
+static p_funcion_deserial vec_deserializador[N_MENSAJES]; // funcion esttic es q solo puede ser usado en el mismo archivo
 static p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 
 /******************************************* FUNCIONES DE INICIALIZADO ********************************************/
 /*									ESTO ES TEMPORAL; HAY UNA MEJOR MANERA DE HACERLO							  */
-
 
 
 //setea los vec de la serializadora
@@ -46,14 +45,14 @@ static void init_vec_serial(){
 	//todo ir agregando a medida que se escriben
 	vec_serializador[NOTIF_MOVIMIENTO_PERMITIDO] = srlz_movimiento_permitido;
 	vec_serializador[NOTIF_TURNO_CONCLUIDO] = srlz_turno_concluido;
-	vec_serializador[ENVIO_DE_DATOS_AL_PLANIFICADOR] = srlz_datos_delPersonaje_alPlanificador;
     vec_serializador[INFO_NIVEL_Y_PLANIFICADOR] = srlz_info_nivel_y_planificador;
     vec_serializador[NOTIF_PERSONAJE_CONDENADO] = srlz_personaje_condenado;
-	vec_serializador[SOLICITUD_UBICACION_RECURSO] = srlz_ubicacion_de_recurso;
+	vec_serializador[INFO_UBICACION_RECURSO] = srlz_ubicacion_de_recurso;
 	vec_serializador[SOLICITUD_MOVIMIENTO_XY]=srlz_solicitud_de_movimiento;
     vec_serializador[RTA_SOLICITUD_MOVIMIENTO_XY]=srlz_resp_a_solicitud_movimiento;
     vec_serializador[SOLICITUD_INSTANCIA_RECURSO]=srlz_solicitud_de_recurso;
 }
+
 
 
 //setea el vector de de-serializadores
@@ -64,7 +63,7 @@ static void init_vec_deserial(){
 	vec_deserializador[NOTIF_MOVIMIENTO_PERMITIDO] = deserializar_movimiento_permitido;
 	vec_deserializador[INFO_NIVEL_Y_PLANIFICADOR] = deserializar_info_nivel_planificador;
 	vec_deserializador[NOTIF_PERSONAJE_CONDENADO] = deserializar_personaje_condenado;
-	vec_deserializador[SOLICITUD_UBICACION_RECURSO] = deserializar_ubicacion_de_recurso;
+	vec_deserializador[INFO_UBICACION_RECURSO] = deserializar_ubicacion_de_recurso;
 	vec_deserializador[SOLICITUD_MOVIMIENTO_XY]=deserializar_solicitud_de_movimiento;
     vec_deserializador[RTA_SOLICITUD_MOVIMIENTO_XY]=deserializar_solicitud_de_movimiento;
     vec_deserializador[SOLICITUD_INSTANCIA_RECURSO]=deserializar_solicitud_de_recurso;
@@ -82,6 +81,7 @@ static void init_vec_deserial(){
 int getnextmsg(int socket){
 	uint8_t tipo;
 	char buffer[sizeof(uint8_t)];
+
 
 	if(recv(socket, buffer, sizeof(t_cabecera), MSG_PEEK) < 0){
 		/*todo logear*/;
@@ -102,7 +102,7 @@ void *recibir(int socket, int tipo)
 	char *buffer_cabecera = malloc(sizeof(t_cabecera));
 
 	// Primero: Recibir el header para saber cuando ocupa el payload.
-	if (recv(socket, buffer_cabecera, sizeof(t_cabecera)-1, MSG_WAITALL) <= 0) {
+	if (recv(socket, buffer_cabecera, sizeof(t_cabecera) - 1, MSG_WAITALL) <= 0) {
 		/*todo logear*/
 		exit(1);
 	}
@@ -125,7 +125,8 @@ void *recibir(int socket, int tipo)
 	free(buffer_cuerpo);
 	free(buffer_cabecera);
 
-	return tipo_valido? deserializado : NULL ;
+	return tipo_valido? deserializado : NULL ; // return el deserializado correspondiente
+	//al tipo validado
 }
 
 
@@ -146,14 +147,14 @@ void enviar(int socket, int tipo, void *struct_mensaje, t_log *logger)
 	offset += tmp;
 	memcpy(buffer + offset, &len_cast, tmp = sizeof(uint16_t));
 	offset += tmp;
-	memcpy(buffer + offset-1, serializado, strlen(serializado));
+	memcpy(buffer + offset -1, serializado, strlen(serializado));
+
 
 	//envio de mensaje y checkeo de errores
 	if(send(socket, buffer, strlen(buffer), 0) < 0){
 		/*todo: logear*/
 		exit(1);
 	}
-
 	//liberacion de mallocs
 	free(struct_mensaje);
 	free(serializado);
@@ -230,9 +231,19 @@ void * deserializar_info_nivel_planificador(char *buffer){
 	int tmp =0,offset=0;
 
 	t_info_nivel_planificador *info = malloc(sizeof(t_info_nivel_planificador));
-	memcpy(&info->info_nivel,buffer,tmp=sizeof(uint16_t));
+	memcpy(&info->puerto_nivel,buffer,tmp=sizeof(uint16_t));
 	offset+=tmp;
-	memcpy(&info->info_planificador,buffer + offset,sizeof(uint16_t));
+	memcpy(&info->puerto_planificador,buffer + offset,tmp=sizeof(uint16_t));
+    offset+=tmp;
+
+    for(tmp=1;(buffer+offset)[tmp-1]!='\0';tmp++);
+    info->ip_nivel=malloc(tmp);
+    memcpy(&info->ip_nivel,buffer+offset,tmp);
+
+    offset+=tmp;
+    for(tmp=1;(buffer+offset)[tmp-1]!='\0';tmp++);
+    info->ip_planificador=malloc(tmp);
+    memcpy(&info->ip_planificador,buffer+offset,tmp);
 
 	return info;  // devuelve el struct de t_info_nivel_planificador
 }
@@ -274,8 +285,7 @@ void *deserializar_movimiento_permitido(char *buffer){
 /********************************************** FUNCIONES SERIALIZADORAS *********************************************/
 /*  LOS MALLOCS SE LIBERAN EN LA FUNCION ENVIAR, TODOS: LOS DEL BUFFER Y LOS PASADOS COMO STRUCT PORQUE SE USAN AHI  */
 
-
-
+/////
 char *srlz_solicitud_de_recurso(void *data){
 
 	char* buffer = malloc(sizeof(uint8_t));
@@ -293,6 +303,7 @@ char *srlz_resp_a_solicitud_movimiento(void *data){
 	return buffer;
 
 }
+
 
 
 char *srlz_solicitud_de_movimiento(void *data){
@@ -327,29 +338,19 @@ char *srlz_personaje_condenado(void *data){
 }
 
 
-char *srlz_info_nivel_y_planificador(void *data){
-   int tmp =0,offset=0;
-
-	t_info_nivel_planificador *d = data;
-	char *buffer = malloc(sizeof(uint32_t));
-
-	memcpy(buffer,&d->info_nivel,tmp=sizeof(uint16_t));
-    offset+=tmp;
-    memcpy(buffer+offset,&d->info_planificador,sizeof(uint16_t));
-
-	return buffer;
-}
-
-
-char *srlz_datos_delPersonaje_alPlanificador(void *data){
-	t_datos_delPersonaje_alPlanificador *d = data;
-	char *buffer = malloc(sizeof(uint8_t));
-
-	memcpy(buffer, &d->char_personaje, sizeof(uint8_t));
-
-	return buffer;
-}
-
+//char *srlz_info_nivel_y_planificador(void *data){
+//   int tmp =0,offset=0;
+//
+//	t_info_nivel_planificador *d = data;
+//	char *buffer = malloc(sizeof(uint32_t));
+//
+//	memcpy(buffer,&d->info_nivel,tmp=sizeof(uint16_t));
+//    offset+=tmp;
+//    memcpy(buffer+offset,&d->info_planificador,sizeof(uint16_t));
+//
+//	return buffer;
+//}
+//////////////////
 
 char *srlz_movimiento_permitido(void* data){
 	t_mov_permitido *d = data;
@@ -432,8 +433,5 @@ int init_socket_escucha(int puerto, int optval, t_log *logger){
 		/*todo logear:Error al bindear socket escucha*/
 		exit(1);
 	}
-
-	listen(socketEscucha, 10);
-
 	return socketEscucha;
 }

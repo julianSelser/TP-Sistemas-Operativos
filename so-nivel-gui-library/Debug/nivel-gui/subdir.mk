@@ -17,7 +17,7 @@ C_DEPS += \
 nivel-gui/%.o: ../nivel-gui/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C Compiler'
-	gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	gcc -I/usr/include -I/usr/include/i386-linux-gnu -I/usr/lib/gcc/i686-linux-gnu/4.7/include -I/usr/lib/gcc/i686-linux-gnu/4.7/include-fixed -I/usr/local/include -I"/home/julian/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/src" -I"/home/julian/git/tp-20131c-juanito-y-los-clonosaurios/so-nivel-gui-library/nivel-gui" -I"/home/julian/git/tp-20131c-juanito-y-los-clonosaurios/tad_items" -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

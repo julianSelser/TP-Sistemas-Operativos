@@ -6,6 +6,7 @@
 		<project>so-commons-library</project>
 		<project>so-nivel-gui-library</project>
 		<project>tad_items</project>
+		<project>so-serial-library</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
