@@ -41,6 +41,7 @@ int game_over = 0;
 int contador_vidas;
 
 int conf_es_valida(t_config * configuracion);
+void morir();
 
 
 int main(int argc, char** argv)
@@ -92,6 +93,8 @@ int main(int argc, char** argv)
 	plan_de_niveles = malloc(sizeof(temp_plan_niveles));
 	memcpy(plan_de_niveles, temp_plan_de_niveles);*/
 
+	//TAMBIÉN LEER LOS OBJETIVOS POR NIVEL
+
 	log_name = malloc(strlen(nombre)+1);
 	strcpy(log_name, nombre);
 	string_append(&log_name, ".log");
@@ -111,10 +114,10 @@ int main(int argc, char** argv)
 	while (!termino_plan_niveles)
 	{
 		static int socket_orquestador;
-		static struct sockaddr_in el_orquestador;
 		char * nivel_a_pedir;
-		t_info_nivel_planificador info_nivel_y_planificador;
+		t_info_nivel_planificador * info_nivel_y_planificador;
 		int socket_nivel;
+		int socket_planificador;
 
 		// niveles[i];
 		// int nivel_a_pedir;
@@ -129,28 +132,9 @@ int main(int argc, char** argv)
 		//ACCION: UBICAR EL PROXIMO NIVEL A PEDIR
 		//log_info(logger_personaje, strcat("Próximo nivel", nivel_a_pedir), "INFO");
 
-		//log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
-
-		  if((socket_orquestador = socket(AF_INET, SOCK_STREAM,0))==-1){
-		          	perror("socket");
-		          	exit(1);
-		          }
-
-		  	  	  el_orquestador.sin_family=AF_INET;
-		          el_orquestador.sin_port= htons(puerto_orquestador);
-		          el_orquestador.sin_addr.s_addr=inet_addr(ip_orquestador); // aca puede ir inet_addr(DIRECCION)
-		         // memset(&(el_orquestador.sin_zero),8);
-
-
-
-		          if(connect(socket_orquestador,(struct sockaddr *) & el_orquestador,sizeof(struct sockaddr))==-1){
-
-		         	 perror("connect");
-		         	 exit(1);
-		          }
-
-
+		socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
+		log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 		enviar(socket_orquestador, SOLICITUD_INFO_NIVEL, nivel_a_pedir, logger);
 		info_nivel_y_planificador = recibir(socket_orquestador, INFO_NIVEL_Y_PLANIFICADOR);
@@ -159,16 +143,11 @@ int main(int argc, char** argv)
 		close(socket_orquestador);
 		log_debug(logger, "Desconectado del hilo orquestador", "DEBUG");
 
-		//socket_nivel = init_socket_externo(info_nivel_y_planificador->puerto_nivel, info_nivel_y_planificador->ip_nivel, logger);
-		//comentado hasta que se refaccione el struct de la info
+		socket_nivel = init_socket_externo(info_nivel_y_planificador->puerto_nivel, info_nivel_y_planificador->ip_nivel, logger);
+		log_info(logger, "Entrando al nivel...", "INFO");
 
-
-		//log_info(logger_personaje, "Entrando al nivel...", "INFO");
-
-		//socket_planificador = init_socket_externo(info_nivel_y_planificador->puerto_planif, info_nivel_y_planificador->ip_planif, logger);
-		//comentado hasta que se refaccione el struct de la info
-
-		//log_debug(logger_personaje, "Conectado al hilo planificador del nivel", "DEBUG);
+		socket_planificador = init_socket_externo(info_nivel_y_planificador->puerto_planificador, info_nivel_y_planificador->ip_planificador, logger);
+		log_debug(logger, "Conectado al hilo planificador del nivel", "DEBUG");
 
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no. Se pone en Falso al entrar a un nivel
 		consiguio_total_recursos = 0;
@@ -182,31 +161,30 @@ int main(int argc, char** argv)
 			//2. EL PROCESO ESTÁ BLOQUEADO Y RECIBE LA NOTIFICACIÓN DE PERSONAJE CONDENADO
 			//EL PJ VA A PENSAR QUE RECIBE ESTA ÚLTIMA POR PARTE DEL PLANIFICADOR, AUNQUE EN REALIDAD LO ESTÉ ENVIANDO EL ORQUESTADOR
 
+			mje_a_recibir = getnextmsg(socket_planificador); //getnextmsg es una función que informa qué tipo de mensaje es el próximo que hay en el socket (hace un peek del header). es bloqueante
 
-			//mje_a_recibir = getnextmsg(socket_planificador) //getnextmsg es una función que informa qué tipo de mensaje es el próximo que hay en el socket (hace un peek del header). es bloqueante
-
-			if(mje_a_recibir == 17) //NOTIF_PERSONAJE_CONDENADO
+			if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO) //NOTIF_PERSONAJE_CONDENADO
 			{
-				//recibir(socket_planificador, NOTIF_PERSONAJE_CONDENADO);
-				//log_info(logger_personaje, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
-				//morir() //morir se encarga de setear game_over si es necesario
+				recibir(socket_planificador, NOTIF_PERSONAJE_CONDENADO);
+				log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
+				morir(); //morir se encarga de setear game_over si es necesario
 				break; //sale del nivel
 			}
 
-			//recibir(socket_planificador, ID_NOTIF_MOVIMIENTO_PERMITIDO)
-
-
+			recibir(socket_planificador, NOTIF_MOVIMIENTO_PERMITIDO);
 			//el propósito de este "recibir" es puramente que el personaje se bloquee, no necesita ninguna información. De hecho, el mensaje podría ser solamente el header y nada de datos.
 			//recibir este mensaje significa que es el turno del personaje
 
 			if(!sabe_donde_ir)
 			{
+				//t_solicitud_ubicacion_recurso sol_ubicacion_recurso;
+				//t_ubicacion_recurso * ubicacion_recursos;
+
 				//ACCION: AVERIGUAR CUÁL ES EL PROXIMO RECURSO A OBTENER
 				//ACCION: ELABORAR SOLICITUD DE UBICACION DEL PROXIMO RECURSO
-				//ACCION: SERIALIZAR SOLICITUD DE UBICACION DEL PROXIMO RECURSO
 
-				//send(socket_nivel, msj_solicitud_ubicacion_recurso, longitud_msj, 0);
-				//ubicacion_recursos = recibir(socket_nivel, ID_INFO_UBICACION_RECURSOS);
+				//enviar(socket_nivel, SOLICITUD_UBICACION_RECURSO, &sol_ubicacion_recurso, logger);
+				//ubicacion_recursos = recibir(socket_nivel, INFO_UBICACION_RECURSO);
 
 				//destino[0]=ubicacion_recursos.x //esto podría ser más prolijo si destino lo hicieramos un struct en vez de un vector
 				//destino[1]=ubicacion_recursos.y //idem
