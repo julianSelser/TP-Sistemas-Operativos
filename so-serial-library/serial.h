@@ -57,8 +57,11 @@
 	} __attribute__((packed)) t_turno_concluido;
 
 	typedef struct{
-		uint16_t info_nivel;
-		uint16_t info_planificador;
+		uint16_t puerto_nivel;
+		uint16_t puerto_planificador;
+		char* ip_nivel;
+		char* ip_planificador;
+
 	}__attribute__((packed)) t_info_nivel_planificador;
 
 	typedef struct{

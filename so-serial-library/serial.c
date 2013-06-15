@@ -231,9 +231,19 @@ void * deserializar_info_nivel_planificador(char *buffer){
 	int tmp =0,offset=0;
 
 	t_info_nivel_planificador *info = malloc(sizeof(t_info_nivel_planificador));
-	memcpy(&info->info_nivel,buffer,tmp=sizeof(uint16_t));
+	memcpy(&info->puerto_nivel,buffer,tmp=sizeof(uint16_t));
 	offset+=tmp;
-	memcpy(&info->info_planificador,buffer + offset,sizeof(uint16_t));
+	memcpy(&info->puerto_planificador,buffer + offset,tmp=sizeof(uint16_t));
+    offset+=tmp;
+
+    for(tmp=1;(buffer+offset)[tmp-1]!='\0';tmp++);
+    info->ip_nivel=malloc(tmp);
+    memcpy(&info->ip_nivel,buffer+offset,tmp);
+
+    offset+=tmp;
+    for(tmp=1;(buffer+offset)[tmp-1]!='\0';tmp++);
+    info->ip_planificador=malloc(tmp);
+    memcpy(&info->ip_planificador,buffer+offset,tmp);
 
 	return info;  // devuelve el struct de t_info_nivel_planificador
 }
@@ -328,18 +338,18 @@ char *srlz_personaje_condenado(void *data){
 }
 
 
-char *srlz_info_nivel_y_planificador(void *data){
-   int tmp =0,offset=0;
-
-	t_info_nivel_planificador *d = data;
-	char *buffer = malloc(sizeof(uint32_t));
-
-	memcpy(buffer,&d->info_nivel,tmp=sizeof(uint16_t));
-    offset+=tmp;
-    memcpy(buffer+offset,&d->info_planificador,sizeof(uint16_t));
-
-	return buffer;
-}
+//char *srlz_info_nivel_y_planificador(void *data){
+//   int tmp =0,offset=0;
+//
+//	t_info_nivel_planificador *d = data;
+//	char *buffer = malloc(sizeof(uint32_t));
+//
+//	memcpy(buffer,&d->info_nivel,tmp=sizeof(uint16_t));
+//    offset+=tmp;
+//    memcpy(buffer+offset,&d->info_planificador,sizeof(uint16_t));
+//
+//	return buffer;
+//}
 //////////////////
 
 char *srlz_movimiento_permitido(void* data){
