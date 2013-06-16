@@ -337,6 +337,10 @@ char *srlz_personaje_condenado(void *data){
 	return buffer;
 }
 
+char * srlz_info_nivel_y_planificador(void *data)
+{
+	return NULL; //dummy para que compile
+}
 
 //char *srlz_info_nivel_y_planificador(void *data){
 //   int tmp =0,offset=0;
