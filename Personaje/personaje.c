@@ -165,9 +165,10 @@ int main(int argc, char** argv)
 		t_info_nivel_planificador * info_nivel_y_planificador;
 		int socket_nivel;
 		int socket_planificador;
+		int recursos_obtenidos;
 
 		//int destino[2]; por ahora comentado porque no se usa y tira warning
-		int sabe_donde_ir, consiguio_total_recursos;
+		int sabe_donde_ir;
 
 		nivel_a_pedir = plan_de_niveles[niveles_completados];
 
@@ -193,26 +194,12 @@ int main(int argc, char** argv)
 
 
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no. Se pone en Falso al entrar a un nivel
-		consiguio_total_recursos = 0;
+		recursos_obtenidos = 0;
 
 		while(1)
 		{
 			uint8_t mje_a_recibir = 255;
 
-			//IMPORTANTE, ACÁ PUEDEN PASAR UNA DE DOS COSAS:
-			//1. EL PROCESO ESTÁ LISTO Y RECIBE LA NOTIFICACIÓN DE MOVIMIENTO PERMITIDO
-			//2. EL PROCESO ESTÁ BLOQUEADO Y RECIBE LA NOTIFICACIÓN DE PERSONAJE CONDENADO
-			//EL PJ VA A PENSAR QUE RECIBE ESTA ÚLTIMA POR PARTE DEL PLANIFICADOR, AUNQUE EN REALIDAD LO ESTÉ ENVIANDO EL ORQUESTADOR
-
-			mje_a_recibir = getnextmsg(socket_planificador); //getnextmsg es una función que informa qué tipo de mensaje es el próximo que hay en el socket (hace un peek del header). es bloqueante
-
-			if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO) //NOTIF_PERSONAJE_CONDENADO
-			{
-				recibir(socket_planificador, NOTIF_PERSONAJE_CONDENADO);
-				log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
-				morir(); //morir se encarga de setear game_over si es necesario
-				break; //sale del nivel
-			}
 
 			recibir(socket_planificador, NOTIF_MOVIMIENTO_PERMITIDO);
 			//el propósito de este "recibir" es puramente que el personaje se bloquee, no necesita ninguna información. De hecho, el mensaje podría ser solamente el header y nada de datos.
@@ -224,6 +211,7 @@ int main(int argc, char** argv)
 				//t_ubicacion_recurso * ubicacion_recursos;
 
 				//ACCION: AVERIGUAR CUÁL ES EL PROXIMO RECURSO A OBTENER
+				//el proximo recurso a pedir es recursos_por_nivel[niveles_completados][recursos_obtenidos]
 				//ACCION: ELABORAR SOLICITUD DE UBICACION DEL PROXIMO RECURSO
 
 				//enviar(socket_nivel, SOLICITUD_UBICACION_RECURSO, &sol_ubicacion_recurso, logger);
@@ -272,8 +260,21 @@ int main(int argc, char** argv)
 
 				//else if (!rta_solicitud_instancia_recurso.concedido)
 				//{
-						//ACCION: BLOQUEARSE (¿listo=0?)
-						//log_info(logger_personaje, "El personaje quedó a la espera del recurso", INFO);
+
+
+					//log_info(logger_personaje, "El personaje quedó a la espera del recurso", INFO);
+					//
+					//mje_a_recibir = getnextmsg(socket_planificador);
+					//
+					//
+					//if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO) //NOTIF_PERSONAJE_CONDENADO
+					//	{
+					//		recibir(socket_planificador, NOTIF_PERSONAJE_CONDENADO);
+					//		log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
+					//		morir(); //morir se encarga de setear game_over si es necesario
+					//		break; //sale del nivel
+					//	}
+					//else if mje == NOTIF_RECURSO_CONCEDIDO then recursos_obtenidos++ y sabe_donde_ir=0(como arriba)
 				//}
 
 			//}
@@ -283,7 +284,7 @@ int main(int argc, char** argv)
 
 			//send(socket_planificador, msj_notif_turno_concluido, longitud, 0);
 
-			if(consiguio_total_recursos)
+			if(recursos_obtenidos == strlen(recursos_por_nivel[niveles_completados]))
 			{
 				//log_info(logger_personaje, "Nivel finalizado!", "INFO");
 				//ACCION: ELABORAR NOTIFICACION NIVEL CONCLUIDO
