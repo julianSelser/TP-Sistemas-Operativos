@@ -26,7 +26,6 @@
 
 #include "Nivel.h"
 #include "serial.h"
-#include "rutina_chequeo_deadlock.h"
 
 //hilo principal del proceso nivel
 //lee el archivo de configuración, crea el logger y lanza los demás hilos
@@ -38,8 +37,6 @@ int tiempo_chequeo_deadlock;
 int recovery;
 uint8_t cantidad_de_recursos;
 t_config * configuracion;
-t_vec_finish *
-
 
 t_log * logger;
 t_list * lista_cajas;
@@ -150,9 +147,8 @@ int main(int argc, char ** argv)
     int nuevo_fd;        // newly accept()ed socket descriptor
     int escucha = init_socket_escucha(5000,1,NULL);
 
-    pthread_t hilo_deadlock;
-
-    pthread_create(&hilo_deadlock, NULL, rutina_chequeo_deadlock, &tiempo_chequeo_deadlock);
+    //pthread_t hilo_deadlock;
+   // pthread_create(&hilo_deadlock, NULL, rutina_chequeo_deadlock, &tiempo_chequeo_deadlock);
 
     FD_ZERO(&maestro);
     FD_ZERO(&read_fds);

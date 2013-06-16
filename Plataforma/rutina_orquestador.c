@@ -96,9 +96,7 @@ parametro *armar_parametro()
 
 void rutina_inotify()
 {
-	t_config *plataforma_conf = config_create("conf.arch");
-	quantum = config_get_int_value(plataforma_conf, "quantum");
-	retraso = config_get_int_value(plataforma_conf, "retraso");
+		t_config *plataforma_conf;
 
 		char buffer[BUF_LEN];
 
@@ -139,12 +137,15 @@ void rutina_inotify()
 					// Dentro de "mask" tenemos el evento que ocurrio y sobre donde ocurrio
 					// sea un archivo o un directorio
 					if (event->mask & IN_MODIFY) {
-						if(!strcmp(event->name,"conf.arch"))
+						if(!strcmp(event->name,"arch.conf"))
 						{
+							plataforma_conf = config_create("arch.conf");
+
 							quantum = config_get_int_value(plataforma_conf, "quantum");
 							retraso = config_get_int_value(plataforma_conf, "retraso");
 							printf("\n modificacion en el archivo de configuracion...\n quantum: %d\n retraso: %d\n\n",quantum,retraso);
 
+							config_destroy(plataforma_conf);
 						}
 					}
 				}

@@ -36,6 +36,10 @@ int main()
 {
 	iniciar_serializadora();
 
+	t_config *plataforma_conf = config_create("conf.arch");
+	quantum = config_get_int_value(plataforma_conf, "quantum");
+	retraso = config_get_int_value(plataforma_conf, "retraso");
+
 	pthread_t orquestador;
 
 	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
