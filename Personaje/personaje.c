@@ -55,9 +55,11 @@ int main(int argc, char** argv)
 	char * temp_plan_niveles;
 	
 
-	char ** plan_de_niveles;
+	char ** recursos_por_nivel; //vectores paralelos
+	char ** plan_de_niveles;  //vectores paralelos
 	int cantidad_niveles;
 	int niveles_completados;
+	int i;
 
 	if(argc != 2) //controlar que haya exactamente un parámetro
 	{
@@ -100,7 +102,47 @@ int main(int argc, char** argv)
 	plan_de_niveles = string_split(temp_plan_niveles, ",");
 	free(temp_plan_niveles);
 
-	//TAMBIÉN LEER LOS OBJETIVOS POR NIVEL
+	i=0;
+
+	recursos_por_nivel = malloc(cantidad_niveles * sizeof(char *));
+
+	while(i<cantidad_niveles)
+	{
+		char * clave;
+		char * temp_recursos;
+		char * string_recursos;
+		int pos;
+
+		clave = malloc(1);
+		clave[0] = '\0';
+		string_append(&clave, "obj[" );
+		string_append(&clave, plan_de_niveles[i]);
+		string_append(&clave, "]");
+
+		temp_recursos = config_get_string_value(configuracion, clave);
+		string_recursos = malloc(1);
+		string_recursos[0]='\0';
+
+		pos = 0;
+		while(temp_recursos[pos]!=']')
+		{
+			char rec[2];
+			rec[0] = temp_recursos[pos];
+			rec[1] = '\0';
+
+			if(rec[0]>='A' && rec[0]<='Z')
+			{
+				string_append(&string_recursos, rec);
+			}
+			pos++;
+		}
+		free(temp_recursos);
+		recursos_por_nivel[i] = malloc(strlen(string_recursos)+1);
+		strcpy(recursos_por_nivel[i], string_recursos);
+		free(string_recursos);
+		i++;
+	}
+
 
 	log_name = malloc(strlen(nombre)+1);
 	strcpy(log_name, nombre);
@@ -129,8 +171,7 @@ int main(int argc, char** argv)
 
 		nivel_a_pedir = plan_de_niveles[niveles_completados];
 
-		//ACCION: UBICAR EL PROXIMO NIVEL A PEDIR
-		//log_info(logger_personaje, strcat("Próximo nivel", nivel_a_pedir), "INFO");
+		log_info(logger, strcat("Próximo nivel", nivel_a_pedir), "INFO");
 
 
 		socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
@@ -148,6 +189,8 @@ int main(int argc, char** argv)
 
 		socket_planificador = init_socket_externo(info_nivel_y_planificador->puerto_planificador, info_nivel_y_planificador->ip_planificador, logger);
 		log_debug(logger, "Conectado al hilo planificador del nivel", "DEBUG");
+
+
 
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no. Se pone en Falso al entrar a un nivel
 		consiguio_total_recursos = 0;
