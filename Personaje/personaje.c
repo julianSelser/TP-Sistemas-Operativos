@@ -37,6 +37,7 @@ int max_vidas;
 
 char ** plan_de_niveles;
 int termino_plan_niveles;
+int cantidad_niveles;
 int game_over = 0;
 int contador_vidas;
 
@@ -53,7 +54,7 @@ int main(int argc, char** argv)
 	char * temp_ip_puerto_orq;
 	char ** ip_puerto_separados;
 	char * temp_nombre;
-	char ** temp_plan_niveles;
+	char * temp_plan_niveles;
 	
 	if(argc != 2) //controlar que haya exactamente un parámetro
 	{
@@ -89,9 +90,9 @@ int main(int argc, char** argv)
 	contador_vidas = max_vidas = config_get_int_value(configuracion, "vidas");
 	simbolo = config_get_int_value(configuracion, "simbolo");
 	
-	/*temp_plan_niveles = config_get_array_value(configuracion, "planDeNiveles");
-	plan_de_niveles = malloc(sizeof(temp_plan_niveles));
-	memcpy(plan_de_niveles, temp_plan_de_niveles);*/
+	temp_plan_niveles = config_get_string_value(configuracion, "planDeNiveles");
+	cantidad_niveles = string_count(temp_plan_niveles, ',') + 1;
+	plan_de_niveles = string_split(temp_plan_niveles, ",");
 
 	//TAMBIÉN LEER LOS OBJETIVOS POR NIVEL
 
