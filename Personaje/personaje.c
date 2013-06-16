@@ -35,9 +35,7 @@ char * ip_orquestador;
 int puerto_orquestador;
 int max_vidas;
 
-char ** plan_de_niveles;
-int termino_plan_niveles;
-int cantidad_niveles;
+
 int game_over = 0;
 int contador_vidas;
 
@@ -56,6 +54,11 @@ int main(int argc, char** argv)
 	char * temp_nombre;
 	char * temp_plan_niveles;
 	
+
+	char ** plan_de_niveles;
+	int cantidad_niveles;
+	int niveles_completados;
+
 	if(argc != 2) //controlar que haya exactamente un parámetro
 	{
 		puts("Uso: personaje <arch.conf>\n");
@@ -77,6 +80,7 @@ int main(int argc, char** argv)
 	strcpy(ip_puerto_orquestador, temp_ip_puerto_orq);
 	ip_puerto_separados = string_split(ip_puerto_orquestador, ":");
 	free(ip_puerto_orquestador);
+	free(temp_ip_puerto_orq);
 	
 	ip_orquestador = malloc(strlen(ip_puerto_separados[0]+1));
 	strcpy(ip_orquestador, ip_puerto_separados[0]);
@@ -86,13 +90,15 @@ int main(int argc, char** argv)
 	temp_nombre = config_get_string_value(configuracion, "nombre");
 	nombre = malloc(strlen(temp_nombre)+1);
 	strcpy(nombre, temp_nombre);
+	free(temp_nombre);
 	
 	contador_vidas = max_vidas = config_get_int_value(configuracion, "vidas");
-	simbolo = config_get_int_value(configuracion, "simbolo");
+	simbolo = (config_get_string_value(configuracion, "simbolo"))[0];
 	
 	temp_plan_niveles = config_get_string_value(configuracion, "planDeNiveles");
 	cantidad_niveles = string_count(temp_plan_niveles, ',') + 1;
 	plan_de_niveles = string_split(temp_plan_niveles, ",");
+	free(temp_plan_niveles);
 
 	//TAMBIÉN LEER LOS OBJETIVOS POR NIVEL
 
@@ -109,10 +115,8 @@ int main(int argc, char** argv)
 
 
 
-	termino_plan_niveles = 0;
-	//hay que ver cómo determinamos si el personaje terminó o no su plan, y evaluarlo acá, en vez de inicializar esto en 0
-	//int i=0;
-	while (!termino_plan_niveles)
+	niveles_completados=0;
+	while (!(cantidad_niveles==niveles_completados))
 	{
 		static int socket_orquestador;
 		char * nivel_a_pedir;
@@ -120,15 +124,10 @@ int main(int argc, char** argv)
 		int socket_nivel;
 		int socket_planificador;
 
-		// niveles[i];
-		// int nivel_a_pedir;
-
 		//int destino[2]; por ahora comentado porque no se usa y tira warning
 		int sabe_donde_ir, consiguio_total_recursos;
 
-
-
-		//nivel_a_pedir=niveles[i];
+		nivel_a_pedir = plan_de_niveles[niveles_completados];
 
 		//ACCION: UBICAR EL PROXIMO NIVEL A PEDIR
 		//log_info(logger_personaje, strcat("Próximo nivel", nivel_a_pedir), "INFO");
