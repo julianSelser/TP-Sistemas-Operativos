@@ -79,7 +79,7 @@ static t_particion *crear_particion(bool disponibilidad, int inicio, t_memoria s
 	nueva_particion->id = id;
 	nueva_particion->inicio = inicio;
 	nueva_particion->tamanio = tamanio;
-	nueva_particion->dato = memmove(segmento+inicio,contenido,strlen(contenido));
+	nueva_particion->dato = memmove(segmento+inicio,contenido,tamanio);
 	nueva_particion->libre = disponibilidad;
 	return nueva_particion;
 }
@@ -88,7 +88,7 @@ static void sobrescribir_particion(t_particion *particion, t_memoria segmento, c
 	particion->id = id;
 	particion->tamanio = tamanio;
 	particion->libre = false;
-	particion->dato = memmove(segmento+(particion->inicio),contenido,strlen(contenido));
+	particion->dato = memmove(segmento+(particion->inicio),contenido,tamanio);
 }
 
 static void dividir_particion(t_link_element *nodo_best_fit, t_particion *best_fit, t_memoria segmento, char id, int tamanio, char* contenido){
