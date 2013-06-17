@@ -60,5 +60,7 @@
 	extern t_list * lista_personajes;
 	extern ITEM_NIVEL * lista_items;
 
+	int detectar_deadlock();
+
 
 #endif /* NIVEL_DEFS_H_ */
