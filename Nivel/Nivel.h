@@ -39,7 +39,7 @@
 		int socket;
 		uint8_t x;
 		uint8_t y;
-		t_necesidad * necesidades;
+		t_list * necesidades;
 	} t_nodo_personaje;
 
 
