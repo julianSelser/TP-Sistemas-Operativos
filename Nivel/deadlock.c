@@ -174,7 +174,7 @@ int rutina_chequeo_deadlock()
 				i++;
 			}
 
-			puts(msj); puts('\n');
+			puts(msj); puts("\n");
 			log_info(logger, msj, "INFO");
 			free(msj);
 
