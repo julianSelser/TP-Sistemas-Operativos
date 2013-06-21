@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
 	nivel_gui_dibujar(lista_items);
 
 	//lanzar el hilo de deteccion de deadlock
-    pthread_create(&hilo_deadlock, NULL, (void*)detectar_deadlock, NULL);
+    pthread_create(&hilo_deadlock, NULL, (void*)rutina_chequeo_deadlock, NULL);
 
 	/*	...A PARTIR DE ACA SE COMIENZAN A PROCESAR MENSAJES...	*/
 
@@ -112,7 +112,8 @@ int main(int argc, char ** argv)
                             fdmax = nuevo_fd;
                         }
                     }
-                } else {
+                }
+                else {
                     // si no es el escucha, es una comunicacion
                 	if(is_connected(i))  	//viene un mensaje del tipo de "next msg"
                 	{
@@ -138,17 +139,20 @@ int main(int argc, char ** argv)
 void manejar_peticion(int socket){
 	switch(getnextmsg(socket))
 	{
+
 	case ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL:
 										manejar_ingreso_personaje(socket);
 										break;
 	case SOLICITUD_MOVIMIENTO_XY:
 										manejar_solicitud_movimiento(socket);
 										break;
+	case NOTIF_NIVEL_CUMPLIDO:
+										manejar_nivel_concluido(socket);
+										break;
 	case SOLICITUD_UBICACION_RECURSO:
 										manejar_solicitud_ubicacion_recurso(socket);
 										break;
 	case SOLICITUD_INSTANCIA_RECURSO:
-
 										manejar_solicitud_instancia_recurso(socket);
 										break;
 	case NOTIF_ELECCION_VICTIMA:
@@ -221,6 +225,9 @@ void manejar_solicitud_movimiento(int socket){
 		personaje->y = solicitud->y;
 
 		respuesta->resp_solicitud = true; 	//permiso dado
+
+		MoverPersonaje(lista_items, personaje->ID, personaje->x, personaje->y);
+		nivel_gui_dibujar(lista_items);
 	}
 	else respuesta->resp_solicitud = false;	//comela
 
@@ -228,6 +235,7 @@ void manejar_solicitud_movimiento(int socket){
 
 	free(solicitud);
 }
+void manejar_nivel_concluido(int socket){}
 
 void manejar_solicitud_ubicacion_recurso(int socket){
 
