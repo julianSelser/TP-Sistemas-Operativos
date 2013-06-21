@@ -185,6 +185,7 @@ int rutina_chequeo_deadlock()
 			}
 		}
 
+		free(pjes_en_deadlock);
 	}
 	return 0;
 }
