@@ -24,12 +24,12 @@
 #define N_MENSAJES 20 //por ahora son 20
 
 
-//p_funcion_deserial vec_deserializador[N_MENSAJES];
-//p_funcion_serial vec_serializador[N_MENSAJES];
+p_funcion_deserial vec_deserializador[N_MENSAJES];
+p_funcion_serial vec_serializador[N_MENSAJES];
 
 
-static p_funcion_deserial vec_deserializador[N_MENSAJES];
-static p_funcion_serial vec_serializador[N_MENSAJES];
+//static p_funcion_deserial vec_deserializador[N_MENSAJES];
+//static p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 /******************************************* FUNCIONES DE INICIALIZADO ********************************************/
@@ -181,10 +181,14 @@ void *deserializar_resp_a_solicitud_movimiento(char* buffer){
 }
 
 void *deserializar_solicitud_de_movimiento(char *buffer){
-
-   t_solicitud_movimiento * solicitud = malloc(sizeof(t_solicitud_movimiento));
-   memcpy(&solicitud->solicito_moverme,buffer,sizeof(uint8_t));
-   return solicitud;
+	int offset = 0, tmp = 0;
+	t_solicitud_movimiento * solicitud = malloc(sizeof(t_solicitud_movimiento));
+	memcpy(&solicitud->char_personaje,buffer,tmp = sizeof(uint8_t));
+	offset += tmp;
+	memcpy(&solicitud->x,buffer+offset,tmp = sizeof(uint8_t));
+	offset += tmp;
+	memcpy(&solicitud->y,buffer+offset,sizeof(uint8_t));
+	return solicitud;
 }
 
 
@@ -208,7 +212,7 @@ void *deserializar_personaje_condenado(char *buffer){
 }
 
 
-void * deserializar_info_nivel_y_planificador(char *buffer){
+void *deserializar_info_nivel_y_planificador(char *buffer){
 
 	int tmp = 0,offset=0;
 
@@ -302,6 +306,7 @@ char *srlz_solicitud_de_movimiento(void *data, int *tamanio){
 	free(data);
 	return buffer;
 }
+
 
 
 char *srlz_ubicacion_de_recurso(void *data, int *tamanio){

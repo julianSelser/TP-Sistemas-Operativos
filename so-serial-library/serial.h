@@ -39,8 +39,8 @@
 	typedef void *(*p_funcion_deserial)(char *buffer);
 	typedef char *(*p_funcion_serial)(void *data, int *tamanio);
 
-	//extern p_funcion_deserial vec_deserializador[N_MENSAJES];
-	//extern p_funcion_serial vec_serializador[N_MENSAJES];
+	extern p_funcion_deserial vec_deserializador[N_MENSAJES];
+	extern p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 	/**************************** STRUCTS  ***************************/
@@ -84,8 +84,9 @@
 	} __attribute__((packed)) t_ubicacion_recurso ;
 
 	typedef struct {
-		uint8_t solicito_moverme;
-
+		uint8_t char_personaje;
+		uint8_t x;
+		uint8_t y;
 	} __attribute__((packed)) t_solicitud_movimiento;
 
 	typedef struct{
