@@ -66,7 +66,7 @@
 	/*	DECLARACION DE FUNCIONES	*/
 
 	//rutina para el hilo de deteccion
-	char * detectar_deadlock();
+	int rutina_chequeo_deadlock();
 
 
 	void manejar_peticion(int socket);

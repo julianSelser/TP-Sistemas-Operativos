@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
 	nivel_gui_dibujar(lista_items);
 
 	//lanzar el hilo de deteccion de deadlock
-    pthread_create(&hilo_deadlock, NULL, (void*)detectar_deadlock, NULL);
+    pthread_create(&hilo_deadlock, NULL, (void*)rutina_chequeo_deadlock, NULL);
 
 	/*	...A PARTIR DE ACA SE COMIENZAN A PROCESAR MENSAJES...	*/
 
