@@ -24,12 +24,8 @@
 #define N_MENSAJES 20 //por ahora son 20
 
 
-p_funcion_deserial vec_deserializador[N_MENSAJES];
-p_funcion_serial vec_serializador[N_MENSAJES];
-
-
-//static p_funcion_deserial vec_deserializador[N_MENSAJES];
-//static p_funcion_serial vec_serializador[N_MENSAJES];
+/*static*/ p_funcion_deserial vec_deserializador[N_MENSAJES];
+/*static*/ p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 /******************************************* FUNCIONES DE INICIALIZADO ********************************************/

@@ -39,8 +39,8 @@
 	typedef void *(*p_funcion_deserial)(char *buffer);
 	typedef char *(*p_funcion_serial)(void *data, int *tamanio);
 
-	extern p_funcion_deserial vec_deserializador[N_MENSAJES];
-	extern p_funcion_serial vec_serializador[N_MENSAJES];
+	//extern p_funcion_deserial vec_deserializador[N_MENSAJES];
+	//extern p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 	/**************************** STRUCTS  ***************************/
