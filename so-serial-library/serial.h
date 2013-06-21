@@ -11,45 +11,42 @@
 #ifndef SERIAL_H_
 #define SERIAL_H_
 
-	#define N_MENSAJES 20
-
 	#define SOLICITUD_INFO_NIVEL 1						//PP->HO
-	#define INFO_NIVEL_Y_PLANIFICADOR 2					//HO->PP
+	#define INFO_NIVEL_Y_PLANIFICADOR 2
 	#define NOTIF_MOVIMIENTO_PERMITIDO 3				//HP->PP
-	#define SOLICITUD_MOVIMIENTO_XY 4					//PP->PN
-	#define RTA_SOLICITUD_MOVIMIENTO_XY 5				//PN->PP
-	#define SOLICITUD_UBICACION_RECURSO 6				//PP->PN
-	#define SOLICITUD_INSTANCIA_RECURSO 7				//PP->PN
-	#define RTA_SOLICITUD_INSTANCIA_RECURSO 8			//PN->PP
+	#define SOLICITUD_MOVIMIENTO_XY 4
+	#define RTA_SOLICITUD_MOVIMIENTO_XY 5
+	#define SOLICITUD_UBICACION_RECURSO 6
+	#define SOLICITUD_INSTANCIA_RECURSO 7
+	#define RTA_SOLICITUD_INSTANCIA_RECURSO 8
 	#define NOTIF_TURNO_CONCLUIDO 9						//PP->HP
-	#define NOTIF_NIVEL_CUMPLIDO 10						//PP->HP,HO
-	#define NOTIF_MUERTE_PERSONAJE 11					//HO->PP
-	#define INTENCION_REINICIAR_NIVEL 12				//PP->HO
-	#define NOTIF_RECURSOS_LIBERADOS 13					//PN->HO
-	#define NOTIF_RECURSOS_REASIGNADOS 14				//HO->PN
-	#define SOLICITUD_RECUPERO_DEADLOCK 15				//PN->HO
-	#define NOTIF_ELECCION_VICTIMA 16					//HO->PN
+	#define NOTIF_NIVEL_CUMPLIDO 10
+	#define NOTIF_MUERTE_PERSONAJE 11
+	#define INTENCION_REINICIAR_NIVEL 12
+	#define NOTIF_RECURSOS_LIBERADOS 13
+	#define NOTIF_RECURSOS_REASIGNADOS 14
+	#define SOLICITUD_RECUPERO_DEADLOCK 15
+	#define NOTIF_ELECCION_VICTIMA 16
 	#define NOTIF_PERSONAJE_CONDENADO 17
 	#define NOTIF_PLAN_TERMINADO 18
 	#define ENVIO_DE_DATOS_AL_PLANIFICADOR 19			//PP->HP
-	#define INFO_UBICACION_RECURSO 20					//PN->PP
-	#define ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL 21	//PP->PN
+	#define INFO_UBICACION_RECURSO 20
 
 	//typedefs de punteros a funciones
 	typedef void *(*p_funcion_deserial)(char *buffer);
 	typedef char *(*p_funcion_serial)(void *data, int *tamanio);
-
-	//extern p_funcion_deserial vec_deserializador[N_MENSAJES];
-	//extern p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 	/**************************** STRUCTS  ***************************/
 
 
 	//struct del mensaje que envia el personaje al planificador cuando conecta por primera vez
+    typedef struct {
+    	char * nivel_solicitado;
+    }__attribute__((packed)) t_solicitud_info_nivel;
+
 	typedef struct {
 		uint8_t char_personaje;
-		uint8_t *nombre_personaje;
 	} __attribute__((packed)) t_datos_delPersonaje_alPlanificador;
 
 	//struct simbolico del mensaje movimiento permitido(no se usa)
@@ -66,8 +63,8 @@
 	typedef struct{
 		uint16_t puerto_nivel;
 		uint16_t puerto_planificador;
-		uint8_t *ip_nivel;
-		uint8_t *ip_planificador;
+		char* ip_nivel;
+		char* ip_planificador;
 
 	}__attribute__((packed)) t_info_nivel_planificador ;
 
@@ -79,19 +76,21 @@
 	} __attribute__((packed)) t_personaje_condenado;
 
 	typedef struct{
+
 		uint8_t x;
 		uint8_t y;
+
 	} __attribute__((packed)) t_ubicacion_recurso ;
 
 	typedef struct {
-		uint8_t char_personaje;
-		uint8_t x;
-		uint8_t y;
+		uint8_t eje_x;
+		uint8_t eje_y;
+
 	} __attribute__((packed)) t_solicitud_movimiento;
 
 	typedef struct{
 
-		uint8_t resp_solicitud;
+		uint8_t aprobado;
 
 	} __attribute__((packed)) t_resp_solicitud_movimiento;
 
@@ -99,20 +98,31 @@
 
 		uint8_t recurso;
 
-	} __attribute__((packed)) t_solicitud_ubicacion_recurso;
+	} __attribute__((packed)) t_solicitud_ubicacion_recurso; // le enviamos el recurso al nivel
 	//estos dos structs son iguales pero tienen que tener distintos nombres. tiene que haber una forma de definirlo una sola vez
 	typedef struct{
 
-		uint8_t recurso;
+		uint8_t instancia_recurso; // me devuelve el recurso que solicite
 
 	} __attribute__((packed)) t_solcitud_instancia_recurso; // falta la serializadora/deserializadora/vector de esta
 
-	//mensaje que un personaje envia al nivel cada vez que se quiere conectar por primera vez
+
+	typedef struct {
+		uint8_t concedido;
+	} __attribute__((packed)) t_rspta_solicitud_instancia_recurso;
+
 	typedef struct{
-		uint8_t char_personaje;
-		uint8_t *nombre_personaje;
-		uint8_t *necesidades;
-	} __attribute__((packed)) t_datos_delPersonaje_alNivel;
+		char * nivel;
+	} __attribute__((packed)) t_notificacion_nivel_cumplido;
+
+	typedef struct{
+		char * personaje;
+
+	} __attribute__((packed)) t_notificacion_plan_terminado;
+
+	typedef struct{
+		uint8_t mor;
+	}__attribute__((packed)) t_notificacion_muerte_personaje;
 
 	//la cabecera que se lee en todos los mensajes
 	typedef struct {
@@ -125,6 +135,7 @@
 
 
 	//funciones serializadoras
+	char *srlz_solicitud_info_nivel(void *data, int *tamanio);
 	char *srlz_turno_concluido(void *data, int *tamanio);
 	char *srlz_movimiento_permitido(void* data, int *tamanio);
 	char *srlz_info_nivel_y_planificador(void *data, int *tamanio);
@@ -132,30 +143,36 @@
     char *srlz_ubicacion_de_recurso(void *data, int *tamanio);
     char *srlz_solicitud_de_movimiento(void *data, int *tamanio);
     char *srlz_resp_a_solicitud_movimiento(void *data, int *tamanio);
-    char *srlz_datos_delPersonaje_alPlanificador(void *data, int *tamanio);
-    char *srlz_solicitud_de_recurso(void *data, int *tamanio);
+    char *srlz_solicitud_instancia_recurso(void *data,int *tamanio);
+    char *srlz_rspta_solicitud_instancia_recurso(void *data,int *tamanio);
+    char *srlz_notificacion_nivel_cumplido(void *data,int *tamanio);
+    char *srlz_notificacion_plan_terminado(void *data,int *tamanio);
+    char *srlz_notificacion_muerte_personaje(void *data,int *tamanio);
 
     //funciones de-serializadoras
-	void *deserializar_movimiento_permitido(char *buffer);
+	void *deserializar_solicitud_info_nivel(char *buffer);
+    void *deserializar_movimiento_permitido(char *buffer);
 	void *deserializar_turno_concluido(char *buffer);
+	void *deserializar_datos_delPersonaje_alPlanificador(char *buffer);
 	void *deserializar_info_nivel_y_planificador(char *buffer);
 	void *deserializar_personaje_condenado(char *buffer);
     void *deserializar_ubicacion_de_recurso(char *buffer);
     void *deserializar_solicitud_de_movimiento(char *buffer);
     void *deserializar_resp_a_solicitud_movimiento(char *buffer);
-	void *deserializar_datos_delPersonaje_alPlanificador(char *buffer);
-    void *deserializar_solicitud_de_recurso(char *buffer);
-
-	//funciones de envio/recepcion
+    void *deserializar_solicitud_instancia_recurso(char *buffer);
+    void *deserializar_rspta_solicitud_instancia_recurso(char *buffer);
+    void *deserializar_notificacion_nivel_cumplido(char *buffer);
+    void *deserializar_notificacion_plan_terminado(char *buffer);
+    void *deserializar_notificacion_muerte_personaje(char *buffer);
+    //funciones de envio/recepcion
 	int getnextmsg(int socket);
 	void *recibir(int socket, int tipo);
-	int enviar(int socket, int tipo, void *struct_mensaje, t_log *logger);
+	void enviar(int socket, int tipo, void *struct_mensaje, t_log *logger);
 	t_cabecera *deserializar_cabecera(char *buffer);
 
 	//funciones de socket
 	int init_socket_externo(int puerto, char *direccion, t_log *logger);
 	int init_socket_escucha(int puerto, int optval, t_log *logger);
-	int is_connected(int socket);
 
 	// funciones de inicializacion
 	void iniciar_serializadora();
