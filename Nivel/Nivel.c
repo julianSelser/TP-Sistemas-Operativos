@@ -26,7 +26,7 @@
 #include <nivel.h> //nivel gui de la catedra
 
 #include "Nivel.h"
-#include "serial.h"
+#include <serial.h>
 
 //hilo principal del proceso nivel
 //lee el archivo de configuración, crea el logger y lanza los demás hilos
@@ -45,6 +45,8 @@ t_list *lista_cajas;
 t_list *lista_personajes;
 ITEM_NIVEL * lista_items = NULL;
 
+sem_t sem_general;
+sem_t sem_recovery;
 
 int main(int argc, char ** argv)
 {
@@ -61,6 +63,8 @@ int main(int argc, char ** argv)
 
 	levantar_config(argc,argv);
 	iniciar_serializadora();
+	//si, lo de recien tocaba las listas criticas, pero todavia no esta corriendo el otro hilo
+
 
 	//lineas que muestran detalles del nivel antes de lanzar la interfaz grafica
 	printf("\n ip orquestador: %s\n nombre: %s\n", ip_orquestador, nombre);
@@ -74,12 +78,16 @@ int main(int argc, char ** argv)
     socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
     sleep(1);
 
+    sem_init(&sem_general, 0, 1);
+    sem_init(&sem_recovery, 0, 0);
+
 	nivel_gui_inicializar();
 	nivel_gui_get_area_nivel(&filas, &columnas);
 	nivel_gui_dibujar(lista_items);
 
 	//lanzar el hilo de deteccion de deadlock
     pthread_create(&hilo_deadlock, NULL, (void*)rutina_chequeo_deadlock, NULL);
+    //ahora es importante sincronizar los hilos
 
 	/*	...A PARTIR DE ACA SE COMIENZAN A PROCESAR MENSAJES...	*/
 
@@ -141,6 +149,7 @@ int main(int argc, char ** argv)
 
 
 void manejar_peticion(int socket){
+	sem_wait(&sem_general); //no atiendo ningun mensaje mientras se esta detectando deadlock
 	switch(getnextmsg(socket))
 	{
 
@@ -168,7 +177,8 @@ void manejar_peticion(int socket){
 	default:
 			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));//todo esto deberia loguearse como error
 			break;
-	}
+	} //end switch
+	sem_post(&sem_general); //ya atendi el mensaje, permito detectar deadlock
 }
 
 
@@ -355,6 +365,8 @@ void manejar_notif_eleccion_victima(int socket){
 void manejar_recursos_reasignados(int socket){
 	//aca el orquestador nos contesta la notificacion de recursos liberados
 	//con los identificadores de los personajes y los recursos asignados
+
+	sem_post(&sem_recovery); //con esto finaliza el procedimiento de recovery
 }
 
 void reubicar_recursos(t_list *necesidades){

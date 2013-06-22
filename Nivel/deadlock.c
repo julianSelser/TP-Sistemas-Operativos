@@ -133,11 +133,9 @@ int rutina_chequeo_deadlock()
 
 		usleep(tiempo_chequeo_deadlock*1000);
 
-		//TOMAR MUTEX GENERAL
-
+		sem_wait(&sem_general);
 		pjes_en_deadlock = detectar_deadlock(); //ver aclaración
 
-		//SOLTAR MUTEX GENERAL
 		cant_pjes_en_deadlock = strlen(pjes_en_deadlock);
 
 		if (cant_pjes_en_deadlock) //es decir, si hay al menos dos (imposible que haya uno)
@@ -173,6 +171,8 @@ int rutina_chequeo_deadlock()
 
 				i++;
 			}
+			sem_post(&sem_general);
+
 
 			puts(msj); puts("\n");
 			log_info(logger, msj, "INFO");
@@ -180,9 +180,13 @@ int rutina_chequeo_deadlock()
 
 			if (recovery)
 			{
-			//enviar(socket_orquestador, SOLICITUD_RECUPERO_DEADLOCK, pjes_en_deadlock, logger);
-			//WAIT(MUTEX RECOVERY)
+			enviar(socket_orquestador, SOLICITUD_RECUPERO_DEADLOCK, pjes_en_deadlock, logger);
+			sem_wait(&sem_recovery); //para que no vuelva a detectar deadlock hasta que se haya accionado el recovery
 			}
+		}
+		else
+		{
+			sem_post(&sem_general);
 		}
 
 		free(pjes_en_deadlock);

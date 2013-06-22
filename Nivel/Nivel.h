@@ -81,6 +81,9 @@
 	int imprimir_nodo_caja(t_caja * nodo_caja);
 	int crear_item_caja_desde_nodo(t_caja * nodo_caja);
 
+	t_nodo_personaje * ubicar_pje_por_ID(char ID);
+	int indexof(char * array, char c, int size);
+
 	/*	MANEJO DE MENSAJES	*/
 
 	void manejar_ingreso_personaje(int socket);
@@ -88,6 +91,7 @@
 	void manejar_solicitud_ubicacion_recurso(int socket);
 	void manejar_solicitud_instancia_recurso(int socket);
 	void manejar_notif_eleccion_victima(int socket);
+	void manejar_nivel_concluido(int socket);
 	void manejar_recursos_reasignados(int socket);
 
 
