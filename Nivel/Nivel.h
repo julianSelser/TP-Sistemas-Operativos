@@ -51,6 +51,7 @@
 	extern char * nombre;
 	extern char * ip_orquestador;
 	extern int puerto_orquestador;
+	extern int socket_orquestador;
 	extern int tiempo_chequeo_deadlock;
 	extern int recovery;
 	extern uint8_t cantidad_de_recursos;
