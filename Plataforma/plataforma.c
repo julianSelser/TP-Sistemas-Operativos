@@ -36,7 +36,7 @@ int main()
 {
 	iniciar_serializadora();
 
-	t_config *plataforma_conf = config_create("conf.arch");
+	t_config *plataforma_conf = config_create("arch.conf");
 	quantum = config_get_int_value(plataforma_conf, "quantum");
 	retraso = config_get_int_value(plataforma_conf, "retraso");
 

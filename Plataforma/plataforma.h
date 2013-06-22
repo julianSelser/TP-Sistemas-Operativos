@@ -19,7 +19,7 @@
 
 	//la info que le llega por aprametro al planificador
 	typedef struct info_planificador{
-		sem_t semaforos[3];//los 3 semaforos que se usan en cada planificador
+		sem_t semaforos[4]; //se usan 3 semaforos en cada planificador, NO USAR EL 4°...revienta...
 		t_log *logger_planificador;
 		t_list *colas[2];
 		int puerto;

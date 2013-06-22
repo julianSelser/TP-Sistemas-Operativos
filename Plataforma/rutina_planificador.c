@@ -26,67 +26,57 @@
 
 #include "serial.h"
 
-
-
+//todo: faltan todos los logeos
 void rutina_planificador(parametro *info)
 {
-	sem_t *cola_listos = &info->semaforos[1];
-	sem_t *cola_vacia = &info->semaforos[2];
-
-    sem_init(cola_listos, 0, 1);
-    sem_init(cola_vacia, 0, 0);
-
-	//desgloce del "parametro info" para claridad
-	t_log *logger_planificador = info->logger_planificador;
-	t_list *listos = info->colas[LISTOS];
-	t_list *bloqueados = info->colas[BLOQUEADOS];
-
-	//crea el hilo que escuchara personajes
-	pthread_t hilo_escucha;
-	pthread_create(&hilo_escucha, NULL,(void*)rutina_escucha, info);
-
+	int i;
 	//esto liberarlo, lo que llega por "recibir" es responsabilidad del usuario
 	//(estas variables contendran de-serializaciones)
 	t_turno_concluido *resultado;
 	t_nodo_personaje *personaje;
-	bool saltear_reencolamiento;
-	bool primera=true;
-	int i;
 
-	while(1){
-		saltear_reencolamiento = false;
+	//desglose del "parametro info" en su log, colas y semaforos, macro en el .h
+	DESGLOSE_INFO(info);
 
-		sem_wait(cola_vacia);
-		sem_wait(cola_listos);
+    sem_init(sem_cola_listos, 0, 1);
+    sem_init(sem_cola_vacia, 0, 0);
+    sem_init(sem_cola_bloqueados, 0, 1);
 
-		if(primera){printf("\n iniciando bucle principal del planificador\n\n");primera=false;}
+	//crea el hilo que escuchara personajes
+	pthread_t hilo_escucha;
 
+	pthread_create(&hilo_escucha, NULL,(void*)rutina_escucha, info);
+
+	while(1)
+	{
+		bool desconexion = false;
+
+		sem_wait(sem_cola_vacia);
+		sem_wait(sem_cola_listos);
 		personaje = desencolar(listos);
-		sem_post(cola_listos);
-		sem_post(cola_vacia);
+		sem_post(sem_cola_listos);
+		sem_post(sem_cola_vacia);
 
 
 		for(i=0; i<quantum ; i++)
 		{
-			printf("\n planificador va a enviar mensaje\n\n");
-			enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador);
-			printf("\n planificador envio mensaje\n\n");
+			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )) break;
 			resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
-			printf("\n planificador recibio notif_turno-concluido\n\n");
 
-			//la "operacion" de dar quantum termino aca, si se hiciera despues no esperaria lo que deberia luego de personajes que terminaron o se bloquean
-			sleep(retraso); //por ejemplo, 5 personajes terminan seguidos, si no sleepea aca lo hace sin retraso, cuando deberia haber un retraso por operacion
-
-			if((saltear_reencolamiento =  resultado->bloqueado || resultado->termino_nivel )){
-				if(resultado->bloqueado) encolar( buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje);
-				sem_wait(cola_vacia);
+			if((resultado->bloqueado)){
+				sem_wait(sem_cola_bloqueados);
+				encolar( buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje);
+				sem_post(sem_cola_bloqueados);
+				sem_wait(sem_cola_vacia);
 				break;
 			}
 		}
+		printf("\n dado quantum\n\n");
+		sleep(retraso);
 
-		sem_wait(cola_listos);
-		if(!saltear_reencolamiento) encolar(listos, personaje); //cuando se des-encola un personaje sale de la cola, ante bloqueo o termino de nivel el reencolamiento debe saltearse
-		sem_post(cola_listos);
+		sem_wait(sem_cola_listos);
+		if(!resultado->bloqueado && !desconexion) encolar(listos, personaje); //cuando se des-encola un personaje sale de la cola, ante bloqueo el reencolamiento debe saltearse
+		sem_post(sem_cola_listos);
 	}
 
 	free(info);
@@ -95,8 +85,7 @@ void rutina_planificador(parametro *info)
 
 void rutina_escucha(parametro *info)
 {
-	sem_t *cola_listos = &info->semaforos[1];
-	sem_t *cola_vacia = &info->semaforos[2];
+	DESGLOSE_INFO(info);
 
 	int socketNuevoPersonaje;
 	int socketEscucha = init_socket_escucha(info->puerto, 1, info->logger_planificador);
@@ -106,11 +95,11 @@ void rutina_escucha(parametro *info)
 	{
 		if ((socketNuevoPersonaje = accept(socketEscucha, NULL, 0)) < 0)/* todo log:Error al aceptar conexion entrante */exit(1);
 		else {
-			t_nodo_personaje *personaje = armar_personaje( recibir(socketNuevoPersonaje, ENVIO_DE_DATOS_AL_PLANIFICADOR) ,socketNuevoPersonaje);
-			sem_wait(cola_listos);
-			encolar(info->colas[LISTOS], personaje);
-			sem_post(cola_listos);
-			sem_post(cola_vacia);
+			t_nodo_personaje *personaje = armar_nodo_personaje( recibir(socketNuevoPersonaje, ENVIO_DE_DATOS_AL_PLANIFICADOR) ,socketNuevoPersonaje);
+			sem_wait(sem_cola_listos);
+			encolar(listos, personaje);
+			sem_post(sem_cola_listos);
+			sem_post(sem_cola_vacia);
 		}
 	}
 }
@@ -118,11 +107,12 @@ void rutina_escucha(parametro *info)
 
 // funcion que toma el deserializado del mensaje crudo del personaje al conectarse al planificador
 //y lo convierte en un nodo personaje para usar en las listas; tambien libera los datos del mensaje
-t_nodo_personaje *armar_personaje(t_datos_delPersonaje_alPlanificador *datos, int socket)
+t_nodo_personaje *armar_nodo_personaje(t_datos_delPersonaje_alPlanificador *datos, int socket)
 {
 	t_nodo_personaje *personaje = malloc(sizeof(t_nodo_personaje));
 
 	personaje->char_personaje = datos->char_personaje;
+	personaje->nombre = (char *)datos->nombre;
 	personaje->socket = socket;
 
 	free(datos);
@@ -149,7 +139,7 @@ t_mov_permitido *armarMSG_mov_permitido(){
 t_list *buscar_lista_de_recurso(t_list *bloqueados, char recurso_de_bloqueo)
 {
 		t_link_element *element = bloqueados->head;
-		t_nodo_bloq_por_recurso *nodo = element->data; //nunca va a ser NULL, el orquestador siempre crea esta lista
+		t_nodo_bloq_por_recurso *nodo = element->data; //nunca van a ser NULL, el orquestador siempre crea esta lista
 
 		while ( element != NULL && !(nodo->char_recurso == recurso_de_bloqueo)) {
 			element = element->next;
@@ -159,4 +149,3 @@ t_list *buscar_lista_de_recurso(t_list *bloqueados, char recurso_de_bloqueo)
 }
 
 
-//todo:semaforos en la cola de bloqueados
