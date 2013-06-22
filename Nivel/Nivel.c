@@ -93,7 +93,7 @@ int main(int argc, char ** argv)
     while(1){
         read_fds = maestro;
         if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
-            perror("select");
+            perror("select");//todo loguear: error de select...
             exit(1);
         }
 
@@ -104,10 +104,10 @@ int main(int argc, char ** argv)
                     // si es el escucha se tiene un nuevofd
                     nuevo_fd = accept(escucha,NULL,0);
                     if (nuevo_fd == -1) {
-                        perror("accept");
+                        perror("accept");//todo loguear: error aceptando nueva conexion
                     } else {
                         FD_SET(nuevo_fd, &maestro);
-                        //chequear si el nuevo es mas grande que el maximo
+                        //chequear si el nuevo fd es mas grande que el maximo
                         if (nuevo_fd > fdmax) {
                             fdmax = nuevo_fd;
                         }
@@ -119,7 +119,11 @@ int main(int argc, char ** argv)
                 	{
                 	manejar_peticion(i);	//y manejarlos
                 	}
-                	else{ // si no esta conectado, cerrarlo y sacarlo del set maestro
+                	else // si se desconecto, ver si es el orquestador(en ese caso termina el juego), si es un personaje manejarlo
+                	{
+                		if(i!=socket_orquestador)
+                		{}/*	FALTA TERMINAR ACA	*/
+
                 		close(i);
                 		FD_CLR(i, &maestro);
                 	}
@@ -162,20 +166,23 @@ void manejar_peticion(int socket){
 										manejar_recursos_reasignados(socket);
 										break;
 	default:
-			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));
+			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));//todo esto deberia loguearse como error
 			break;
 	}
 }
 
 
 void manejar_ingreso_personaje(int socket){
+	//variables auxiliares y malloc de nuevo nodo
 	int i;
 	t_list *lista;
 	t_link_element *aux;
-
-	t_datos_delPersonaje_alNivel *datos = recibir(socket, ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL);
 	t_nodo_personaje *nodo_p = malloc(sizeof(t_nodo_personaje));
 
+	//recibir
+	t_datos_delPersonaje_alNivel *datos = recibir(socket, ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL);
+
+	//inicializar nuevo nodo
 	nodo_p->ID = datos->char_personaje;
 	nodo_p->nombre = (char *)datos->nombre_personaje;
 	nodo_p->socket = socket;
@@ -183,6 +190,7 @@ void manejar_ingreso_personaje(int socket){
 	nodo_p->y = 0;
 	lista = nodo_p->necesidades = list_create();
 
+	//por cada necesidad enviada
 	for(i=0; datos->necesidades[i] != '\0' ;i++)
 	{
 		//busca si la necesidad estaba enlistada
@@ -199,6 +207,7 @@ void manejar_ingreso_personaje(int socket){
 		}
 	}
 
+	//crea el personaje en (0,0)
 	CrearPersonaje(&lista_items, nodo_p->ID, 0, 0);
 	nivel_gui_dibujar(lista_items);
 
@@ -208,10 +217,12 @@ void manejar_ingreso_personaje(int socket){
 
 
 void manejar_solicitud_movimiento(int socket){
+	//variables auxiliares y malloc de respuesta
 	t_link_element *aux;
 	t_nodo_personaje *personaje;
 	t_resp_solicitud_movimiento *respuesta = malloc(sizeof(t_resp_solicitud_movimiento));
 
+	//recibir
 	t_solicitud_movimiento *solicitud = recibir(socket, SOLICITUD_MOVIMIENTO_XY);
 
 	if(solicitud->x<columnas && solicitud->y<filas) //si esta dentro del nivel...
@@ -219,36 +230,158 @@ void manejar_solicitud_movimiento(int socket){
 		//buscamos el personaje en la lista de personajes...
 		for(aux=lista_personajes->head; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID != solicitud->char_personaje; aux=aux->next);
 
-		personaje = ((t_nodo_personaje*)aux->data);
+		//si no se encontro personaje...
+		if(aux==NULL)
+			/*todo logear: error grotesco, el personaje que solicita moverse no estaba en la lista*/;
 
+		personaje = ((t_nodo_personaje*)aux->data); //asignacion por claridad...
+
+		//actualizar el personaje y dibujarlo
 		personaje->x = solicitud->x;
 		personaje->y = solicitud->y;
 
-		respuesta->resp_solicitud = true; 	//permiso dado
+		respuesta->aprobado = true; 	//permiso dado
 
 		MoverPersonaje(lista_items, personaje->ID, personaje->x, personaje->y);
 		nivel_gui_dibujar(lista_items);
 	}
-	else respuesta->resp_solicitud = false;	//comela
+	else respuesta->aprobado = false;	//permiso negado
 
 	enviar(socket, RTA_SOLICITUD_MOVIMIENTO_XY, respuesta, logger); //contestacion con la respuesta
 
 	free(solicitud);
 }
-void manejar_nivel_concluido(int socket){}
+
+
+void manejar_nivel_concluido(int socket){
+	//variables auxiliares
+	int i;
+	t_list *necesidades;
+	t_nodo_personaje *personaje;
+	t_link_element *aux = lista_personajes->head;
+
+	//recibir
+	t_notificacion_nivel_cumplido *conclusion = recibir(socket, NOTIF_NIVEL_CUMPLIDO);
+
+	//buscar en la lista de personajes su nodo con el caracter identificador
+	for(i=0 ; aux!=NULL &&((t_nodo_personaje*)aux->data)->ID != conclusion->char_personaje ; aux = aux->next, i++);
+
+	//si no encotro personaje...
+	if(aux==NULL)
+		/*todo logear: error grotesco, no se encontro en la lista de personajes al que informa de haber cumplido el nivel*/;
+
+	personaje = list_remove(lista_personajes, i); //saco el nodo de la lista y me lo guardo temporalmente
+	necesidades = personaje->necesidades;
+
+	//esta funcion deberia mandarle al orquestador los recursos
+	liberar_recursos(necesidades);
+
+	BorrarItem(&lista_items, personaje->ID);
+	nivel_gui_dibujar(lista_items);
+
+	free(personaje->nombre);
+	free(personaje);
+	free(conclusion);
+}
+
 
 void manejar_solicitud_ubicacion_recurso(int socket){
+	//variables auxiliares y malloc de respuesta
+	t_caja *caja;
+	t_link_element *aux;
+	t_ubicacion_recurso *ubicacion = malloc(sizeof(t_ubicacion_recurso));
 
+	//recibir mensaje
+	t_solicitud_ubicacion_recurso *solicitud_ubicacion = recibir(socket, SOLICITUD_UBICACION_RECURSO);
+
+	//busco el recurso solicitado entre las cajas...
+	for(aux=lista_cajas->head; aux!=NULL && ((t_caja*)aux->data)->ID!=solicitud_ubicacion->recurso ;aux=aux->next);
+
+	//si ciclo todas las cajas...
+	if(aux == NULL)
+		/*todo loguear error grotesco: no hay una caja del recurso pedido*/;
+
+	//asignar valores a la respuesta
+	caja = aux->data;
+	ubicacion->x = caja->x;
+	ubicacion->y = caja->y;
+
+	enviar(socket, INFO_UBICACION_RECURSO, ubicacion, logger);
+
+	free(solicitud_ubicacion);
 }
-void manejar_solicitud_instancia_recurso(int socket){}
-void manejar_notif_eleccion_victima(int socket){}
-void manejar_recursos_reasignados(int socket){}
 
-/*	Estos hay que contestar	*/
-/*#define RTA_SOLICITUD_INSTANCIA_RECURSO 8			//PN->PP
-#define NOTIF_RECURSOS_LIBERADOS 13					//PN->HO
-#define SOLICITUD_RECUPERO_DEADLOCK 15				//PN->HO
-#define INFO_UBICACION_RECURSO 20					//PN->PP*/
+
+void manejar_solicitud_instancia_recurso(int socket){
+	//variables auxiliars y malloc de la respuesta
+	t_caja *caja;
+	t_link_element *aux;
+	t_rspta_solicitud_instancia_recurso *respuesta_solicitud_instancia = malloc(sizeof(t_rspta_solicitud_instancia_recurso));
+
+	//recibir mensaje
+	t_solcitud_instancia_recurso *solicitud_instancia = recibir(socket, SOLICITUD_INSTANCIA_RECURSO);
+
+	//buscamos la caja correspondiente al recurso solicitado
+	for(aux=lista_cajas->head; aux!=NULL && ((t_caja*)aux->data)->ID!=solicitud_instancia->instancia_recurso; aux=aux->next);
+
+	if(aux == NULL)
+		/*todo loguear error grotesco: se esta pidiendo un recurso que no esta en ninguna caja*/;
+
+	caja = aux->data; //asignacion por claridad
+
+	//si hay recursos disponibles en la caja: restarlo, concederlo y dibujar; sino negarlo
+	if(caja->disp > 0){
+		caja->disp--;
+
+		restarRecurso(lista_items, caja->ID);
+		nivel_gui_dibujar(lista_items);
+
+		respuesta_solicitud_instancia->concedido = true;
+	}
+	else respuesta_solicitud_instancia->concedido=false;
+
+	enviar(socket, RTA_SOLICITUD_INSTANCIA_RECURSO, respuesta_solicitud_instancia, logger);
+
+	free(solicitud_instancia);
+}
+
+
+void manejar_notif_eleccion_victima(int socket){
+	//aca el orquestador informa que personaje murio
+	//hay que responder NOTIF_RECURSOS_LIBERADOS 13					//PN->HO
+}
+
+
+void manejar_recursos_reasignados(int socket){
+	//aca el orquestador nos contesta la notificacion de recursos liberados
+	//con los identificadores de los personajes y los recursos asignados
+}
+
+void liberar_recursos(t_list *necesidades){
+	//variable auxiliares
+	t_necesidad *nec_aux;
+	t_link_element *a,*b;
+
+	//mientras no se acabo la lista de necesidades
+	for(a=necesidades->head ; a!=NULL ;a=a->next){
+		nec_aux = a->data;
+
+		//buscar la caja correspondiente a la necesidad
+		for(b=lista_cajas->head; b!=NULL && ((t_caja*)b->data)->ID!=nec_aux->ID_recurso ;b=b->next);
+
+		//si no se encontro la caja: error, sino se suman los recurso asignados a los disponibles
+		if(b == NULL)
+			/*todo logear error: no habia una caja para liberar uno de los recursos del personaje*/;
+		else
+			((t_caja*)b->data)->disp += nec_aux->asig;
+	}
+	//borrar lista de necesidades y sus nodos de memoria
+	list_destroy_and_destroy_elements(necesidades, free);
+
+	//todo: falta ver como incrementar en la gui los recursos
+}
+
+
 
 
 int conf_es_valida(t_config * configuracion)
