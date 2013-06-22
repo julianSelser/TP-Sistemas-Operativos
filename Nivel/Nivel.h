@@ -9,6 +9,7 @@
 #define NIVEL_DEFS_H_
 
 	#include <stdint.h>
+	#include <semaphore.h>
 
 	#include <nivel.h> //nivel gui de la catedra
 	#include <commons/log.h>
@@ -56,12 +57,16 @@
 	extern int recovery;
 	extern uint8_t cantidad_de_recursos;
 
-
 	extern t_log * logger;
 
 	extern t_list * lista_cajas;
 	extern t_list * lista_personajes;
 	extern ITEM_NIVEL * lista_items;
+
+	//sincronizacion
+	extern sem_t sem_general;
+	extern sem_t sem_recovery;
+
 
 
 	/*	DECLARACION DE FUNCIONES	*/
