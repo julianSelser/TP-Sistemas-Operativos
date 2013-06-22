@@ -274,7 +274,7 @@ void manejar_nivel_concluido(int socket){
 	necesidades = personaje->necesidades;
 
 	//esta funcion deberia mandarle al orquestador los recursos
-	liberar_recursos(necesidades);
+	reubicar_recursos(necesidades);
 
 	BorrarItem(&lista_items, personaje->ID);
 	nivel_gui_dibujar(lista_items);
@@ -357,7 +357,7 @@ void manejar_recursos_reasignados(int socket){
 	//con los identificadores de los personajes y los recursos asignados
 }
 
-void liberar_recursos(t_list *necesidades){
+void reubicar_recursos(t_list *necesidades){
 	//variable auxiliares
 	t_necesidad *nec_aux;
 	t_link_element *a,*b;
