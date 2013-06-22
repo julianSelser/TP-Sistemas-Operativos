@@ -119,13 +119,27 @@
 
 	/*12 - FALTA 	*/
 
-	/*13 - FALTA	*/
+	//struct del mensaje que envia el nivel al orquestador con los recursos liberados de la forma "ACDC"
+	typedef struct{
+		uint8_t *recursos_liberados;
+	}__attribute__((packed)) t_notif_recursos_liberados;
 
-	/*14 - FALTA	*/
+
+	//struct del mensaje que envia el orquestador al nivel con los recursos reasignados de la forma "#A&B" y remanentes: "CACA"
+	typedef struct{
+		uint8_t *asignaciones;
+		uint8_t *remanentes;
+	}__attribute__((packed)) t_notif_recursos_reasignados;
+
 
 	/*15 - FALTA	*/
 
-	/*16 - FALTA	*/
+
+	//struct del mensaje que envia el orquestador al nivel para notificarlo de la muerte de un personaje
+	typedef struct{
+		uint8_t char_personaje;
+	}__attribute__((packed)) t_notif_eleccion_de_victima;
+
 
 	//17 - struct del mensaje que envia el orquestador al personaje cuando debe morir a causa de interbloqueo
 	typedef struct{
