@@ -357,8 +357,19 @@ void manejar_solicitud_instancia_recurso(int socket){
 
 
 void manejar_notif_eleccion_victima(int socket){
-	//aca el orquestador informa que personaje murio
-	//hay que responder NOTIF_RECURSOS_LIBERADOS 13					//PN->HO
+	t_notif_eleccion_de_victima * notif_victima;
+	t_nodo_personaje * nodo_victima;
+
+	notif_victima = recibir(socket_orquestador, NOTIF_ELECCION_VICTIMA);
+
+	nodo_victima = ubicar_pje_por_ID(notif_victima->char_personaje);
+
+	reubicar_recursos(nodo_victima->necesidades); //esto ya manda el mensaje de recursos liberados al orquestador
+
+	//todo como saco al personaje de la lista, y libero su memoria?
+	//todo sacar al personaje de la lista de la catedra
+	//todo como dibujo la gui?
+				//PN->HO
 }
 
 
@@ -372,25 +383,33 @@ void manejar_recursos_reasignados(int socket){
 void reubicar_recursos(t_list *necesidades){
 	//variable auxiliares
 	t_necesidad *nec_aux;
-	t_link_element *a,*b;
+	t_link_element *a;
+	t_notif_recursos_liberados * notificacion;
+	char * recursos_liberados;
+
+	recursos_liberados = malloc(1);
+	recursos_liberados[0] = '\0';
 
 	//mientras no se acabo la lista de necesidades
-	for(a=necesidades->head ; a!=NULL ;a=a->next){
+	for(a=necesidades->head ; a!=NULL ;a=a->next)
+	{
+		char * repeticion_recurso;
 		nec_aux = a->data;
 
-		//buscar la caja correspondiente a la necesidad
-		for(b=lista_cajas->head; b!=NULL && ((t_caja*)b->data)->ID!=nec_aux->ID_recurso ;b=b->next);
-
-		//si no se encontro la caja: error, sino se suman los recurso asignados a los disponibles
-		if(b == NULL)
-			/*todo logear error: no habia una caja para liberar uno de los recursos del personaje*/;
-		else
-			((t_caja*)b->data)->disp += nec_aux->asig;
+		if (nec_aux->asig > 0)
+		{
+			repeticion_recurso = string_repeat(nec_aux->ID_recurso, nec_aux->asig);
+			string_append(&recursos_liberados, repeticion_recurso);
+			free(repeticion_recurso);
+		}
 	}
 	//borrar lista de necesidades y sus nodos de memoria
 	list_destroy_and_destroy_elements(necesidades, free);
 
-	//todo: falta ver como incrementar en la gui los recursos
+	notificacion->recursos_liberados=recursos_liberados;
+
+	enviar(socket_orquestador, NOTIF_RECURSOS_LIBERADOS, &notificacion, logger);
+	//free(recursos_liberados) todo esto es necesario?
 }
 
 

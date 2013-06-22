@@ -374,3 +374,22 @@ t_nodo_personaje * ubicar_pje_por_ID(char ID)
 
 	return NULL;
 }
+
+int index_pje_por_ID(char ID)
+{
+	int cant_pjes;
+	int i = 0;
+
+	cant_pjes = list_size(lista_personajes);
+
+	while(i<cant_pjes)
+	{
+		t_nodo_personaje * pje_actual;
+		pje_actual = (t_nodo_personaje*)list_get(lista_personajes, i);
+		if ((pje_actual->ID) == ID) return i;
+		i++;
+	}
+
+	return NULL;
+}
+

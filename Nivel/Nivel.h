@@ -83,6 +83,7 @@
 
 	t_nodo_personaje * ubicar_pje_por_ID(char ID);
 	int indexof(char * array, char c, int size);
+	int index_pje_por_ID(char ID);
 
 	/*	MANEJO DE MENSAJES	*/
 
