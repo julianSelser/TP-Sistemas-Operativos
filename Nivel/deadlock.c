@@ -32,6 +32,7 @@ int indexof(char * array, char c, int size);
 int puede_terminar(char pje_actual, char * recs, uint8_t * instancias, int cant_recursos);
 int liberar_recursos(char pje_actual, char * recs, uint8_t * instancias, int cant_recursos);
 t_nodo_personaje * ubicar_pje_por_ID(char ID);
+char * detectar_deadlock();
 
 
 //t_list * lista_personajes;
@@ -114,104 +115,168 @@ int crear_pjes()
 
 //FIN FUNCIONES DE PRUEBA
 
-char * detectar_deadlock()
+int rutina_chequeo_deadlock()
 {
-
-	crear_pjes();
-	crear_cajas();
-
-
-	while (1)
+	while(1)
 	{
-		char * pjes;
-		uint8_t * finish;
-		char * involucrados;
+		char * pjes_en_deadlock;
+		int cant_pjes_en_deadlock;
+		//ACLARACIÓN
+		//no asigno memoria para pjes_en_deadlock
+		//voy a tomar el puntero que devuelva detectar_deadlock
+		//detectar_deadlock ya asignó memoria para este string
+		//es responsabilidad de esta funcion liberar esa memoria
 
-		char * recs;
-		uint8_t * instancias;
 
-		int cant_pjes;
-		int cant_recursos;
-
-		int i;
-		int cambio;
+		//crear_pjes(); crear personajes de prueba
+		//crear_cajas(); crear cajas de prueba
 
 		usleep(tiempo_chequeo_deadlock*1000);
 
-		//TOMAR MUTEX
+		//TOMAR MUTEX GENERAL
 
-		cant_pjes = list_size(lista_personajes);
+		pjes_en_deadlock = detectar_deadlock(); //ver aclaración
 
-		finish = malloc (cant_pjes);
-		pjes = malloc (cant_pjes);
+		//SOLTAR MUTEX GENERAL
+		cant_pjes_en_deadlock = strlen(pjes_en_deadlock);
 
+		if (cant_pjes_en_deadlock) //es decir, si hay al menos dos (imposible que haya uno)
+		{
+			char * msj;
+			t_nodo_personaje * personaje;
+			int i;
+
+			msj = malloc(1);
+			msj[0] = '\0';
+
+			string_append(&msj, "Deadlock! Se encuentran involucrados ");
+
+			i = 0;
+			while(i < cant_pjes_en_deadlock)
+			{
+				personaje = ubicar_pje_por_ID(pjes_en_deadlock[i]);
+
+				string_append(&msj, personaje->nombre);
+
+				if((i+2)==cant_pjes_en_deadlock)
+				{
+					string_append(&msj, " y ");
+				}
+				else if((i+1)== cant_pjes_en_deadlock)
+				{
+					string_append(&msj, ".");
+				}
+				else
+				{
+					string_append(&msj, ", ");
+				}
+
+				i++;
+			}
+
+			puts(msj); puts("\n");
+			log_info(logger, msj, "INFO");
+			free(msj);
+
+			if (recovery)
+			{
+			//enviar(socket_orquestador, SOLICITUD_RECUPERO_DEADLOCK, pjes_en_deadlock, logger);
+			//WAIT(MUTEX RECOVERY)
+			}
+		}
+
+		free(pjes_en_deadlock);
+	}
+	return 0;
+}
+
+
+
+char * detectar_deadlock()
+{
+
+	char * pjes;
+	uint8_t * finish;
+	char * involucrados;
+
+	char * recs;
+	uint8_t * instancias;
+
+	int cant_pjes;
+	int cant_recursos;
+
+	int i;
+	int cambio;
+
+
+	cant_pjes = list_size(lista_personajes);
+
+	finish = malloc (cant_pjes);
+	pjes = malloc (cant_pjes);
+
+	for(i=0; i<cant_pjes; i++)
+	{
+		pjes[i] = ((t_nodo_personaje *)list_get(lista_personajes, i))->ID;
+		finish[i] = 0;
+	}
+
+	cant_recursos = list_size(lista_cajas);
+
+	recs = malloc(cant_recursos);
+	instancias = malloc(cant_recursos);
+
+	for(i=0; i<cant_recursos; i++)
+	{
+		recs[i] = ((t_caja *)list_get(lista_cajas, i))->ID;
+		instancias[i] = ((t_caja*)list_get(lista_cajas, i))->disp;
+	}
+
+
+
+	while(cambio)
+	{
+		char pje_actual;
+
+		cambio = 0;
 		for(i=0; i<cant_pjes; i++)
 		{
-			pjes[i] = ((t_nodo_personaje *)list_get(lista_personajes, i))->ID;
-			finish[i] = 0;
-		}
-
-		cant_recursos = list_size(lista_cajas);
-
-		recs = malloc(cant_recursos);
-		instancias = malloc(cant_recursos);
-
-		for(i=0; i<cant_recursos; i++)
-		{
-			recs[i] = ((t_caja *)list_get(lista_cajas, i))->ID;
-			instancias[i] = ((t_caja*)list_get(lista_cajas, i))->disp;
-		}
-
-
-
-		while(cambio)
-		{
-			char pje_actual;
-
-			cambio = 0;
-			for(i=0; i<cant_pjes; i++)
+			pje_actual = pjes[i];
+			if (finish[i]) continue;
+			if (puede_terminar(pje_actual, recs, instancias, cant_recursos))
 			{
-				pje_actual = pjes[i];
-				if (finish[i]) continue;
-				if (puede_terminar(pje_actual, recs, instancias, cant_recursos))
-				{
-					liberar_recursos(pje_actual, recs, instancias, cant_recursos);
-					finish[i]=1;
-					cambio=1;
-				}
+				liberar_recursos(pje_actual, recs, instancias, cant_recursos);
+				finish[i]=1;
+				cambio=1;
 			}
 		}
+	}
 
-		i= 0;
+	i= 0;
 
-		involucrados = malloc(1);
-		involucrados[0] = '\0';
+	involucrados = malloc(1);
+	involucrados[0] = '\0';
 
-		while(i<cant_pjes)
+	while(i<cant_pjes)
+	{
+		if(finish[i]==0)
 		{
-			if(finish[i]==0)
-			{
-				char * pje_deadlock;
-				pje_deadlock = malloc(2);
-				pje_deadlock[0] = pjes[i];
-				pje_deadlock[1] = '\0';
+			char * pje_deadlock;
+			pje_deadlock = malloc(2);
+			pje_deadlock[0] = pjes[i];
+			pje_deadlock[1] = '\0';
 
-				string_append(&involucrados, pje_deadlock);
-				free(pje_deadlock);
-			}
-			i++;
+			string_append(&involucrados, pje_deadlock);
+			free(pje_deadlock);
 		}
+		i++;
+	}
 
-		free(pjes);
-		free(finish);
-		free(recs);
-		free(instancias);
+	free(pjes);
+	free(finish);
+	free(recs);
+	free(instancias);
 
-		//return involucrados; en realidad es un loop infinito, no devuelve
-
-		//SOLTAR MUTEX
-	}	//FIN DEL LOOP PARA  BUSCAR DEADLOCK!
-	return NULL;
+	return involucrados;
 }
 
 
