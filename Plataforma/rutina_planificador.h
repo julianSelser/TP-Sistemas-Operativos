@@ -49,9 +49,9 @@
 								t_list *listos = x->colas[LISTOS];						\
 								t_list *bloqueados = x->colas[BLOQUEADOS];				\
 																						\
-								sem_t *sem_cola_listos = &x->semaforos[1];				\
-								sem_t *sem_cola_vacia = &x->semaforos[2];				\
-								sem_t *sem_cola_bloqueados = &x->semaforos[3]			\
+								sem_t *sem_cola_listos = &x->semaforos[0];				\
+								sem_t *sem_cola_vacia = &x->semaforos[1];				\
+								sem_t *sem_cola_bloqueados = &x->semaforos[2]			\
 
 
 #endif /* RUTINA_PLANIFICADOR_H_ */

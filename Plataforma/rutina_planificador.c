@@ -61,7 +61,7 @@ void rutina_planificador(parametro *info)
 		for(i=0; i<quantum ; i++)
 		{
 			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )) break;
-			resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
+				 resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
 
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
@@ -120,6 +120,7 @@ t_nodo_personaje *armar_nodo_personaje(t_datos_delPersonaje_alPlanificador *dato
 }
 
 
+//wrappers por claridad
 void encolar(t_list *cola, void *data){
 	list_add(cola, data);
 }
