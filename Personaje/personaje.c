@@ -27,8 +27,6 @@
 
 t_log * logger;
 
-
-
 char * nombre;
 char simbolo;
 char * ip_orquestador;
@@ -41,15 +39,15 @@ int contador_vidas;
 int conf_es_valida(t_config * configuracion);
 void morir();
 int llego();
-int llego(int pos[],int dest[],int n,int m);
 
 int main(int argc, char** argv)
 {
-extern	t_config * configuracion;
+	t_config * configuracion;
 	t_notificacion_plan_terminado * notificacion_plan_terminado;
 	char * log_name;
+    int socket_orquestador;
 
-	char * ip_puerto_orquestador;
+    char * ip_puerto_orquestador;
 	char * temp_ip_puerto_orq;
 	char ** ip_puerto_separados;
 	char * temp_nombre;
@@ -96,7 +94,7 @@ extern	t_config * configuracion;
 	free(temp_nombre);
 	
 	contador_vidas = max_vidas = config_get_int_value(configuracion, "vidas");
-	simbolo = (config_get_string_value(configuracion, "simbolo"))[0];
+	simbolo = (config_get_string_value(configuracion,"simbolo"))[0];
 	
 	temp_plan_niveles = config_get_string_value(configuracion, "planDeNiveles");
 	cantidad_niveles = string_count(temp_plan_niveles, ',') + 1;
@@ -144,10 +142,6 @@ extern	t_config * configuracion;
 		free(string_recursos);
 		i++;
 	}
-//	int j;
-//  for(j=0;j<cantidad_niveles;j++){
-//	  printf("%s",recursos_por_nivel[j]);
-//  }
 
 	log_name = malloc(strlen(nombre)+1);
 	strcpy(log_name, nombre);
@@ -165,13 +159,15 @@ extern	t_config * configuracion;
 	niveles_completados=0;
 	while (!(cantidad_niveles==niveles_completados))
 	{
-		static int socket_orquestador;
+	 //	int socket_orquestador;
 		char * nivel_a_pedir;
 
 	    t_solicitud_info_nivel *solicitud_info_nivel;
-        t_notificacion_nivel_cumplido * notificacion_nivel_cumplido;
 	    t_info_nivel_planificador * info_nivel_y_planificador;
-		int socket_nivel;
+	    t_notificacion_nivel_cumplido * notificacion_nivel_cumplido;
+	    t_datos_delPersonaje_alPlanificador * datos_personaje_planificador;
+
+	    int socket_nivel;
 		int socket_planificador;
 		int recursos_obtenidos;
         int posicion[2] = {0,0};
@@ -187,9 +183,9 @@ extern	t_config * configuracion;
 		socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
 		log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
-		enviar(socket_orquestador, SOLICITUD_INFO_NIVEL,solicitud_info_nivel, logger);
+		enviar(socket_orquestador,SOLICITUD_INFO_NIVEL,solicitud_info_nivel,logger);
 		info_nivel_y_planificador = recibir(socket_orquestador, INFO_NIVEL_Y_PLANIFICADOR); // tengo el struct
-		//cargado con los datos del nivel y el planificador
+		//cargando con los datos del nivel y el planificador
 		log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
 
 		close(socket_orquestador);
@@ -202,17 +198,22 @@ extern	t_config * configuracion;
 		log_debug(logger, "Conectado al hilo planificador del nivel", "DEBUG");
         //  Accion : enviar al planificador mi caracter
 
+        datos_personaje_planificador->char_personaje=simbolo;
+        datos_personaje_planificador->nombre_personaje=nombre;
+
+        enviar(socket_planificador,ENVIO_DE_DATOS_AL_PLANIFICADOR,datos_personaje_planificador,logger);
 
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no.
 		//Se pone en Falso al entrar a un nivel
 		recursos_obtenidos = 0;
 
+
 		while(1)
 		{
-
+			int consiguio_total_recursos;
 			uint8_t mje_a_recibir = 255;
             uint8_t  proximo_recurso;
-            int n,m;
+
             t_solicitud_movimiento *solicitud_movimiento;
             t_resp_solicitud_movimiento *rspt_solicitud_movimiento;
             t_turno_concluido * turno_concluido;
@@ -247,17 +248,16 @@ extern	t_config * configuracion;
 			 	//ELABORAR MENSAJE PARA LOG: INFORMAR CUAL ES EL NUEVO DESTINO Y
 				//QUE RECURSO ESTAMOS YENDO A BUSCAR
 
-				log_info(logger,string_append_with_format("destino","(%d,%d)",destino[0],destino[1]), "INFO");
+
+		        //	log_info(logger,, "INFO");
+
 			}
 
 			//CASO EXTREMO A CONSIDERAR: SI EL PERSONAJE, APENAS LLEGA AL NIVEL, YA ESTÁ EN SU PRIMER DESTINO??
-
-
-
 			//ACCION: ELABORAR SOLICITUD DE MOVIMIENTO XY
-
-             solicitud_movimiento->eje_x=destino[0];
-             solicitud_movimiento->eje_y=destino[1];
+             solicitud_movimiento->char_personaje=simbolo;
+             solicitud_movimiento->x=destino[0];
+             solicitud_movimiento->y=destino[1];
 
 			//ACCION: SERIALIZAR SOLICITUD DE MOVIMIENTO XY // el enviar lo serializa
 
@@ -272,10 +272,8 @@ extern	t_config * configuracion;
 
 			//ACCION: MOVERSE (ACTUALIZAR POSICION DEL PERSONAJE)
               memcpy(posicion,destino,sizeof(posicion));
-                	n = sizeof posicion / sizeof *posicion;
-                 	m = sizeof destino / sizeof *destino;
 
-			if(llego(posicion, destino,n,m)) //llego es una funcion que simplemente compara la posicion con el destino, componente a componente
+			if(llego(posicion, destino)) //llego es una funcion que simplemente compara la posicion con el destino, componente a componente
 			{
 			     t_solcitud_instancia_recurso * solicitud_instancia;
 			     t_rspta_solicitud_instancia_recurso * rpta_solicitud_instancia_recurso;
@@ -291,11 +289,15 @@ extern	t_config * configuracion;
 				{
 						//ACCION: ACTUALIZAR RECURSOS OBTENIDOS. SI CONSIGUIO EL TOTAL, INDICAR consiguio_total_recursos = 1
 					    recursos_obtenidos++;
-					    if(recursos_obtenidos == cant_recursos(recursos_por_nivel[niveles_completados])){
 
-					    	// consiguio_total_recursos = 1
+					    if(recursos_obtenidos == strlen(recursos_por_nivel[niveles_completados])){
+
+					    	consiguio_total_recursos = 1;
+
+					    //	una vez que consiguio total de recursos se deberia desconectar del nivel ?
 					    }
-					sabe_donde_ir = 0;
+
+					    sabe_donde_ir = 0;
 					log_info(logger, "Se obtuvo el recurso!", "INFO");
 				}
 
@@ -329,11 +331,11 @@ extern	t_config * configuracion;
 			{
 				log_info(logger, "Nivel finalizado!", "INFO");
 				//ACCION: ELABORAR NOTIFICACION NIVEL CONCLUIDO
-				notificacion_nivel_cumplido->nivel=plan_de_niveles[niveles_completados];
+				notificacion_nivel_cumplido->char_personaje=simbolo;
 
 				//ACCION: SERIALIZAR NOTIFICACION NIVEL CONCLUIDO
 				//ACCION: MARCAR NIVEL COMO CONCLUIDO
-				enviar(socket_planificador,NOTIF_NIVEL_CUMPLIDO,notificacion_nivel_cumplido,logger);  // a quien se lo envia realmente
+				enviar(socket_nivel,NOTIF_NIVEL_CUMPLIDO,notificacion_nivel_cumplido,logger);  // a quien se lo envia realmente
 				//send(socket_nivel, msj_notif_nivel_concluido, longitud, 0);
 
 				break; //por acá se sale del while(1) [personaje sale del nivel]
@@ -355,14 +357,15 @@ extern	t_config * configuracion;
 			//REINICIAR PLAN DE NIVELES
 	         niveles_completados=0;
 			log_info(logger, "Game over - reiniciando plan de niveles","INFO");
+
 		}
 	}
 
 	//el personaje, al terminar su plan de niveles, se conecta al hilo orquestador y se lo notifica
 
 	//ACCION: CONECTAR CON EL HILO ORQUESTADOR
-	socket_orquestador=init_socket_externo(puerto_orquestador,ip_puerto_orquestador,logger);
-	log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
+    socket_orquestador=init_socket_externo(puerto_orquestador,ip_puerto_orquestador,logger);
+    log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 	//ELABORAR NOTIFICACION DE PLAN TERMINADO
     notificacion_plan_terminado->personaje=nombre;
@@ -404,29 +407,23 @@ int conf_es_valida(t_config * configuracion)
 }
 
 
-int llego(int pos[],int dest[],int n,int m){
+int llego(int pos[],int dest[]){
 
-		int igual;
-	    int i;
+	int igual;
+    int i;
 
-	    igual=1; // true
-	    if(n==m){
-	        i=0;
+    igual=1; // true
+
+        i=0;
+
+        while( (i<2) && (igual) ){
+           if(pos[i]!=dest[i]){
+             igual=0;
+           }
+           i++;
+        }
+
+    return igual;
+ }
 
 
-	        while( (i<n) && (igual) ){
-	           if(pos[i]!=dest[i]){
-	             igual=0;
-	           }
-	           i++;
-	        }
-	    }else{
-	        igual=0;
-	    }
-	    return(igual);
-	 }
-
-int cant_recursos(char **){
-
-	return NULL;
-}
