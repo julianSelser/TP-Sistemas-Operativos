@@ -11,7 +11,7 @@
 #ifndef SERIAL_H_
 #define SERIAL_H_
 
-	#define N_MENSAJES 20
+	#define N_MENSAJES 22
 
 	#define SOLICITUD_INFO_NIVEL 1						//PP->HO
 	#define INFO_NIVEL_Y_PLANIFICADOR 2					//HO->PP
@@ -39,15 +39,15 @@
 	typedef void *(*p_funcion_deserial)(char *buffer);
 	typedef char *(*p_funcion_serial)(void *data, int *tamanio);
 
-	//extern p_funcion_deserial vec_deserializador[N_MENSAJES];
-	//extern p_funcion_serial vec_serializador[N_MENSAJES];
+	extern p_funcion_deserial vec_deserializador[N_MENSAJES];
+	extern p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 	/**************************** STRUCTS  ***************************/
 
 	//1 - struct del mensaje que le envia el personaje al orquestador para recibir como respuesta la informacion que necesita (ips/puertos)
     typedef struct {
-    	uint8_t * nivel_solicitado;
+    	uint8_t *nivel_solicitado;
     }__attribute__((packed)) t_solicitud_info_nivel;
 
 
@@ -113,19 +113,19 @@
 
 	//11 - ESTE LE LLEGA AL NIVEL DE PARTE DEL ORQUESTADOR Y ESTA MAL
 	typedef struct{
-		uint8_t mori;
 	}__attribute__((packed)) t_notificacion_muerte_personaje;
 
 
 	/*12 - FALTA 	*/
 
-	//struct del mensaje que envia el nivel al orquestador con los recursos liberados de la forma "ACDC"
+
+	//13 - struct del mensaje que envia el nivel al orquestador con los recursos liberados de la forma "ACDC"
 	typedef struct{
 		uint8_t *recursos_liberados;
 	}__attribute__((packed)) t_notif_recursos_liberados;
 
 
-	//struct del mensaje que envia el orquestador al nivel con los recursos reasignados de la forma "#A&B" y remanentes: "CACA"
+	//14 - struct del mensaje que envia el orquestador al nivel con los recursos reasignados de la forma "#A&B" y remanentes: "CACA"
 	typedef struct{
 		uint8_t *asignaciones;
 		uint8_t *remanentes;
@@ -135,7 +135,7 @@
 	/*15 - FALTA	*/
 
 
-	//struct del mensaje que envia el orquestador al nivel para notificarlo de la muerte de un personaje
+	//16 - struct del mensaje que envia el orquestador al nivel para notificarlo de la muerte de un personaje
 	typedef struct{
 		uint8_t char_personaje;
 	}__attribute__((packed)) t_notif_eleccion_de_victima;
@@ -183,48 +183,57 @@
 	} __attribute__((packed)) t_cabecera;
 
 
+
 	/**************************** FUNCIONES  ***************************/
 
 
 	//funciones serializadoras
-	char *srlz_turno_concluido(void *data, int *tamanio);
-	char *srlz_movimiento_permitido(void* data, int *tamanio);
-	char *srlz_info_nivel_y_planificador(void *data, int *tamanio);
-    char *srlz_personaje_condenado(void *data, int *tamanio);
-    char *srlz_ubicacion_de_recurso(void *data, int *tamanio);
-    char *srlz_solicitud_de_movimiento(void *data, int *tamanio);
-    char *srlz_resp_a_solicitud_movimiento(void *data, int *tamanio);
-    char *srlz_datos_delPersonaje_alPlanificador(void *data, int *tamanio);
-    char *srlz_solicitud_de_recurso(void *data, int *tamanio);
-    char *srlz_rta_solicitud_de_recurso(void *data, int *tamanio);
+	char *srlz_solicitud_info_nivel(void *data, int *tamanio);				//1
+	char *srlz_info_nivel_y_planificador(void *data, int *tamanio);			//2
+	char *srlz_movimiento_permitido(void *data, int *tamanio);				//3
+    char *srlz_solicitud_de_movimiento(void *data, int *tamanio);			//4
+    char *srlz_resp_a_solicitud_movimiento(void *data, int *tamanio);		//5
+    char *srlz_solicitud_ubicacion_recurso(void *data, int *tamanio);		//6
+    char *srlz_solicitud_instancia_recurso(void *data,int *tamanio);		//7
+    char *srlz_rspta_solicitud_instancia_recurso(void *data,int *tamanio);	//8
+	char *srlz_turno_concluido(void *data, int *tamanio);					//9
+    char *srlz_notificacion_nivel_cumplido(void *data,int *tamanio);		//10
+    char *srlz_notif_recursos_liberados(void *data, int *tamanio);			//13
+    char *srlz_notif_recursos_reasignados(void *data, int *tamanio);		//14
+    char *srlz_notif_eleccion_de_victima(void *data, int *tamanio);			//16
+    char *srlz_personaje_condenado(void *data, int *tamanio);				//17
+    char *srlz_notificacion_plan_terminado(void *data,int *tamanio);		//18
+    char *srlz_datos_delPersonaje_alPlanificador(void *data, int *tamanio);	//19
+    char *srlz_ubicacion_de_recurso(void *data, int *tamanio);				//20
+    char *srlz_datos_delPersonaje_alNivel(void *data, int *tamanio);		//21
+
+    //faltan en el .c y capaz no se usa
+    char *srlz_notificacion_muerte_personaje(void *data,int *tamanio);//11
 
 
-	char *srlz_solicitud_info_nivel(void *data, int *tamanio);
-    char *srlz_solicitud_instancia_recurso(void *data,int *tamanio);
-    char *srlz_rspta_solicitud_instancia_recurso(void *data,int *tamanio);
-    char *srlz_notificacion_nivel_cumplido(void *data,int *tamanio);
-    char *srlz_notificacion_plan_terminado(void *data,int *tamanio);
-    char *srlz_notificacion_muerte_personaje(void *data,int *tamanio);
+    //listo
+    void *deserializar_solicitud_info_nivel(char *buffer); 					//1
+	void *deserializar_info_nivel_y_planificador(char *buffer);				//2
+	void *deserializar_movimiento_permitido(char *buffer);					//3
+    void *deserializar_solicitud_de_movimiento(char *buffer);				//4
+    void *deserializar_resp_a_solicitud_movimiento(char *buffer);			//5
+    void *deserializar_solicitud_ubicacion_recurso(char *buffer);			//6
+    void *deserializar_solicitud_instancia_recurso(char *buffer);			//7
+    void *deserializar_rspta_solicitud_instancia_recurso(char *buffer);		//8
+	void *deserializar_turno_concluido(char *buffer);						//9
+    void *deserializar_notificacion_nivel_cumplido(char *buffer);			//10
+    void *deserializar_notif_recursos_liberados(char *buffer);				//13
+    void *deserializar_notif_recursos_reasignados(char *buffer);			//14
+    void *deserializar_notif_eleccion_de_victima(char *buffer);				//16
+	void *deserializar_personaje_condenado(char *buffer);					//17
+    void *deserializar_notificacion_plan_terminado(char *buffer);			//18
+	void *deserializar_datos_delPersonaje_alPlanificador(char *buffer);		//19
+    void *deserializar_ubicacion_de_recurso(char *buffer);					//20
+    void *deserializar_datos_delPersonaje_alNivel(char *buffer);			//21
 
-    //funciones de-serializadoras
-	void *deserializar_movimiento_permitido(char *buffer);
-	void *deserializar_turno_concluido(char *buffer);
-	void *deserializar_info_nivel_y_planificador(char *buffer);
-	void *deserializar_personaje_condenado(char *buffer);
-    void *deserializar_ubicacion_de_recurso(char *buffer);
-    void *deserializar_solicitud_de_movimiento(char *buffer);
-    void *deserializar_resp_a_solicitud_movimiento(char *buffer);
-	void *deserializar_datos_delPersonaje_alPlanificador(char *buffer);
-    void *deserializar_solicitud_de_recurso(char *buffer);
-    void *deserializar_resp_solicitud_de_recurso(char *buffer);
-    
-    void *deserializar_solicitud_info_nivel(char *buffer);
-	void *deserializar_info_nivel_y_planificador(char *buffer);
-    void *deserializar_solicitud_instancia_recurso(char *buffer);
-    void *deserializar_rspta_solicitud_instancia_recurso(char *buffer);
-    void *deserializar_notificacion_nivel_cumplido(char *buffer);
-    void *deserializar_notificacion_plan_terminado(char *buffer);
-    void *deserializar_notificacion_muerte_personaje(char *buffer);
+    //faltan en el .c y capaz no se usa
+    void *deserializar_notificacion_muerte_personaje(char *buffer);//11
+
 
 	//funciones de envio/recepcion
 	int getnextmsg(int socket);
@@ -237,10 +246,8 @@
 	int init_socket_escucha(int puerto, int optval, t_log *logger);
 	int is_connected(int socket);
 
-	// funciones de inicializacion
+	// funcion de inicializacion
 	void iniciar_serializadora();
-	static void init_vec_deserial();
-	static void init_vec_serial();
 
 
 
