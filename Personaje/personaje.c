@@ -175,7 +175,7 @@ int main(int argc, char** argv)
 		int sabe_donde_ir;
 
 		nivel_a_pedir = plan_de_niveles[niveles_completados];
-        solicitud_info_nivel->nivel_solicitado=nivel_a_pedir;
+        solicitud_info_nivel->nivel_solicitado=(uint8_t*)nivel_a_pedir;
 
 		log_info(logger, strcat("Próximo nivel ", nivel_a_pedir), "INFO");
 
@@ -191,15 +191,15 @@ int main(int argc, char** argv)
 		close(socket_orquestador);
 		log_debug(logger, "Desconectado del hilo orquestador", "DEBUG");
 
-		socket_nivel = init_socket_externo(info_nivel_y_planificador->puerto_nivel, info_nivel_y_planificador->ip_nivel, logger);
+		socket_nivel = init_socket_externo(info_nivel_y_planificador->puerto_nivel, (char *)info_nivel_y_planificador->ip_nivel, logger);
 		log_info(logger, "Entrando al nivel...", "INFO");
 
-		socket_planificador = init_socket_externo(info_nivel_y_planificador->puerto_planificador, info_nivel_y_planificador->ip_planificador, logger);
+		socket_planificador = init_socket_externo(info_nivel_y_planificador->puerto_planificador,(char *) info_nivel_y_planificador->ip_planificador, logger);
 		log_debug(logger, "Conectado al hilo planificador del nivel", "DEBUG");
         //  Accion : enviar al planificador mi caracter
 
         datos_personaje_planificador->char_personaje=simbolo;
-        datos_personaje_planificador->nombre_personaje=nombre;
+        datos_personaje_planificador->nombre_personaje=(uint8_t*)nombre;
 
         enviar(socket_planificador,ENVIO_DE_DATOS_AL_PLANIFICADOR,datos_personaje_planificador,logger);
 
@@ -368,7 +368,7 @@ int main(int argc, char** argv)
     log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 	//ELABORAR NOTIFICACION DE PLAN TERMINADO
-    notificacion_plan_terminado->personaje=nombre;
+    notificacion_plan_terminado->personaje=(uint8_t *)nombre;
 	//SERIALIZAR NOTIFICACION DE PLAN TERMINADO
 	enviar(socket_orquestador,NOTIF_PLAN_TERMINADO,notificacion_plan_terminado,logger);
 	while(1); //y queda a la espera indefinidamente? no debería terminar el proceso cuando termina el plan de niveles, así que supongo que hay que dejarlo ahí
