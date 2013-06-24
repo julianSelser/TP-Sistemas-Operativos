@@ -25,8 +25,8 @@
 #define N_MENSAJES 22//por ahora son 21
 
 
-/*static*/ p_funcion_deserial vec_deserializador[N_MENSAJES];
-/*static*/ p_funcion_serial vec_serializador[N_MENSAJES];
+static p_funcion_deserial vec_deserializador[N_MENSAJES];
+static p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 static void init_vec_deserial();

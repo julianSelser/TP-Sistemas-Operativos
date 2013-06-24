@@ -23,7 +23,7 @@
 	#define RTA_SOLICITUD_INSTANCIA_RECURSO 8			//PN->PP
 	#define NOTIF_TURNO_CONCLUIDO 9						//PP->HP
 	#define NOTIF_NIVEL_CUMPLIDO 10						//PP->PN
-	#define NOTIF_MUERTE_PERSONAJE 11					//HO->PN
+	#define NOTIF_MUERTE_PERSONAJE 11					//PP->PN
 	#define INTENCION_REINICIAR_NIVEL 12				//PP->HO
 	#define NOTIF_RECURSOS_LIBERADOS 13					//PN->HO
 	#define NOTIF_RECURSOS_REASIGNADOS 14				//HO->PN
@@ -39,8 +39,8 @@
 	typedef void *(*p_funcion_deserial)(char *buffer);
 	typedef char *(*p_funcion_serial)(void *data, int *tamanio);
 
-	extern p_funcion_deserial vec_deserializador[N_MENSAJES];
-	extern p_funcion_serial vec_serializador[N_MENSAJES];
+	//extern p_funcion_deserial vec_deserializador[N_MENSAJES];
+	//extern p_funcion_serial vec_serializador[N_MENSAJES];
 
 
 	/**************************** STRUCTS  ***************************/
@@ -111,7 +111,7 @@
 	} __attribute__((packed)) t_notificacion_nivel_cumplido;
 
 
-	//11 - ESTE LE LLEGA AL NIVEL DE PARTE DEL ORQUESTADOR Y ESTA MAL
+	//11 - ESTE LE LLEGA AL NIVEL DE PARTE DEL PERSONAJE Y ESTA MAL
 	typedef struct{
 	}__attribute__((packed)) t_notificacion_muerte_personaje;
 
