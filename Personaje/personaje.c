@@ -382,7 +382,7 @@ void morir()
 	t_notificacion_muerte_personaje * muerte_personaje;
 	//ELABORAR NOTIFICACION DE MUERTE PERSONAJE
 	//SERIALIZAR NOTFICACION DE MUERTE PERSONAJE
-	muerte_personaje->mor=1;
+	muerte_personaje->mori=1;
 	enviar(socket_nivel,NOTIF_MUERTE_PERSONAJE,muerte_personaje,logger);
 	if(contador_vidas > 0) contador_vidas--;
 
@@ -408,22 +408,7 @@ int conf_es_valida(t_config * configuracion)
 
 
 int llego(int pos[],int dest[]){
-
-	int igual;
-    int i;
-
-    igual=1; // true
-
-        i=0;
-
-        while( (i<2) && (igual) ){
-           if(pos[i]!=dest[i]){
-             igual=0;
-           }
-           i++;
-        }
-
-    return igual;
- }
-
+	//true si las componentes son iguales
+    return pos[0]==dest[0] && pos[1]==dest[1];
+}
 
