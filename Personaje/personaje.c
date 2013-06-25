@@ -166,6 +166,7 @@ int main(int argc, char** argv)
 	    t_info_nivel_planificador * info_nivel_y_planificador;
 	    t_notificacion_nivel_cumplido * notificacion_nivel_cumplido;
 	    t_datos_delPersonaje_alPlanificador * datos_personaje_planificador;
+	    t_datos_delPersonaje_alNivel *datos_personaje_nivel;
 
 	    int socket_nivel;
 		int socket_planificador;
@@ -200,8 +201,13 @@ int main(int argc, char** argv)
 
         datos_personaje_planificador->char_personaje=simbolo;
         datos_personaje_planificador->nombre_personaje=(uint8_t*)nombre;
+        datos_personaje_nivel->char_personaje=simbolo;
+        datos_personaje_nivel->nombre_personaje=(uint8_t*) nombre;
+        datos_personaje_nivel->necesidades=(uint8_t*) recursos_por_nivel[niveles_completados];
 
         enviar(socket_planificador,ENVIO_DE_DATOS_AL_PLANIFICADOR,datos_personaje_planificador,logger);
+        enviar(socket_nivel,ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL,datos_personaje_nivel,logger);
+
 
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no.
 		//Se pone en Falso al entrar a un nivel
@@ -312,7 +318,7 @@ int main(int argc, char** argv)
 
 					if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO) //NOTIF_PERSONAJE_CONDENADO
 						{
-						recibir(socket_planificador, NOTIF_PERSONAJE_CONDENADO);
+						recibir(socket_planificador,NOTIF_PERSONAJE_CONDENADO); // me devuelve el struct t_not_perso_conde
 						log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
 					   	morir(); //morir se encarga de setear game_over si es necesario
 							break; //sale del nivel
@@ -368,7 +374,7 @@ int main(int argc, char** argv)
     log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 	//ELABORAR NOTIFICACION DE PLAN TERMINADO
-    notificacion_plan_terminado->personaje=(uint8_t *)nombre;
+    notificacion_plan_terminado->personaje=(uint8_t *)nombre;  // revisar q le voy a mandar al orquestador
 	//SERIALIZAR NOTIFICACION DE PLAN TERMINADO
 	enviar(socket_orquestador,NOTIF_PLAN_TERMINADO,notificacion_plan_terminado,logger);
 	while(1); //y queda a la espera indefinidamente? no debería terminar el proceso cuando termina el plan de niveles, así que supongo que hay que dejarlo ahí
@@ -378,11 +384,10 @@ int main(int argc, char** argv)
 
 void morir()
 {
-	//aca tengo revisar las variables locales socket_nivel
-	t_notificacion_muerte_personaje * muerte_personaje;
+	t_personaje_condenado * personaje_condenado;
 	//ELABORAR NOTIFICACION DE MUERTE PERSONAJE
 	//SERIALIZAR NOTFICACION DE MUERTE PERSONAJE
-	muerte_personaje->mori=1;
+	personaje_condenado->condenado=1;
 	enviar(socket_nivel,NOTIF_MUERTE_PERSONAJE,muerte_personaje,logger);
 	if(contador_vidas > 0) contador_vidas--;
 
