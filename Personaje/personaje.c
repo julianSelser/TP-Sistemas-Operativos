@@ -37,7 +37,7 @@ int game_over = 0;
 int contador_vidas;
 
 int conf_es_valida(t_config * configuracion);
-void morir();
+
 int llego();
 
 int main(int argc, char** argv)
@@ -63,19 +63,20 @@ int main(int argc, char** argv)
 	if(argc != 2) //controlar que haya exactamente un parámetro
 	{
 		puts("Uso: personaje <arch.conf>\n");
-		return -1;
+	//	return -1;  // esto me saca inmediatamente del main ?
 	}
 
 	//configuracion = config_create(argv); //qué devuelve en caso de error?
-	configuracion = config_create("/home/utnso//archivo_personajes/mario.conf");
+	configuracion = config_create(argv[1]);
 
 	if (!conf_es_valida(configuracion)) //ver que el archivo de config tenga todito
 	{
 	puts("Archivo de configuración incompleto o inválido.\n");
-	return -2;
+	//return -2;
 	}
 
 	
+
 	temp_ip_puerto_orq = config_get_string_value(configuracion, "orquestador");
 	ip_puerto_orquestador = malloc(strlen(temp_ip_puerto_orq)+1);
 	strcpy(ip_puerto_orquestador, temp_ip_puerto_orq); //guardo todo el orquestador aca
@@ -216,7 +217,7 @@ int main(int argc, char** argv)
 
 		while(1)
 		{
-			int consiguio_total_recursos;
+			int  consiguio_total_recursos;
 			uint8_t mje_a_recibir = 255;
             uint8_t  proximo_recurso;
 
@@ -307,7 +308,7 @@ int main(int argc, char** argv)
 					log_info(logger, "Se obtuvo el recurso!", "INFO");
 				}
 
-				else if (!rpta_solicitud_instancia_recurso->concedido)
+				else if (!rpta_solicitud_instancia_recurso->concedido) //denegado
 				{
 
 
@@ -318,9 +319,21 @@ int main(int argc, char** argv)
 
 					if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO) //NOTIF_PERSONAJE_CONDENADO
 						{
-						recibir(socket_planificador,NOTIF_PERSONAJE_CONDENADO); // me devuelve el struct t_not_perso_conde
+					//recibir(socket_orquestador,NOTIF_PERSONAJE_CONDENADO); // me devuelve el struct t_not_perso_conde
+					//pero es lo mismo que la  NOTIF_PERSONAJE_CONDENADO
 						log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
-					   	morir(); //morir se encarga de setear game_over si es necesario
+					 //notificar al nivel que murio el personaje
+					 //morir(); //morir se encarga de setear game_over si es necesario
+						if(contador_vidas>0){
+							contador_vidas--;
+							recursos_obtenidos=0;
+					 //enviar mensaje al orquestador reiniciar nivel
+
+						}else if(contador_vidas==0){
+							contador_vidas=config_get_int_value(configuracion,"vidas");
+							game_over=1;
+						}
+
 							break; //sale del nivel
 						}
 					//else if mje == NOTIF_RECURSO_CONCEDIDO then recursos_obtenidos++ y sabe_donde_ir=0(como arriba)
@@ -338,7 +351,7 @@ int main(int argc, char** argv)
 				log_info(logger, "Nivel finalizado!", "INFO");
 				//ACCION: ELABORAR NOTIFICACION NIVEL CONCLUIDO
 				notificacion_nivel_cumplido->char_personaje=simbolo;
-
+                niveles_completados++; //aumentamos los niveles concluidos
 				//ACCION: SERIALIZAR NOTIFICACION NIVEL CONCLUIDO
 				//ACCION: MARCAR NIVEL COMO CONCLUIDO
 				enviar(socket_nivel,NOTIF_NIVEL_CUMPLIDO,notificacion_nivel_cumplido,logger);  // a quien se lo envia realmente
@@ -362,10 +375,13 @@ int main(int argc, char** argv)
 		{
 			//REINICIAR PLAN DE NIVELES
 	         niveles_completados=0;
-			log_info(logger, "Game over - reiniciando plan de niveles","INFO");
+	         log_info(logger, "Game over - reiniciando plan de niveles","INFO");
 
 		}
-	}
+	} // fin plan_de_niveles==niveles_completados
+
+
+
 
 	//el personaje, al terminar su plan de niveles, se conecta al hilo orquestador y se lo notifica
 
@@ -381,26 +397,26 @@ int main(int argc, char** argv)
 	return 0; //para evitar el warning, igual no se si tienen que ser tipo int o si pueden ser tipo void nuestros main
 }
 
-
-void morir()
-{
-	t_personaje_condenado * personaje_condenado;
-	//ELABORAR NOTIFICACION DE MUERTE PERSONAJE
-	//SERIALIZAR NOTFICACION DE MUERTE PERSONAJE
-	personaje_condenado->condenado=1;
-	enviar(socket_nivel,NOTIF_MUERTE_PERSONAJE,muerte_personaje,logger);
-	if(contador_vidas > 0) contador_vidas--;
-
-	else
-	{
-		//VOLVER VIDAS AL VALOR INICIAL LEIDO EN EL ARCHIVO DE CONFIG
-		//REINICIAR PLAN DE NIVELES
-		contador_vidas=config_get_int_value(configuracion,"vidas");
-		niveles_completados=0;
-		game_over = 1;
-
-	}
-}
+//
+//void morir()
+//{
+//	t_personaje_condenado * personaje_condenado;
+//	//ELABORAR NOTIFICACION DE MUERTE PERSONAJE
+//	//SERIALIZAR NOTFICACION DE MUERTE PERSONAJE
+//	personaje_condenado->condenado=1;
+//	enviar(socket_nivel,NOTIF_MUERTE_PERSONAJE,muerte_personaje,logger);
+//	if(contador_vidas > 0) contador_vidas--;
+//
+//	else
+//	{
+//		//VOLVER VIDAS AL VALOR INICIAL LEIDO EN EL ARCHIVO DE CONFIG
+//		//REINICIAR PLAN DE NIVELES
+//		contador_vidas=config_get_int_value(configuracion,"vidas");
+//		niveles_completados=0;
+//		game_over = 1;
+//
+//	}
+//}
 
 int conf_es_valida(t_config * configuracion)
 {
