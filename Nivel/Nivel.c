@@ -31,9 +31,9 @@
 //hilo principal del proceso nivel
 //lee el archivo de configuración, crea el logger y lanza los demás hilos
 //tambien inicializa los contadores de recursos
-char *nombre;
+char *nombre, *recursos;
 char *ip_orquestador;
-int puerto_orquestador, socket_orquestador;
+int puerto_orquestador, socket_orquestador, escucha;
 int tiempo_chequeo_deadlock;
 int recovery;
 int filas, columnas;
@@ -63,31 +63,30 @@ int main(int argc, char ** argv)
 
 	levantar_config(argc,argv);
 	iniciar_serializadora();
-	//si, lo de recien tocaba las listas criticas, pero todavia no esta corriendo el otro hilo
 
 
 	//lineas que muestran detalles del nivel antes de lanzar la interfaz grafica
-	printf("\n ip orquestador: %s\n nombre: %s\n", ip_orquestador, nombre);
-	sleep(1);
-
     printf("\n...abriendo puerto para escuchar conexiones...\n");
-    int escucha = init_socket_escucha(0, 1, logger); //elige puerto libre dinamicamente
+    escucha = init_socket_escucha(0, 1, logger); //elige puerto libre dinamicamente
     sleep(1);
 
     printf("...conectando al orquestador...\n");
     socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
     sleep(1);
 
+    printf("...enviando datos del nivel al orquestador...\n");
+    enviar(socket_orquestador, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR, msg_datos_delNivel_alOrquestador(), logger);//todo el mensaje al orquestador con los datos
+    sleep(1);
+
+
     sem_init(&sem_general, 0, 1);
     sem_init(&sem_recovery, 0, 0);
 
 	nivel_gui_inicializar();
 	nivel_gui_get_area_nivel(&filas, &columnas);
-	nivel_gui_dibujar(lista_items);
 
 	//lanzar el hilo de deteccion de deadlock
     pthread_create(&hilo_deadlock, NULL, (void*)rutina_chequeo_deadlock, NULL);
-    //ahora es importante sincronizar los hilos
 
 	/*	...A PARTIR DE ACA SE COMIENZAN A PROCESAR MENSAJES...	*/
 
@@ -98,7 +97,10 @@ int main(int argc, char ** argv)
     //necesito tener el fdmax (max valor de socket)
     fdmax = socket_orquestador > escucha? socket_orquestador : escucha;
 
-    while(1){
+    while(1)
+    {
+        nivel_gui_dibujar(lista_items);
+
         read_fds = maestro;
         if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
             perror("select");//todo loguear: error de select...
@@ -113,7 +115,8 @@ int main(int argc, char ** argv)
                     nuevo_fd = accept(escucha,NULL,0);
                     if (nuevo_fd == -1) {
                         perror("accept");//todo loguear: error aceptando nueva conexion
-                    } else {
+                    }
+                    else {
                         FD_SET(nuevo_fd, &maestro);
                         //chequear si el nuevo fd es mas grande que el maximo
                         if (nuevo_fd > fdmax) {
@@ -121,17 +124,36 @@ int main(int argc, char ** argv)
                         }
                     }
                 }
-                else {
-                    // si no es el escucha, es una comunicacion
-                	if(is_connected(i))  	//viene un mensaje del tipo de "next msg"
+                else // si no es el escucha, es una comunicacion
+                {
+                	if(is_connected(i))  	//si el socket sigue estando conectado
                 	{
-                	manejar_peticion(i);	//y manejarlos
+                	manejar_peticion(i);	//es un mensaje, manejarlo
                 	}
                 	else // si se desconecto, ver si es el orquestador(en ese caso termina el juego), si es un personaje manejarlo
                 	{
-                		if(i!=socket_orquestador)
-                		{}/*	FALTA TERMINAR ACA	*/
+                		if(i==socket_orquestador)
+                		{
+                			/*	todo: FALTA DEDINIR QUE PASA CUANDO SE LLEGA A EXECVE Y EL ORQUESTADOR SE DESCONECTA	*/
+                		}
+                		else //se desconecto un personaje
+                		{
+                			int j;
+                			t_link_element *aux;
+                			t_nodo_personaje *p;
 
+                			for(aux=lista_personajes->head,j=0 ; aux!=NULL && ((t_nodo_personaje*)aux->data)->socket!=i ; aux=aux->next,j++);
+
+                			if(aux!=NULL)//si el personaje todavia se encontraba en la lista no se manejo su salida, hay que manejarla
+                			{
+                				p = list_remove(lista_personajes, j);
+
+                				reubicar_recursos(p->necesidades);
+
+                				free(p->nombre);
+                				free(p);
+                			}
+                		}
                 		close(i);
                 		FD_CLR(i, &maestro);
                 	}
@@ -140,7 +162,7 @@ int main(int argc, char ** argv)
         } // fin loop
     }
 
-    sleep(10); //DESPUES BORRAR ESTE SLEEP, ESTA PARA PODER VER LA PANTALLA
+    //todo: liberar la lista de items
 
     nivel_gui_terminar();
 
@@ -219,7 +241,6 @@ void manejar_ingreso_personaje(int socket){
 
 	//crea el personaje en (0,0)
 	CrearPersonaje(&lista_items, nodo_p->ID, 0, 0);
-	nivel_gui_dibujar(lista_items);
 
 	free(datos->necesidades);
 	free(datos);
@@ -253,7 +274,6 @@ void manejar_solicitud_movimiento(int socket){
 		respuesta->aprobado = true; 	//permiso dado
 
 		MoverPersonaje(lista_items, personaje->ID, personaje->x, personaje->y);
-		nivel_gui_dibujar(lista_items);
 	}
 	else respuesta->aprobado = false;	//permiso negado
 
@@ -283,11 +303,10 @@ void manejar_nivel_concluido(int socket){
 	personaje = list_remove(lista_personajes, i); //saco el nodo de la lista y me lo guardo temporalmente
 	necesidades = personaje->necesidades;
 
-	//esta funcion deberia mandarle al orquestador los recursos
+	//esta funcion le manda al orquestador los recursos
 	reubicar_recursos(necesidades);
 
 	BorrarItem(&lista_items, personaje->ID);
-	nivel_gui_dibujar(lista_items);
 
 	free(personaje->nombre);
 	free(personaje);
@@ -344,7 +363,6 @@ void manejar_solicitud_instancia_recurso(int socket){
 		caja->disp--;
 
 		restarRecurso(lista_items, caja->ID);
-		nivel_gui_dibujar(lista_items);
 
 		respuesta_solicitud_instancia->concedido = true;
 	}
@@ -357,38 +375,79 @@ void manejar_solicitud_instancia_recurso(int socket){
 
 
 void manejar_notif_eleccion_victima(int socket){
-	t_notif_eleccion_de_victima * notif_victima;
-	t_nodo_personaje * nodo_victima;
+	int i;
+	t_nodo_personaje *nodo_victima;
+	t_link_element *aux = lista_personajes->head;
+	t_notif_eleccion_de_victima *notif_victima = recibir(socket_orquestador, NOTIF_ELECCION_VICTIMA);
 
-	notif_victima = recibir(socket_orquestador, NOTIF_ELECCION_VICTIMA);
+	for(i=0; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID!=notif_victima->char_personaje ; aux=aux->next,i++);
 
-	nodo_victima = ubicar_pje_por_ID(notif_victima->char_personaje);
+	if(aux==NULL) /*todo loguear: la victima elegida no estaba en la lista, ver si esto puede llegar a pasar*/;
+
+	nodo_victima = list_remove(lista_personajes, i);
 
 	reubicar_recursos(nodo_victima->necesidades); //esto ya manda el mensaje de recursos liberados al orquestador
 
-	//todo como saco al personaje de la lista, y libero su memoria?
-	//todo sacar al personaje de la lista de la catedra
-	//todo como dibujo la gui?
-				//PN->HO
+	BorrarItem(&lista_items, nodo_victima->ID);
+
+	free(nodo_victima->nombre);
+	free(nodo_victima);
+	free(notif_victima);
 }
 
 
 void manejar_recursos_reasignados(int socket){
 	//aca el orquestador nos contesta la notificacion de recursos liberados
 	//con los identificadores de los personajes y los recursos asignados
+	//variable auxiliar para c/lista
+	char *c;
+	t_caja *caja;
+	t_necesidad *necesidad;
+	t_nodo_personaje *personaje;
+	t_link_element *paux, *naux, *caux;
+
+	t_notif_recursos_reasignados *reasignados = recibir(socket, NOTIF_RECURSOS_REASIGNADOS);
+
+	//a cada personaje indicado por el orquestador le damos el recurso que le corresponde
+	//recordar que tratamos con un string donde los caracteres pares son personajes y los impares recursos
+	for(c=reasignados->asignaciones ; *c!='\0' ; c=c+2)
+	{
+		//buscamos el personaje por su id en la lista de personajes
+		for(paux=lista_personajes->head; paux!=NULL && ((t_nodo_personaje*)paux->data)->ID!=*c ; paux=paux->next);
+		if(paux==NULL) /*todo loguear: personaje al que se le reasigno recursos no estaba en la lista de personajes*/;
+		personaje = paux->data;
+
+		//dentro de las necesidades del personaje buscamos el recurso asignado y se lo damos (incrementa asignacion)
+		for(naux=personaje->necesidades->head; naux!=NULL && ((t_necesidad*)naux->data)->ID_recurso!=*(c+1) ; naux=naux->next);
+		if(naux==NULL) /*todo loguear: no se encontro el recurso a reasignar dentro de las necesidades del personaje*/;
+		necesidad = naux->data;
+		necesidad->asig++;
+	}
+
+	for(c=reasignados->remanentes; *c!='\0' ; c++){
+		for(caux=lista_cajas->head ; caux!=NULL && ((t_caja*)caux->data)->ID!=*c ; caux=caux->next);
+		if(caux==NULL) /*todo loguear: no se encontro una caja para asignar el recurso */;
+
+		caja = caux->data;
+		caja->disp++;
+
+		sumarRecurso(lista_items, caja->ID);
+	}
+
+	free(reasignados->asignaciones);
+	free(reasignados->remanentes);
+	free(reasignados);
 
 	sem_post(&sem_recovery); //con esto finaliza el procedimiento de recovery
 }
 
+
 void reubicar_recursos(t_list *necesidades){
 	//variable auxiliares
-	t_necesidad *nec_aux;
 	t_link_element *a;
-	t_notif_recursos_liberados * notificacion;
-	char * recursos_liberados;
-
-	recursos_liberados = malloc(1);
-	recursos_liberados[0] = '\0';
+	t_necesidad *nec_aux;
+	t_notif_recursos_liberados *notificacion = malloc(sizeof(t_notif_recursos_liberados));
+	char * recursos_liberados = strdup("");
 
 	//mientras no se acabo la lista de necesidades
 	for(a=necesidades->head ; a!=NULL ;a=a->next)
@@ -406,13 +465,10 @@ void reubicar_recursos(t_list *necesidades){
 	//borrar lista de necesidades y sus nodos de memoria
 	list_destroy_and_destroy_elements(necesidades, free);
 
-	notificacion->recursos_liberados=recursos_liberados;
+	notificacion->recursos_liberados = (uint8_t*)recursos_liberados;
 
-	enviar(socket_orquestador, NOTIF_RECURSOS_LIBERADOS, &notificacion, logger);
-	//free(recursos_liberados) todo esto es necesario?
+	enviar(socket_orquestador, NOTIF_RECURSOS_LIBERADOS, notificacion, logger);
 }
-
-
 
 
 int conf_es_valida(t_config * configuracion)
@@ -423,6 +479,22 @@ int conf_es_valida(t_config * configuracion)
 			config_has_property(configuracion, "Caja1") && //al menos una caja de recursos
 			config_has_property(configuracion, "orquestador")
 			);
+}
+
+
+void *msg_datos_delNivel_alOrquestador(){
+	struct sockaddr_in sin;
+	socklen_t len = sizeof(sin);
+	t_envio_deDatos_delNivel_alOrquestador *datos = malloc(sizeof(t_envio_deDatos_delNivel_alOrquestador));
+
+	getsockname(escucha, (struct sockaddr *)&sin, &len);
+
+	//asumiendo que no se vuelven a usar son liberados por el enviar que usa la funcion
+	datos->nombre = nombre;
+	datos->recursos_nivel = recursos;
+	datos->puerto_nivel = ntohs(sin.sin_port); //el puerto asignado automaticamente
+
+	return datos;
 }
 
 
@@ -492,6 +564,8 @@ void levantar_config(int argc, char ** argv){
 
 	cantidad_de_recursos = config_keys_amount(configuracion) - 4; //este 4 esta hardcodeado, pero la realidad es que siempre el archivo de config tiene la cantidad de cajas y cuatro entradas más
 
+	recursos = malloc(cantidad_de_recursos + 1), recursos[cantidad_de_recursos] = '\0';
+
 	for(i=1; i<=cantidad_de_recursos; i++)
 	{
 		char ** datos_caja;
@@ -519,6 +593,9 @@ void levantar_config(int argc, char ** argv){
 		nodo_caja->disp = nodo_caja->total = atoi(datos_caja[2]); //todo verificar condicion de error de atoi?
 		nodo_caja->x = atoi(datos_caja[3]); //todo idem
 		nodo_caja->y = atoi(datos_caja[4]); //todo idem
+
+		//sumo el recurso al string de recursos
+		recursos[i-1] = nodo_caja->ID;
 
 		crear_item_caja_desde_nodo(nodo_caja);
 		list_add(lista_cajas, (void *) nodo_caja);

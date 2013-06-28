@@ -74,6 +74,7 @@
 	//rutina para el hilo de deteccion
 	int rutina_chequeo_deadlock();
 
+	void *msg_datos_delNivel_alOrquestador();
 	void reubicar_recursos(t_list *necesidades);
 	void manejar_peticion(int socket);
 	void levantar_config(int argc, char ** argv);
