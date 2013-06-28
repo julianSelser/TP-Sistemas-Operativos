@@ -4,6 +4,7 @@
 #include "nivel.h"
 
 void BorrarItem(ITEM_NIVEL** i, char id);
+void sumarRecurso(ITEM_NIVEL* i, char id);
 void restarRecurso(ITEM_NIVEL* i, char id);
 void MoverPersonaje(ITEM_NIVEL* i, char personaje, int x, int y);
 void CrearPersonaje(ITEM_NIVEL** i, char id, int x , int y);

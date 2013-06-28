@@ -76,3 +76,20 @@ void restarRecurso(ITEM_NIVEL* ListaItems, char id) {
 
 }
 
+
+void sumarRecurso(ITEM_NIVEL* ListaItems, char id) {
+
+        ITEM_NIVEL * temp;
+        temp = ListaItems;
+
+        while ((temp != NULL) && (temp->id != id)) {
+                temp = temp->next;
+        }
+        if ((temp != NULL) && (temp->id == id)) {
+                if ((temp->item_type) && (temp->quantity > 0)) {
+                        temp->quantity = temp->quantity++;
+                }
+        }
+
+}
+
