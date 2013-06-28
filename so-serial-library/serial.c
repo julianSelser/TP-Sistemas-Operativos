@@ -568,8 +568,8 @@ char *srlz_datos_delPersonaje_alNivel(void *data, int *tamanio){
 	offset+= tmp;
 	memcpy(buffer+offset, d->necesidades, strlen((char*)d->necesidades)+1);
 
-	//free(d->necesidades);
-	//free(d->nombre_personaje);
+	free(d->necesidades);
+	free(d->nombre_personaje);
 	free(d);
 	return buffer;
 }

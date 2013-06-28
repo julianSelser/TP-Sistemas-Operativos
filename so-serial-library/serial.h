@@ -34,6 +34,7 @@
 	#define ENVIO_DE_DATOS_AL_PLANIFICADOR 19			//PP->HP
 	#define INFO_UBICACION_RECURSO 20					//PN->PP
 	#define ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL 21		//PP->PN
+	#define ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR 22		//PN->HO
 
 	//typedefs de punteros a funciones
 	typedef void *(*p_funcion_deserial)(char *buffer);
@@ -176,12 +177,20 @@
 	} __attribute__((packed)) t_datos_delPersonaje_alNivel;
 
 
+	//22 - mensaje que el nivel le envia al orquestador con sus datos apenas arranca
+	typedef struct{
+		uint8_t *nombre;
+		uint8_t *recursos_nivel;
+		uint16_t puerto_nivel;
+	} __attribute__((packed)) t_envio_deDatos_delNivel_alOrquestador;
+
+
+
 	//la cabecera que se lee en todos los mensajes
 	typedef struct {
-			uint8_t tipo;
-			uint16_t len;
+		uint8_t tipo;
+		uint16_t len;
 	} __attribute__((packed)) t_cabecera;
-
 
 
 	/**************************** FUNCIONES  ***************************/
