@@ -34,7 +34,6 @@ static void init_vec_serial();
 
 
 /******************************************* FUNCIONES DE INICIALIZADO ********************************************/
-/*									ESTO ES TEMPORAL; HAY UNA MEJOR MANERA DE HACERLO							  */
 
 
 
@@ -47,7 +46,6 @@ void iniciar_serializadora(){
 
 //setea el vector de serializadores
 static void init_vec_serial(){
-	//todo ir agregando a medida que se escriben
     vec_serializador[SOLICITUD_INFO_NIVEL] = srlz_solicitud_info_nivel;
     vec_serializador[INFO_NIVEL_Y_PLANIFICADOR] = srlz_info_nivel_y_planificador;
 	vec_serializador[NOTIF_MOVIMIENTO_PERMITIDO] = srlz_movimiento_permitido;
@@ -66,13 +64,13 @@ static void init_vec_serial(){
 	vec_serializador[ENVIO_DE_DATOS_AL_PLANIFICADOR] = srlz_datos_delPersonaje_alPlanificador;
 	vec_serializador[INFO_UBICACION_RECURSO] = srlz_ubicacion_de_recurso;
 	vec_serializador[ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL] = srlz_datos_delPersonaje_alNivel;
+	vec_serializador[ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR] = srlz_envio_deDatos_delNivel_alOrquestador;
 
 }
 
 
 //setea el vector de de-serializadores
 static void init_vec_deserial(){
-	//todo ir agregando a medida que se escriben
     vec_deserializador[SOLICITUD_INFO_NIVEL] = deserializar_solicitud_info_nivel;
 	vec_deserializador[INFO_NIVEL_Y_PLANIFICADOR] = deserializar_info_nivel_y_planificador;
 	vec_deserializador[NOTIF_MOVIMIENTO_PERMITIDO] = deserializar_movimiento_permitido;
@@ -91,6 +89,7 @@ static void init_vec_deserial(){
 	vec_deserializador[ENVIO_DE_DATOS_AL_PLANIFICADOR] = deserializar_datos_delPersonaje_alPlanificador;
 	vec_deserializador[INFO_UBICACION_RECURSO] = deserializar_ubicacion_de_recurso;
 	vec_deserializador[ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL] = deserializar_datos_delPersonaje_alNivel;
+	vec_deserializador[ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR] = deserializar_envio_deDatos_delNivel_alOrquestador;
 }
 
 
@@ -357,6 +356,18 @@ void *deserializar_datos_delPersonaje_alNivel(char *buffer){
 }
 
 
+//22
+void *deserializar_envio_deDatos_delNivel_alOrquestador(char *buffer){
+	t_envio_deDatos_delNivel_alOrquestador *datos = malloc(sizeof(t_envio_deDatos_delNivel_alOrquestador));
+
+	datos->nombre = (uint8_t*)strdup(buffer);
+	datos->recursos_nivel = (uint8_t*)strdup(buffer+strlen(datos->nombre)+1);
+	memcpy(&datos->puerto_nivel, buffer+strlen(datos->nombre)+1+strlen(datos->recursos_nivel)+1, sizeof(uint16_t) );
+
+	return datos;
+}
+
+
 
 /********************************************** FUNCIONES SERIALIZADORAS *********************************************/
 /*  LOS MALLOCS SE LIBERAN EN LA FUNCION ENVIAR, TODOS: LOS DEL BUFFER Y LOS PASADOS COMO STRUCT PORQUE SE USAN AHI  */
@@ -565,11 +576,30 @@ char *srlz_datos_delPersonaje_alNivel(void *data, int *tamanio){
 	memcpy(buffer, (char*)&d->char_personaje, tmp = sizeof(uint8_t));
 	offset += tmp;
 	memcpy(buffer+offset, d->nombre_personaje, tmp = strlen((char*)d->nombre_personaje)+1);
-	offset+= tmp;
+	offset += tmp;
 	memcpy(buffer+offset, d->necesidades, strlen((char*)d->necesidades)+1);
 
 	free(d->necesidades);
 	free(d->nombre_personaje);
+	free(d);
+	return buffer;
+}
+
+
+//22
+char *srlz_envio_deDatos_delNivel_alOrquestador(void *data, int *tamanio){
+	int tmp, offset = 0;
+	t_envio_deDatos_delNivel_alOrquestador *d = data;
+	char *buffer = malloc(*tamanio = sizeof(uint16_t) + strlen(d->nombre)+1 + strlen(d->recursos_nivel)+1);
+
+	memcpy(buffer, d->nombre, tmp = strlen(d->nombre)+1);
+	offset += tmp;
+	memcpy(buffer+offset, d->recursos_nivel, tmp = strlen(d->recursos_nivel)+1);
+	offset += tmp;
+	memcpy(buffer+offset, d->puerto_nivel, sizeof(uint16_t));
+
+	free(d->nombre);
+	free(d->recursos_nivel);
 	free(d);
 	return buffer;
 }
