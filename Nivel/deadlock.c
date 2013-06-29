@@ -180,7 +180,7 @@ int rutina_chequeo_deadlock()
 
 			if (recovery)
 			{
-			enviar(socket_orquestador, SOLICITUD_RECUPERO_DEADLOCK, pjes_en_deadlock, logger);
+			enviar(socket_orquestador, SOLICITUD_RECUPERO_DEADLOCK, msg_recupero_deadlock(pjes_en_deadlock), logger);
 			sem_wait(&sem_recovery); //para que no vuelva a detectar deadlock hasta que se haya accionado el recovery
 			}
 		}
@@ -283,6 +283,14 @@ char * detectar_deadlock()
 	return involucrados;
 }
 
+
+void *msg_recupero_deadlock(char *pjes){
+	t_solicitud_recupero_deadlock *solicitud = malloc(sizeof(t_solicitud_recupero_deadlock));
+
+	solicitud->pjes_deadlock = (uint8_t*)strdup(pjes);
+
+	return solicitud;
+}
 
 int indexof(char * array, char c, int size)
 {
