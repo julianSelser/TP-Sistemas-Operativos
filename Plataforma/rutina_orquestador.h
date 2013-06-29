@@ -11,6 +11,18 @@
 #ifndef RUTINA_ORQUESTADOR_H_
 #define RUTINA_ORQUESTADOR_H_
 
+typedef struct
+{
+  int socket;
+	t_list * colas[2];
+	char * nombre;
+	int puerto_planif;
+	char  * IP_planif;
+	int puerto;
+	char * IP;
+} t_nodo_nivel;
+
+
 void rutina_orquestador(/*?*/);
 
 void rutina_inotify();
