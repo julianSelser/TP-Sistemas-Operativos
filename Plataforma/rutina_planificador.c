@@ -44,7 +44,6 @@ void rutina_planificador(parametro *info)
 
 	//crea el hilo que escuchara personajes
 	pthread_t hilo_escucha;
-
 	pthread_create(&hilo_escucha, NULL,(void*)rutina_escucha, info);
 
 	while(1)
@@ -57,7 +56,6 @@ void rutina_planificador(parametro *info)
 		sem_post(sem_cola_listos);
 		sem_post(sem_cola_vacia);
 
-
 		for(i=0; i<quantum ; i++)
 		{
 			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )) break;
@@ -65,7 +63,7 @@ void rutina_planificador(parametro *info)
 
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
-				encolar( buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje);
+				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje);
 				sem_post(sem_cola_bloqueados);
 				sem_wait(sem_cola_vacia);
 				break;
@@ -74,12 +72,22 @@ void rutina_planificador(parametro *info)
 		printf("\n dado quantum\n\n");
 		sleep(retraso);
 
-		sem_wait(sem_cola_listos);
-		if(!resultado->bloqueado && !desconexion) encolar(listos, personaje); //cuando se des-encola un personaje sale de la cola, ante bloqueo el reencolamiento debe saltearse
-		sem_post(sem_cola_listos);
-	}
+		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
+		if(!resultado->bloqueado && !desconexion)
+		{
+			sem_wait(sem_cola_listos);
+			encolar(listos, personaje);
+			sem_post(sem_cola_listos);
+		}
+		else{
+			free(personaje->nombre);
+			free(personaje);
+		}
 
-	free(info);
+		//libera el resultado que viene por "recibir"
+		free(resultado);
+	}
+	//todo: ver como hacer la liberacion del parametro y las listas(capaz las hace el orquestador)
 }
 
 
