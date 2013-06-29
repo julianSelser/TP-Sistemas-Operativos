@@ -42,20 +42,23 @@
 // Puedo manejar hasta 1024 eventos simultaneos.
 #define BUF_LEN     ( 1024 * EVENT_SIZE )
 
+t_list * lista_niveles;
 
 static int puerto_planif = 7000;
 void manejar_anuncio_nivel(int socket_nivel);
 void manejar_sol_info(int socket_nivel);
+t_info_nivel_planificador * crear_info_nivel(char * nombre);
 
 
 void rutina_orquestador(/*?*/)
 {
-
 	pthread_t inotify;
 	pthread_create(&inotify,NULL,(void*)rutina_inotify,NULL);
 
 	int socketNuevoNivel;
 	int socketEscucha = init_socket_escucha(10000, 1, NULL);
+
+	lista_niveles=list_create();
 
 	printf("\n a la espera de nuevos niveles...\n\n");
 	while(1){
@@ -88,10 +91,10 @@ void manejar_anuncio_nivel(int socket_nivel)
 	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el niel
 	{
 		t_nodo_bloq_por_recurso * info_recurso;
-		info_recurso = malloc(t_nodo_bloq_por_recurso);
+		info_recurso = malloc(sizeof(t_nodo_bloq_por_recurso));
 		info_recurso->char_recurso=datos_nivel_entrante->recursos_nivel[i];
 		info_recurso->personajes=list_create(); //todo no deberian ser colas?
-		list_add(nuevo_nivel->colas[BLOQUEADOS], &info_recurso); //crear cola de bloqueados para el recurso actual
+		list_add(nuevo_nivel->colas[BLOQUEADOS], info_recurso); //crear cola de bloqueados para el recurso actual
 		i++;
 	}
 
@@ -99,6 +102,8 @@ void manejar_anuncio_nivel(int socket_nivel)
 
 	free(datos_nivel_entrante->recursos_nivel);
 	free(datos_nivel_entrante);
+
+	list_add(lista_niveles, nuevo_nivel);
 
 	lanzar_planificador(nuevo_nivel->colas);
 	puerto_planif++;
@@ -112,7 +117,6 @@ void lanzar_planificador(const t_list * colas)
 
 parametro *armar_parametro(const t_list * colas)
 {
-	int i;
 	parametro *p = malloc(sizeof(parametro));
 
 	//ya arme las colas desde antes
@@ -131,6 +135,41 @@ void manejar_sol_info(int socket)
 	t_info_nivel_planificador * info;
 	t_solicitud_info_nivel * solicitud;
 
+	solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
+	info = crear_info_nivel((char *)solicitud->nivel_solicitado);
+
+	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, NULL); //TODO AGREGAR LOGGER!!!
+	free(solicitud->nivel_solicitado);
+	free(solicitud);
+}
+
+t_info_nivel_planificador * crear_info_nivel(char * nombre)
+{
+	t_info_nivel_planificador * temp;
+	int cant_niveles;
+	int i=0;
+
+	temp=malloc(sizeof(t_info_nivel_planificador));
+	cant_niveles=list_size(lista_niveles);
+
+
+	while(i<cant_niveles)
+	{
+		t_nodo_nivel * nivel_actual;
+
+		nivel_actual = (t_nodo_nivel *)list_get(lista_niveles, i);
+		if(strcmp(nivel_actual->nombre, nombre))
+		{
+			temp->ip_nivel=nivel_actual->IP;
+			temp->puerto_nivel=nivel_actual->puerto;
+			temp->ip_planificador=nivel_actual->IP_planif;
+			temp->puerto_planificador=nivel_actual->puerto_planif;
+			return temp;
+		}
+		i++;
+	}
+
+	return NULL;
 }
 
 
