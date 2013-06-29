@@ -27,7 +27,7 @@
 #include "rutina_planificador.h"
 #include "plataforma.h"
 
-#include "serial.h"
+#include <serial.h>
 
 
 // El tamaño de un evento es igual al tamaño de la estructura de inotify
@@ -43,7 +43,10 @@
 #define BUF_LEN     ( 1024 * EVENT_SIZE )
 
 
-static int puerto = 7000;
+static int puerto_planif = 7000;
+void manejar_anuncio_nivel(int socket_nivel);
+void manejar_sol_info(int socket_nivel);
+
 
 void rutina_orquestador(/*?*/)
 {
@@ -57,42 +60,79 @@ void rutina_orquestador(/*?*/)
 	printf("\n a la espera de nuevos niveles...\n\n");
 	while(1){
 			socketNuevoNivel = accept(socketEscucha, NULL, 0);
-			lanzar_planificador();
+			//no lanzo el planificador inmediatamente, sino que espero a que el nivel me mande el mensaje de anuncio
 	}
 
 }
 
-void lanzar_planificador()
+void manejar_anuncio_nivel(int socket_nivel)
 {
-	pthread_t nuevo_hilo;
-	pthread_create(&nuevo_hilo, NULL, (void*)rutina_planificador, armar_parametro());
+	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante;
+	t_nodo_nivel * nuevo_nivel;
+	int i=0;
+
+	datos_nivel_entrante = recibir(socket_nivel, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR);
+
+	nuevo_nivel = malloc(sizeof (t_nodo_nivel));
+	nuevo_nivel->socket = socket_nivel;
+	nuevo_nivel->colas[0] = list_create();
+	nuevo_nivel->colas[1] = list_create();
+	//nuevo_nivel->IP todo asignar a esta variable la IP del nivel!!! no se como se hace
+	nuevo_nivel->puerto = datos_nivel_entrante->puerto_nivel;
+	/*nuevo_nivel->IP = malloc(strlen(IP_local)+1)
+	strcpy(nuevo_nivel->IP, IP_local)*/
+	nuevo_nivel->puerto_planif = puerto_planif;
+	nuevo_nivel->nombre=(char *)(datos_nivel_entrante->nombre);
+	//esa ultima linea funciona solo si la informacion a la que apunta nombre no se libera
+
+	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el niel
+	{
+		t_nodo_bloq_por_recurso * info_recurso;
+		info_recurso = malloc(t_nodo_bloq_por_recurso);
+		info_recurso->char_recurso=datos_nivel_entrante->recursos_nivel[i];
+		info_recurso->personajes=list_create(); //todo no deberian ser colas?
+		list_add(nuevo_nivel->colas[BLOQUEADOS], &info_recurso); //crear cola de bloqueados para el recurso actual
+		i++;
+	}
+
+	nuevo_nivel->colas[LISTOS] = list_create(); //todo no deberian ser colas?
+
+	free(datos_nivel_entrante->recursos_nivel);
+	free(datos_nivel_entrante);
+
+	lanzar_planificador(nuevo_nivel->colas);
+	puerto_planif++;
 }
 
-parametro *armar_parametro()
+void lanzar_planificador(const t_list * colas)
+{
+	pthread_t nuevo_hilo;
+	pthread_create(&nuevo_hilo, NULL, (void*)rutina_planificador, armar_parametro(colas));
+}
+
+parametro *armar_parametro(const t_list * colas)
 {
 	int i;
 	parametro *p = malloc(sizeof(parametro));
-	t_nodo_bloq_por_recurso *nodo = malloc(sizeof(t_nodo_bloq_por_recurso));
 
-	for(i=0;i<2;i++){
-		p->colas[i] = list_create();//la cola de bloqueados hay que inicializarla de una manera mas complicada
-	}
+	//ya arme las colas desde antes
 
-	nodo->char_recurso = '0';
-	nodo->personajes = list_create();
-	list_add(p->colas[BLOQUEADOS],nodo);
-
-	typedef struct{
-		char char_recurso;
-		t_list * personajes;
-	}t_nodo_bloq_por_recurso;
+	//todo no hace falta inicializar los semaforos????
 
 	p->logger_planificador = NULL;
-	p->puerto = puerto++;
-
+	p->puerto = puerto_planif;
 
 	return p;
 }
+
+
+void manejar_sol_info(int socket)
+{
+	t_info_nivel_planificador * info;
+	t_solicitud_info_nivel * solicitud;
+
+}
+
 
 void rutina_inotify()
 {
