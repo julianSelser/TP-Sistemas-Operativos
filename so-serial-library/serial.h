@@ -133,7 +133,10 @@
 	}__attribute__((packed)) t_notif_recursos_reasignados;
 
 
-	/*15 - FALTA	*/
+	//15 - struct del mensaje que envia el hilo que chequea deadlock del nivel al orquestador con los personajes en deadlock
+	typedef struct{
+		uint8_t *pjes_deadlock;
+	} __attribute__((packed)) t_solicitud_recupero_deadlock;
 
 
 	//16 - struct del mensaje que envia el orquestador al nivel para notificarlo de la muerte de un personaje
@@ -185,7 +188,6 @@
 	} __attribute__((packed)) t_envio_deDatos_delNivel_alOrquestador;
 
 
-
 	//la cabecera que se lee en todos los mensajes
 	typedef struct {
 		uint8_t tipo;
@@ -209,12 +211,14 @@
     char *srlz_notificacion_nivel_cumplido(void *data,int *tamanio);		//10
     char *srlz_notif_recursos_liberados(void *data, int *tamanio);			//13
     char *srlz_notif_recursos_reasignados(void *data, int *tamanio);		//14
+    char *srlz_envio_deDatos_delNivel_alOrquestador(void *data,int*tamanio);//15
     char *srlz_notif_eleccion_de_victima(void *data, int *tamanio);			//16
     char *srlz_personaje_condenado(void *data, int *tamanio);				//17
     char *srlz_notificacion_plan_terminado(void *data,int *tamanio);		//18
     char *srlz_datos_delPersonaje_alPlanificador(void *data, int *tamanio);	//19
     char *srlz_ubicacion_de_recurso(void *data, int *tamanio);				//20
     char *srlz_datos_delPersonaje_alNivel(void *data, int *tamanio);		//21
+    char *srlz_solicitud_recupero_deadlock(void *data, int *tamanio);		//22
 
     //faltan en el .c y capaz no se usa
     char *srlz_notificacion_muerte_personaje(void *data,int *tamanio);//11
@@ -233,12 +237,14 @@
     void *deserializar_notificacion_nivel_cumplido(char *buffer);			//10
     void *deserializar_notif_recursos_liberados(char *buffer);				//13
     void *deserializar_notif_recursos_reasignados(char *buffer);			//14
+    void *deserializar_envio_deDatos_delNivel_alOrquestador(char *buffer);	//15
     void *deserializar_notif_eleccion_de_victima(char *buffer);				//16
 	void *deserializar_personaje_condenado(char *buffer);					//17
     void *deserializar_notificacion_plan_terminado(char *buffer);			//18
 	void *deserializar_datos_delPersonaje_alPlanificador(char *buffer);		//19
     void *deserializar_ubicacion_de_recurso(char *buffer);					//20
     void *deserializar_datos_delPersonaje_alNivel(char *buffer);			//21
+    void *deserializar_solicitud_recupero_deadlock(char *buffer);			//22
 
     //faltan en el .c y capaz no se usa
     void *deserializar_notificacion_muerte_personaje(char *buffer);//11

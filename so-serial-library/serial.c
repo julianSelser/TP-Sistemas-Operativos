@@ -58,6 +58,7 @@ static void init_vec_serial(){
     vec_serializador[NOTIF_NIVEL_CUMPLIDO] = srlz_notificacion_nivel_cumplido;
     vec_serializador[NOTIF_RECURSOS_LIBERADOS] = srlz_notif_recursos_liberados;
     vec_serializador[NOTIF_RECURSOS_REASIGNADOS] = srlz_notif_recursos_reasignados;
+    vec_serializador[SOLICITUD_RECUPERO_DEADLOCK] = srlz_solicitud_recupero_deadlock;
 	vec_serializador[NOTIF_ELECCION_VICTIMA] = srlz_notif_eleccion_de_victima;
     vec_serializador[NOTIF_PERSONAJE_CONDENADO] = srlz_personaje_condenado;
     vec_serializador[NOTIF_PLAN_TERMINADO] = srlz_notificacion_plan_terminado;
@@ -83,6 +84,7 @@ static void init_vec_deserial(){
     vec_deserializador[NOTIF_NIVEL_CUMPLIDO] = deserializar_notificacion_nivel_cumplido;
     vec_deserializador[NOTIF_RECURSOS_LIBERADOS] = deserializar_notif_recursos_liberados;
     vec_deserializador[NOTIF_RECURSOS_REASIGNADOS] = deserializar_notif_recursos_reasignados;
+    vec_deserializador[SOLICITUD_RECUPERO_DEADLOCK] = deserializar_solicitud_recupero_deadlock;
     vec_deserializador[NOTIF_ELECCION_VICTIMA] = deserializar_notif_eleccion_de_victima;
     vec_deserializador[NOTIF_PERSONAJE_CONDENADO] = deserializar_personaje_condenado;
     vec_deserializador[NOTIF_PLAN_TERMINADO] = deserializar_notificacion_plan_terminado;
@@ -297,6 +299,14 @@ void *deserializar_notif_recursos_reasignados(char *buffer){
 }
 
 
+//15
+void *deserializar_solicitud_recupero_deadlock(char *buffer){
+	t_solicitud_recupero_deadlock *solicitud = malloc(sizeof(t_solicitud_recupero_deadlock));
+	solicitud->pjes_deadlock = (uint8_t*)strdup(buffer);
+	return solicitud;
+}
+
+
 //16
 void *deserializar_notif_eleccion_de_victima(char *buffer){
 	t_notif_eleccion_de_victima *eleccion = malloc(sizeof(t_notif_eleccion_de_victima));
@@ -361,8 +371,8 @@ void *deserializar_envio_deDatos_delNivel_alOrquestador(char *buffer){
 	t_envio_deDatos_delNivel_alOrquestador *datos = malloc(sizeof(t_envio_deDatos_delNivel_alOrquestador));
 
 	datos->nombre = (uint8_t*)strdup(buffer);
-	datos->recursos_nivel = (uint8_t*)strdup(buffer+strlen(datos->nombre)+1);
-	memcpy(&datos->puerto_nivel, buffer+strlen(datos->nombre)+1+strlen(datos->recursos_nivel)+1, sizeof(uint16_t) );
+	datos->recursos_nivel = (uint8_t*)strdup(buffer+strlen((char*)datos->nombre)+1);
+	memcpy(&datos->puerto_nivel, buffer+strlen((char*)datos->nombre)+1+strlen((char*)datos->recursos_nivel)+1, sizeof(uint16_t) );
 
 	return datos;
 }
@@ -511,6 +521,17 @@ char *srlz_notif_recursos_reasignados(void *data, int *tamanio){
 }
 
 
+//15
+char *srlz_solicitud_recupero_deadlock(void *data, int *tamanio){
+	t_solicitud_recupero_deadlock *d = data;
+	char *buffer = malloc(*tamanio = strlen((char*)d->pjes_deadlock)+1);
+	memcpy(buffer, d->pjes_deadlock, strlen((char*)d->pjes_deadlock)+1);
+	free(d->pjes_deadlock);
+	free(d);
+	return buffer;
+}
+
+
 //16
 char *srlz_notif_eleccion_de_victima(void *data, int *tamanio){
 	char *buffer = malloc(sizeof(t_notif_eleccion_de_victima));
@@ -590,13 +611,13 @@ char *srlz_datos_delPersonaje_alNivel(void *data, int *tamanio){
 char *srlz_envio_deDatos_delNivel_alOrquestador(void *data, int *tamanio){
 	int tmp, offset = 0;
 	t_envio_deDatos_delNivel_alOrquestador *d = data;
-	char *buffer = malloc(*tamanio = sizeof(uint16_t) + strlen(d->nombre)+1 + strlen(d->recursos_nivel)+1);
+	char *buffer = malloc(*tamanio = sizeof(uint16_t) + strlen((char*)d->nombre)+1 + strlen((char*)d->recursos_nivel)+1);
 
-	memcpy(buffer, d->nombre, tmp = strlen(d->nombre)+1);
+	memcpy(buffer, d->nombre, tmp = strlen((char*)d->nombre)+1);
 	offset += tmp;
-	memcpy(buffer+offset, d->recursos_nivel, tmp = strlen(d->recursos_nivel)+1);
+	memcpy(buffer+offset, d->recursos_nivel, tmp = strlen((char*)d->recursos_nivel)+1);
 	offset += tmp;
-	memcpy(buffer+offset, d->puerto_nivel, sizeof(uint16_t));
+	memcpy(buffer+offset, &d->puerto_nivel, sizeof(uint16_t));
 
 	free(d->nombre);
 	free(d->recursos_nivel);
