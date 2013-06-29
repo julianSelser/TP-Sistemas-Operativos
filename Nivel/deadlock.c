@@ -398,6 +398,6 @@ int index_pje_por_ID(char ID)
 		i++;
 	}
 
-	return NULL;
+	return -1;
 }
 
