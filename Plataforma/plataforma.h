@@ -41,4 +41,8 @@
 	t_list * personajes;
 	}t_nodo_bloq_por_recurso;
 
+	//funciones
+	t_list *buscar_lista_de_recurso(t_list *bloqueados, char recurso_de_bloqueo);
+
+
 #endif /* PLATAFORMA_H_ */
