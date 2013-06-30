@@ -10,22 +10,6 @@
 #ifndef RUTINA_PLANIFICADOR_H_
 #define RUTINA_PLANIFICADOR_H_
 
-	/*	STRUCTS	*/
-
-	//estructura de cada nodo de la lista de personajes
-	//contiene el socket de c/proceso personaje y su caracter identificador
-	typedef struct{
-		int socket;
-		char char_personaje;
-		char *nombre;
-	}t_nodo_personaje;
-
-	//estructura de cada nodo de la lista de bloqueados por recuros
-	//tiene un caracter identificador del recurso y una lista de personajes
-	typedef struct{
-		char char_recurso;
-		t_list * personajes;
-	}t_nodo_bloq_por_recurso;
 
 
 	/*	FUNCIONES	*/
