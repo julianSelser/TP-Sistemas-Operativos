@@ -119,7 +119,7 @@ int rutina_chequeo_deadlock()
 {
 	while(1)
 	{
-		char * pjes_en_deadlock;
+		char * pjes_en_deadlock; //por ejemplo "#$@"
 		int cant_pjes_en_deadlock;
 		//ACLARACIÓN
 		//no asigno memoria para pjes_en_deadlock
@@ -133,7 +133,7 @@ int rutina_chequeo_deadlock()
 
 		usleep(tiempo_chequeo_deadlock*1000);
 
-		sem_wait(&sem_general);
+		sem_wait(&sem_general); //semaforo para lockear la lista de personaes y la de recursos. si tomo este semaforo, el hilo principal no puede atender mensajes
 		pjes_en_deadlock = detectar_deadlock(); //ver aclaración
 
 		cant_pjes_en_deadlock = strlen(pjes_en_deadlock);
@@ -215,14 +215,14 @@ char * detectar_deadlock()
 
 	cant_pjes = list_size(lista_personajes);
 
-	finish = malloc (cant_pjes);
+	finish = malloc (cant_pjes); 
 	pjes = malloc (cant_pjes);
 
 	for(i=0; i<cant_pjes; i++)
 	{
-		pjes[i] = ((t_nodo_personaje *)list_get(lista_personajes, i))->ID;
-		finish[i] = 0;
-	}
+		pjes[i] = ((t_nodo_personaje *)list_get(lista_personajes, i))->ID; //vector con los chars de todos los personajes presentes
+		finish[i] = 0; //vector finish, ver silberschatz
+	} 
 
 	cant_recursos = list_size(lista_cajas);
 
@@ -231,8 +231,8 @@ char * detectar_deadlock()
 
 	for(i=0; i<cant_recursos; i++)
 	{
-		recs[i] = ((t_caja *)list_get(lista_cajas, i))->ID;
-		instancias[i] = ((t_caja*)list_get(lista_cajas, i))->disp;
+		recs[i] = ((t_caja *)list_get(lista_cajas, i))->ID; //vector con los chars de cada recurso
+		instancias[i] = ((t_caja*)list_get(lista_cajas, i))->disp; //vector "disponible" del algoritmo
 	}
 
 
@@ -242,15 +242,15 @@ char * detectar_deadlock()
 		char pje_actual;
 
 		cambio = 0;
-		for(i=0; i<cant_pjes; i++)
+		for(i=0; i<cant_pjes; i++) //recorro el vector de personajes
 		{
 			pje_actual = pjes[i];
-			if (finish[i]) continue;
+			if (finish[i]) continue; //salteo este personaje si finish esta en 1
 			if (puede_terminar(pje_actual, recs, instancias, cant_recursos))
 			{
-				liberar_recursos(pje_actual, recs, instancias, cant_recursos);
-				finish[i]=1;
-				cambio=1;
+				liberar_recursos(pje_actual, recs, instancias, cant_recursos); //disp=disp+asig(pje)
+				finish[i]=1; //este pje puede terminar
+				cambio=1; //marco que hubo un cambio (en el vector disp) para que haya una nueva pasada
 			}
 		}
 	}
@@ -273,7 +273,7 @@ char * detectar_deadlock()
 			free(pje_deadlock);
 		}
 		i++;
-	}
+	} //una vez terminado el algoritmo, junto en un string todos los que quedaron en deadlock (finish=0)
 
 	free(pjes);
 	free(finish);
@@ -308,7 +308,7 @@ int indexof(char * array, char c, int size)
 //ojo, las dos funciones que siguen son muy parecidas
 //todo compartir codigo?
 
-int puede_terminar(char pje_actual, char * recs, uint8_t * instancias, int cant_recursos) //todo
+int puede_terminar(char pje_actual, char * recs, uint8_t * instancias, int cant_recursos)
 {
 	int cant_necesidades;
 	t_list * necesidad;
@@ -320,7 +320,7 @@ int puede_terminar(char pje_actual, char * recs, uint8_t * instancias, int cant_
 	necesidad = nodo_pje->necesidades;
 	cant_necesidades = list_size(necesidad);
 
-	while (i<cant_necesidades)
+	while (i<cant_necesidades) //me fijo, por cada necesidad, si la entrada correspondiente del vector disponible es mayor o igual
 	{
 		int posrec;
 		t_necesidad * nec_actual;
@@ -335,7 +335,7 @@ int puede_terminar(char pje_actual, char * recs, uint8_t * instancias, int cant_
 		}
 
 		i++;
-	}
+	} //es decir, con esta funcion comparo la fila del personaje con el vector disponible, retorno 1 si el vector disponible es mayor o igual, 0 si es menor
 	return termina;
 }
 
@@ -360,7 +360,7 @@ int liberar_recursos(char pje_actual, char * recs, uint8_t * instancias, int can
 
 		instancias[posrec] = instancias[posrec] + nec_actual->asig;
 		i++;
-	}
+	} //sumo los recursos asignados que tenia el personaje al vector disponible
 
 	return 0;
 }
