@@ -17,7 +17,6 @@
 	void rutina_escucha(parametro *info);
 	void rutina_planificador(parametro *info);
 
-	t_list *buscar_lista_de_recurso(t_list *bloqueados, char recurso_de_bloqueo);
 	void encolar(t_list *cola, void *data);
 	void *desencolar(t_list *cola);
 
