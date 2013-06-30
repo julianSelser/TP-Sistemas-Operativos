@@ -145,16 +145,3 @@ t_mov_permitido *armarMSG_mov_permitido(){
 }
 
 
-t_list *buscar_lista_de_recurso(t_list *bloqueados, char recurso_de_bloqueo)
-{
-		t_link_element *element = bloqueados->head;
-		t_nodo_bloq_por_recurso *nodo = element->data; //nunca van a ser NULL, el orquestador siempre crea esta lista
-
-		while ( element != NULL && !(nodo->char_recurso == recurso_de_bloqueo)) {
-			element = element->next;
-			nodo = element->data;
-		}
-		return nodo->personajes;
-}
-
-
