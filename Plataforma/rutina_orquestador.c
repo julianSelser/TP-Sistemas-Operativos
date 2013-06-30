@@ -109,20 +109,21 @@ void manejar_anuncio_nivel(int socket_nivel)
 	puerto_planif++;
 }
 
-void lanzar_planificador(const t_list * colas)
+void lanzar_planificador(t_list ** colas)
 {
 	pthread_t nuevo_hilo;
 	pthread_create(&nuevo_hilo, NULL, (void*)rutina_planificador, armar_parametro(colas));
 }
 
-parametro *armar_parametro(const t_list * colas)
+parametro *armar_parametro(t_list ** colas)
 {
 	parametro *p = malloc(sizeof(parametro));
 
 	//ya arme las colas desde antes
 
 	//todo no hace falta inicializar los semaforos????
-
+	p->colas[LISTOS]=colas[LISTOS];
+	p->colas[BLOQUEADOS]=colas[BLOQUEADOS];
 	p->logger_planificador = NULL;
 	p->puerto = puerto_planif;
 

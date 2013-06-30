@@ -26,7 +26,7 @@ typedef struct
 void rutina_orquestador(/*?*/);
 
 void rutina_inotify();
-parametro *armar_parametro();
-void lanzar_planificador();
+parametro *armar_parametro(t_list ** colas);
+void lanzar_planificador(t_list ** colas);
 
 #endif /* RUTINA_ORQUESTADOR_H_ */

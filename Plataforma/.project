@@ -3,6 +3,8 @@
 	<name>Plataforma</name>
 	<comment></comment>
 	<projects>
+		<project>so-commons-library</project>
+		<project>so-serial-library</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
