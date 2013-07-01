@@ -68,7 +68,7 @@ void rutina_orquestador(/*?*/)
 
 }
 
-void manejar_anuncio_nivel(int socket_nivel)
+void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 {
 	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante;
 	t_nodo_nivel * nuevo_nivel;
@@ -78,6 +78,7 @@ void manejar_anuncio_nivel(int socket_nivel)
 
 	nuevo_nivel = malloc(sizeof (t_nodo_nivel));
 	nuevo_nivel->socket = socket_nivel;
+
 	nuevo_nivel->colas[0] = list_create();
 	nuevo_nivel->colas[1] = list_create();
 	//nuevo_nivel->IP todo asignar a esta variable la IP del nivel!!! no se como se hace
