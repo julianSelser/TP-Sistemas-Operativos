@@ -108,13 +108,13 @@ int main(int argc, char ** argv)
         }
 
         // loopea los fd's
-        for(i = 0; i <= fdmax; i++) {
+        for(i = 0 ; i <= fdmax ; i++) {
             if (FD_ISSET(i, &read_fds)) { // buscar los seteados
                 if (i == escucha) {
                     // si es el escucha se tiene un nuevofd
                     nuevo_fd = accept(escucha,NULL,0);
                     if (nuevo_fd == -1) {
-                        perror("accept");//todo loguear: error aceptando nueva conexion
+                        //todo loguear: error aceptando nueva conexion
                     }
                     else {
                         FD_SET(nuevo_fd, &maestro);
@@ -135,6 +135,7 @@ int main(int argc, char ** argv)
                 		if(i==socket_orquestador)
                 		{
                 			/*	todo: FALTA DEDINIR QUE PASA CUANDO SE LLEGA A EXECVE Y EL ORQUESTADOR SE DESCONECTA	*/
+                			exit(EXIT_SUCCESS);
                 		}
                 		else //se desconecto un personaje
                 		{
@@ -223,10 +224,10 @@ void manejar_ingreso_personaje(int socket){
 	lista = nodo_p->necesidades = list_create();
 
 	//por cada necesidad enviada
-	for(i=0; datos->necesidades[i] != '\0' ;i++)
+	for(i=0 ; datos->necesidades[i] != '\0' ; i++)
 	{
 		//busca si la necesidad estaba enlistada
-		for( aux = lista->head; aux!=NULL && ((t_necesidad*)aux->data)->ID_recurso != datos->necesidades[i] ; aux = aux->next);
+		for( aux = lista->head ; aux!=NULL && ((t_necesidad*)aux->data)->ID_recurso != datos->necesidades[i] ; aux = aux->next);
 
 		//si estaba: aumenta el maximo; sino se enlista
 		if(aux != NULL) ((t_necesidad*)aux->data)->max++;
@@ -239,8 +240,8 @@ void manejar_ingreso_personaje(int socket){
 		}
 	}
 
-	//crea el personaje en (0,0)
-	CrearPersonaje(&lista_items, nodo_p->ID, 0, 0);
+	list_add(lista_personajes, nodo_p);
+	CrearPersonaje(&lista_items, nodo_p->ID, 0, 0);//crea el personaje en (0,0)
 
 	free(datos->necesidades);
 	free(datos);
@@ -259,7 +260,7 @@ void manejar_solicitud_movimiento(int socket){
 	if(solicitud->x<columnas && solicitud->y<filas) //si esta dentro del nivel...
 	{
 		//buscamos el personaje en la lista de personajes...
-		for(aux=lista_personajes->head; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID != solicitud->char_personaje; aux=aux->next);
+		for(aux=lista_personajes->head ; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID != solicitud->char_personaje ; aux=aux->next);
 
 		//si no se encontro personaje...
 		if(aux==NULL)
@@ -324,7 +325,7 @@ void manejar_solicitud_ubicacion_recurso(int socket){
 	t_solicitud_ubicacion_recurso *solicitud_ubicacion = recibir(socket, SOLICITUD_UBICACION_RECURSO);
 
 	//busco el recurso solicitado entre las cajas...
-	for(aux=lista_cajas->head; aux!=NULL && ((t_caja*)aux->data)->ID!=solicitud_ubicacion->recurso ;aux=aux->next);
+	for(aux=lista_cajas->head ; aux!=NULL && ((t_caja*)aux->data)->ID!=solicitud_ubicacion->recurso ; aux=aux->next);
 
 	//si ciclo todas las cajas...
 	if(aux == NULL)
@@ -344,26 +345,44 @@ void manejar_solicitud_ubicacion_recurso(int socket){
 void manejar_solicitud_instancia_recurso(int socket){
 	//variables auxiliars y malloc de la respuesta
 	t_caja *caja;
+	t_necesidad *nec;
 	t_link_element *aux;
+	t_nodo_personaje *personaje;
 	t_rspta_solicitud_instancia_recurso *respuesta_solicitud_instancia = malloc(sizeof(t_rspta_solicitud_instancia_recurso));
 
 	//recibir mensaje
 	t_solcitud_instancia_recurso *solicitud_instancia = recibir(socket, SOLICITUD_INSTANCIA_RECURSO);
 
 	//buscamos la caja correspondiente al recurso solicitado
-	for(aux=lista_cajas->head; aux!=NULL && ((t_caja*)aux->data)->ID!=solicitud_instancia->instancia_recurso; aux=aux->next);
+	for(aux=lista_cajas->head ; aux!=NULL && ((t_caja*)aux->data)->ID!=solicitud_instancia->instancia_recurso ; aux=aux->next);
 
 	if(aux == NULL)
 		/*todo loguear error grotesco: se esta pidiendo un recurso que no esta en ninguna caja*/;
 
-	caja = aux->data; //asignacion por claridad
+	caja = aux->data; 	//asignacion por claridad
 
-	//si hay recursos disponibles en la caja: restarlo, concederlo y dibujar; sino negarlo
-	if(caja->disp > 0){
+
+	if(caja->disp > 0)	//si hay recursos disponibles en la caja: restarlo, concederlo y dibujar; sino negarlo
+	{
 		caja->disp--;
 
-		restarRecurso(lista_items, caja->ID);
+		//buscar el personaje para asignarle el recurso concedido
+		for(aux=lista_personajes->head ; aux!=NULL && ((t_nodo_personaje*)aux->data)->socket!=socket ; aux=aux->next);
 
+		if(aux==NULL)/*todo loguear: error grotesco, el personaje pidiendo un recruso no estaba en la lista*/;
+
+		personaje = aux->data;
+
+		//buscar la necesidad a ser satisfecha para asignarla al personaje
+		for(aux=personaje->necesidades->head ; aux!=NULL && ((t_necesidad*)aux->data)->ID_recurso!=caja->ID ; aux=aux->next);
+
+		nec = aux->data;
+
+		if(nec->asig < nec->max) nec->asig++;
+		else
+			/*todo loguear: un personaje esta pidiendo mas recursos que los inicialmente declarados*/;
+
+		restarRecurso(lista_items, caja->ID);
 		respuesta_solicitud_instancia->concedido = true;
 	}
 	else respuesta_solicitud_instancia->concedido=false;
@@ -380,7 +399,7 @@ void manejar_notif_eleccion_victima(int socket){
 	t_link_element *aux = lista_personajes->head;
 	t_notif_eleccion_de_victima *notif_victima = recibir(socket_orquestador, NOTIF_ELECCION_VICTIMA);
 
-	for(i=0; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID!=notif_victima->char_personaje ; aux=aux->next,i++);
+	for(i=0 ; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID!=notif_victima->char_personaje ; aux=aux->next,i++);
 
 	if(aux==NULL) /*todo loguear: la victima elegida no estaba en la lista, ver si esto puede llegar a pasar*/;
 
@@ -413,12 +432,12 @@ void manejar_recursos_reasignados(int socket){
 	for(c=reasignados->asignaciones ; *c!='\0' ; c=c+2)
 	{
 		//buscamos el personaje por su id en la lista de personajes
-		for(paux=lista_personajes->head; paux!=NULL && ((t_nodo_personaje*)paux->data)->ID!=*c ; paux=paux->next);
+		for(paux=lista_personajes->head ; paux!=NULL && ((t_nodo_personaje*)paux->data)->ID!=*c ; paux=paux->next);
 		if(paux==NULL) /*todo loguear: personaje al que se le reasigno recursos no estaba en la lista de personajes*/;
 		personaje = paux->data;
 
 		//dentro de las necesidades del personaje buscamos el recurso asignado y se lo damos (incrementa asignacion)
-		for(naux=personaje->necesidades->head; naux!=NULL && ((t_necesidad*)naux->data)->ID_recurso!=*(c+1) ; naux=naux->next);
+		for(naux=personaje->necesidades->head ; naux!=NULL && ((t_necesidad*)naux->data)->ID_recurso!=*(c+1) ; naux=naux->next);
 		if(naux==NULL) /*todo loguear: no se encontro el recurso a reasignar dentro de las necesidades del personaje*/;
 		necesidad = naux->data;
 		necesidad->asig++;
@@ -450,7 +469,7 @@ void reubicar_recursos(t_list *necesidades){
 	char * recursos_liberados = strdup("");
 
 	//mientras no se acabo la lista de necesidades
-	for(a=necesidades->head ; a!=NULL ;a=a->next)
+	for(a=necesidades->head ; a!=NULL ; a=a->next)
 	{
 		char * repeticion_recurso;
 		nec_aux = a->data;
@@ -500,7 +519,7 @@ void *msg_datos_delNivel_alOrquestador(){
 
 int imprimir_nodo_caja(t_caja * nodo_caja)
 {
-	printf("Hay una caja que contiene %d %s de %d, su símbolo es %c y se encuentra en la posición (%d,%d)\n", nodo_caja->disp, nodo_caja->nombre, nodo_caja->disp, nodo_caja->ID, nodo_caja->x, nodo_caja->y);
+	printf("Caja en (%d,%d) con %d %s, su símbolo es %c\n", nodo_caja->x, nodo_caja->y, nodo_caja->disp, nodo_caja->nombre, nodo_caja->ID);
 	sleep(1);
 	return 0;
 }
