@@ -11,7 +11,7 @@
 #ifndef SERIAL_H_
 #define SERIAL_H_
 
-	#define N_MENSAJES 22
+	#define N_MENSAJES 23
 
 	#define SOLICITUD_INFO_NIVEL 1						//PP->HO
 	#define INFO_NIVEL_Y_PLANIFICADOR 2					//HO->PP
@@ -191,7 +191,7 @@
 	//23 - mensaje que le manda al orquestador al personaje cuando le da el recurso por el que estaba bloqueado
 	typedef struct{
 		char recurso; //esto es simbolico,probablemente no lo necesite
-	}t_concesion_recurso; //todo serializadores de esto
+	}__attribute__((packed)) t_concesion_recurso; //todo serializadores de esto
 
 
 	//la cabecera que se lee en todos los mensajes
