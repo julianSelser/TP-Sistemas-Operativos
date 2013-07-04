@@ -364,8 +364,10 @@ int main(int argc, char **argv) {
 					}
 					else if (mje_a_recibir == NOTIF_RECURSO_CONCEDIDO)
 						{
+							recibir(socket_orquestador,NOTIF_RECURSO_CONCEDIDO);//hay que limpiarlo del socket
 							recursos_obtenidos++;
 							sabe_donde_ir=0;
+							log_info(logger, "Finalmente se concedió el recurso! Personaje desbloqueado.", "INFO");
 						}
 				} //FIN CASO RECURSO DENEGADO
 			} //FIN SITUACION DE SOLICITAR RECURSO (LLEGO A DESTINO)
