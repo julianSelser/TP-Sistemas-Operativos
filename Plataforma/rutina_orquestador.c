@@ -94,12 +94,12 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 		t_nodo_bloq_por_recurso * info_recurso;
 		info_recurso = malloc(sizeof(t_nodo_bloq_por_recurso));
 		info_recurso->char_recurso=datos_nivel_entrante->recursos_nivel[i];
-		info_recurso->personajes=list_create(); //todo no deberian ser colas?
+		info_recurso->personajes=list_create();
 		list_add(nuevo_nivel->colas[BLOQUEADOS], info_recurso); //crear cola de bloqueados para el recurso actual
 		i++;
 	}
 
-	nuevo_nivel->colas[LISTOS] = list_create(); //todo no deberian ser colas?
+	nuevo_nivel->colas[LISTOS] = list_create();
 
 	free(datos_nivel_entrante->recursos_nivel);
 	free(datos_nivel_entrante);
@@ -122,7 +122,6 @@ parametro *armar_parametro(t_list ** colas)
 
 	//ya arme las colas desde antes
 
-	//todo no hace falta inicializar los semaforos????
 	p->colas[LISTOS]=colas[LISTOS];
 	p->colas[BLOQUEADOS]=colas[BLOQUEADOS];
 	p->logger_planificador = NULL;

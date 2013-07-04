@@ -11,7 +11,7 @@
 #ifndef SERIAL_H_
 #define SERIAL_H_
 
-	#define N_MENSAJES 22
+	#define N_MENSAJES 23
 
 	#define SOLICITUD_INFO_NIVEL 1						//PP->HO
 	#define INFO_NIVEL_Y_PLANIFICADOR 2					//HO->PP
@@ -35,6 +35,7 @@
 	#define INFO_UBICACION_RECURSO 20					//PN->PP
 	#define ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL 21		//PP->PN
 	#define ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR 22		//PN->HO
+	#define	NOTIF_RECURSO_CONCEDIDO 23					//HO->PP
 
 	//typedefs de punteros a funciones
 	typedef void *(*p_funcion_deserial)(char *buffer);
@@ -186,6 +187,11 @@
 		uint8_t *recursos_nivel;
 		uint16_t puerto_nivel;
 	} __attribute__((packed)) t_envio_deDatos_delNivel_alOrquestador;
+
+	//23 - mensaje que le manda al orquestador al personaje cuando le da el recurso por el que estaba bloqueado
+	typedef struct{
+		char recurso; //esto es simbolico,probablemente no lo necesite
+	}__attribute__((packed)) t_concesion_recurso; //todo serializadores de esto
 
 
 	//la cabecera que se lee en todos los mensajes
