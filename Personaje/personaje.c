@@ -36,7 +36,7 @@ int contador_vidas;
 int conf_es_valida(t_config * configuracion);
 
 int llego();
-
+int buscar_paso(int * posicion, int * destino, int * prox_paso);
 
 int main(int argc, char **argv) {
 
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
 	string_append(&log_name,".log"); // queda : nombre.log
 
 	logger = log_create(log_name, "PERSONAJE", 0, LOG_LEVEL_TRACE);
-    //hacer free a log_name????????
+    free(log_name);//hacer free a log_name???????? seh
 	niveles_completados=0;
 
 	while (!(cantidad_niveles==niveles_completados)){
@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
         t_turno_concluido * turno_concluido;
         turno_concluido=malloc(sizeof(t_turno_concluido));
 
-	recibir(socket_planificador, NOTIF_MOVIMIENTO_PERMITIDO);     //333333333333333333333333333333
+        recibir(socket_planificador, NOTIF_MOVIMIENTO_PERMITIDO);     //333333333333333333333333333333
 		//el propósito de este "recibir" es puramente que el personaje se bloquee
 		//no necesita ninguna información. De hecho
 		//el mensaje podría ser solamente el header y nada de datos.
@@ -257,56 +257,61 @@ int main(int argc, char **argv) {
 	        log_info(logger,string_from_format("el nuevo destino es (%d,%d) y el recurso es %c ",proximo_recurso), "INFO");
 		}
 
-		//CASO EXTREMO A CONSIDERAR: SI EL PERSONAJE, APENAS LLEGA AL NIVEL, YA ESTÁ EN SU PRIMER DESTINO??
-		//ACCION: ELABORAR SOLICITUD DE MOVIMIENTO XY
-         solicitud_movimiento->char_personaje=simbolo;
-         solicitud_movimiento->x=destino[0];
-         solicitud_movimiento->y=destino[1];
+		int prox_paso[2];
 
-		enviar(socket_nivel,SOLICITUD_MOVIMIENTO_XY,solicitud_movimiento, 0);
+		if (buscar_paso(posicion, destino, prox_paso)) //se modifican los datos a los que apunta prox_paso, no prox_paso en si
+		{ //es decir, si tiene sentido moverse
+			 solicitud_movimiento->char_personaje=simbolo;
+			 solicitud_movimiento->x=prox_paso[0];
+			 solicitud_movimiento->y=prox_paso[1];
 
-			rspt_solicitud_movimiento=recibir(socket_nivel,RTA_SOLICITUD_MOVIMIENTO_XY);
+			 enviar(socket_nivel,SOLICITUD_MOVIMIENTO_XY,solicitud_movimiento, 0);
 
-			if (!rspt_solicitud_movimiento->aprobado) // esto se deberia cargar con el recibir asi q no hace falta inicializ.
-			{
-				log_error(logger, "Se intentó realizar un movimiento imposible", "ERROR");
+			 rspt_solicitud_movimiento=recibir(socket_nivel,RTA_SOLICITUD_MOVIMIENTO_XY);
 
-			//terminar anormalmente
-				printf("SOLICITUD DE MOVIMIENTO DENEGADO");
-						}
-            memcpy(posicion,destino,sizeof(posicion));
-
-			if(llego(posicion, destino)){ //llego es una funcion que simplemente compara la posicion con el destino, componente a componente
-
+			 if (!rspt_solicitud_movimiento->aprobado) // esto se deberia cargar con el recibir asi q no hace falta inicializ.
+			 {
+				 log_error(logger, "Se intentó realizar un movimiento imposible", "ERROR");
+				 printf("SOLICITUD DE MOVIMIENTO DENEGADO");
+				 exit(-1); //terminar anormalmente
+			}
+            memcpy(posicion,prox_paso,sizeof(posicion)); //me muevo a la proxima posicion
+		}
+			if(llego(posicion, destino))
+			{ //llego es una funcion que simplemente compara la posicion con el destino, componente a componente
+				//yes, estoy probando si llego dos veces, pero realmente hay que preguntar antes de pedir moverse (caso extremo), y despues de que me pude mover (caso usual)
 			     t_solcitud_instancia_recurso * solicitud_instancia;
 			     solicitud_instancia=malloc(sizeof(t_rspta_solicitud_instancia_recurso));
 			     t_rspta_solicitud_instancia_recurso * rpta_solicitud_instancia_recurso;
-//			     rpta_solicitud_instancia_recurso=malloc(sizeof(t_rspta_solicitud_instancia_recurso)); no necesita ini.
+			     //rpta_solicitud_instancia_recurso=malloc(sizeof(t_rspta_solicitud_instancia_recurso)); no necesita ini.
 			     //   rpta_solicitud_instancia_recurso->concedido=0; lo use para probar
 
 			     //ACCION: ELABORAR SOLICITUD INSTANCIA DE RECURSO
 			     //ACCION: SERIALIZAR SOLICITUD INSTANCIA DE RECURSO
-			solicitud_instancia->instancia_recurso = proximo_recurso;
-			enviar(socket_nivel,SOLICITUD_INSTANCIA_RECURSO,solicitud_instancia,logger);
+			     solicitud_instancia->instancia_recurso = proximo_recurso;
+			     enviar(socket_nivel,SOLICITUD_INSTANCIA_RECURSO,solicitud_instancia,logger);
 
-			rpta_solicitud_instancia_recurso = recibir(socket_nivel,RTA_SOLICITUD_INSTANCIA_RECURSO);
+			     rpta_solicitud_instancia_recurso = recibir(socket_nivel,RTA_SOLICITUD_INSTANCIA_RECURSO);
 
-			if (rpta_solicitud_instancia_recurso->concedido){
+				if (rpta_solicitud_instancia_recurso->concedido)
+				{
 
-				//ACCION: ACTUALIZAR RECURSOS OBTENIDOS. SI CONSIGUIO EL TOTAL, INDICAR consiguio_total_recursos = 1
-			    recursos_obtenidos++;
-			   // printf("%d\n",recursos_obtenidos); ..recordar borrar el malloc de rpta_solic.
+					//ACCION: ACTUALIZAR RECURSOS OBTENIDOS. SI CONSIGUIO EL TOTAL, INDICAR consiguio_total_recursos = 1
+					recursos_obtenidos++;
+				   // printf("%d\n",recursos_obtenidos); ..recordar borrar el malloc de rpta_solic.
 
-			    if(recursos_obtenidos == strlen(recursos_por_nivel[niveles_completados])){
+					if(recursos_obtenidos == strlen(recursos_por_nivel[niveles_completados]))
+					{
 
-			    	consiguio_total_recursos = 1; // para que me sirve esta variable
+						consiguio_total_recursos = 1; // para que me sirve esta variable
 
-			    //	una vez que consiguio total de recursos se deberia desconectar del nivel ?
-			    		}
-				sabe_donde_ir = 0;
-				log_info(logger, "Se obtuvo el recurso!", "INFO");
+					//	una vez que consiguio total de recursos se deberia desconectar del nivel ?
+					}
+					sabe_donde_ir = 0;
+					log_info(logger, "Se obtuvo el recurso!", "INFO");
 
-				} else if (!rpta_solicitud_instancia_recurso->concedido) //denegado
+				}
+				else if (!rpta_solicitud_instancia_recurso->concedido) //denegado
 
 				{
 					log_info(logger, "El personaje quedó a la espera del recurso", "INFO");
@@ -314,8 +319,8 @@ int main(int argc, char **argv) {
 
 					if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO){
 
-			//recibir(socket_orquestador,NOTIF_PERSONAJE_CONDENADO); // me devuelve el struct t_not_perso_conde
-			//pero es lo mismo que la  NOTIF_PERSONAJE_CONDENADO
+						recibir(socket_orquestador,NOTIF_PERSONAJE_CONDENADO); //hay que limpiarlo del socket
+
 						log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
 						//notificar al nivel que murio el personaje
 						//morir(); //morir se encarga de setear game_over si es necesario
@@ -330,7 +335,11 @@ int main(int argc, char **argv) {
 						}
 						break; //sale del nivel
 					}
-					//fin else if mje == NOTIF_RECURSO_CONCEDIDO then recursos_obtenidos++ y sabe_donde_ir=0(como arriba)
+					else if (mje_a_recibir == NOTIF_RECURSO_CONCEDIDO)
+						{
+							recursos_obtenidos++;
+							sabe_donde_ir=0;
+						}
 				}
 			}
 
@@ -399,6 +408,37 @@ int conf_es_valida(t_config * configuracion)
 		  config_has_property(configuracion, "planDeNiveles") &&
 		  config_has_property(configuracion, "vidas") &&
 		  config_has_property(configuracion, "orquestador"));
+}
+
+int buscar_paso(int * posicion, int * destino, int * prox_paso) //pone en prox_paso el proximo paso a tomar. retorna 1 en caso de exito, 0 si ya estoy en mi destino
+{
+	if (llego(posicion, destino)) return 0;
+
+	if (posicion[0]<destino[0])
+	{
+		prox_paso[0]=(posicion[0]+1);
+		prox_paso[1]=posicion[1];
+
+	}
+	else if (posicion[0]>destino[0])
+	{
+		prox_paso[0]=(posicion[0]-1);
+		prox_paso[1]=posicion[1];
+	}
+	else //if (posicion[0]==destino[0])
+	{
+		prox_paso[0]=posicion[0];
+		if (posicion[1]<destino[1])
+		{
+			prox_paso[1]=(posicion[1]+1);
+		}
+		else if (posicion[1]>destino[1])
+		{
+			prox_paso[1]=(posicion[1]-1);
+		}
+		//aca no hay else porque significaria pos=dest (ya lo deberia haber atrapado la funcion llego)
+	}
+	return 1;
 }
 
 
