@@ -182,7 +182,8 @@ int main(int argc, char **argv) {
 	    	int posicion[2] = {0,0};
 		int destino[2]; 
 		int sabe_donde_ir;
-	
+		int consiguio_total_recursos;
+		
 		nivel_a_pedir = strdup(plan_de_niveles[niveles_completados]);
 	
 		solicitud_info_nivel->nivel_solicitado=(uint8_t *)strdup(nivel_a_pedir);
@@ -225,15 +226,17 @@ int main(int argc, char **argv) {
 	
 		//FIN ANUNCIO
 	
+		
 	     	sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no.
 	     	 	 	 	 	//Se pone en Falso al entrar a un nivel
 		recursos_obtenidos = 0; //cuantos recursos obtuvo
+		consiguio_total_recursos=0; 
 	
 		while(1)
 		{
 	
-			int  consiguio_total_recursos=0;
-			uint8_t mje_a_recibir = 17;
+			
+			uint8_t mje_a_recibir = 17; 
 	        	uint8_t  proximo_recurso;
 	
 		        t_solicitud_movimiento *solicitud_movimiento;
@@ -291,7 +294,7 @@ int main(int argc, char **argv) {
 	            		memcpy(posicion,prox_paso,sizeof(posicion)); //me muevo a la proxima posicion
 			} //CON ESTO DOY EL PASITO, SI ES NECESARIO
 			
-			if(llego(posicion, destino))
+			if(llego(posicion, destino)) //EVALUO SI LLEGUE A MI DESTINO
 			{ //llego es una funcion que simplemente compara la posicion con el destino, componente a componente
 				//yes, estoy probando si llego dos veces, pero realmente hay que preguntar antes de pedir moverse (caso extremo), y despues de que me pude mover (caso usual)
 				t_solcitud_instancia_recurso * solicitud_instancia;
@@ -299,8 +302,6 @@ int main(int argc, char **argv) {
 				t_rspta_solicitud_instancia_recurso * rpta_solicitud_instancia_recurso;
 				//rpta_solicitud_instancia_recurso=malloc(sizeof(t_rspta_solicitud_instancia_recurso)); no necesita ini.
 				//   rpta_solicitud_instancia_recurso->concedido=0; lo use para probar
-				//ACCION: ELABORAR SOLICITUD INSTANCIA DE RECURSO
-				//ACCION: SERIALIZAR SOLICITUD INSTANCIA DE RECURSO
 				solicitud_instancia->instancia_recurso = proximo_recurso;
 				enviar(socket_nivel,SOLICITUD_INSTANCIA_RECURSO,solicitud_instancia,logger);
 				
@@ -311,7 +312,7 @@ int main(int argc, char **argv) {
 
 					//ACCION: ACTUALIZAR RECURSOS OBTENIDOS. SI CONSIGUIO EL TOTAL, INDICAR consiguio_total_recursos = 1
 					recursos_obtenidos++;
-				   // printf("%d\n",recursos_obtenidos); ..recordar borrar el malloc de rpta_solic.
+				   	// printf("%d\n",recursos_obtenidos); ..recordar borrar el malloc de rpta_solic. ESTO ES TESTING?
 
 					if(recursos_obtenidos == strlen(recursos_por_nivel[niveles_completados]))
 					{
@@ -322,15 +323,28 @@ int main(int argc, char **argv) {
 					}
 					sabe_donde_ir = 0;
 					log_info(logger, "Se obtuvo el recurso!", "INFO");
+					//y despues no necesita hacer mas nada!
+					turno_concluido->bloqueado=0;
+					enviar(socket_planificador,NOTIF_TURNO_CONCLUIDO,turno_concluido,logger);
+					
 
 				}
 				else if (!rpta_solicitud_instancia_recurso->concedido) //denegado
 
 				{
 					log_info(logger, "El personaje quedó a la espera del recurso", "INFO");
+					
+					turno_concluido->bloqueado=1;
+					turno_concluido->recurso_de_bloqueo = proximo_recurso;
+					enviar(socket_planificador,NOTIF_TURNO_CONCLUIDO,turno_concluido,logger);
+					//INFORMO QUE ME BLOQUEE
+					//TENGO QUE INFORMARLO SI O SI ACA, SINO COMO ME VAN A CONDENAR O CONCEDER EL RECURSO? ACA TERMINO EL TURNO
+					
 					mje_a_recibir = getnextmsg(socket_planificador);  //este msje me termina abruptamente
-
-					if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO){
+					//TODO ESTO DEBERIA SER BLOQUEANTE Y NO ROMPER
+					
+					if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO)
+					{
 
 						recibir(socket_orquestador,NOTIF_PERSONAJE_CONDENADO); //hay que limpiarlo del socket
 
@@ -353,65 +367,56 @@ int main(int argc, char **argv) {
 							recursos_obtenidos++;
 							sabe_donde_ir=0;
 						}
-				}
-			}
-	
-				//ACCION: ELABORAR NOTIFICACION DE TURNO CONCLUIDO
-		turno_concluido->bloqueado=1;
-		//falta completar el recurso de bloqueo
-		//ACCION: SERIALIZAR NOTIFICACION DE TURNO CONCLUIDO
-		enviar(socket_planificador,NOTIF_TURNO_CONCLUIDO,turno_concluido,logger);
-				if(recursos_obtenidos == strlen(recursos_por_nivel[niveles_completados]))
+				} //FIN CASO RECURSO DENEGADO
+			} //FIN SITUACION DE SOLICITAR RECURSO (LLEGO A DESTINO)
+
+			
+			if(consiguio_total_recursos)
 				{
 					log_info(logger, "Nivel finalizado!", "INFO");
-					//ACCION: ELABORAR NOTIFICACION NIVEL CONCLUIDO
 					notificacion_nivel_cumplido->char_personaje=simbolo;
-	                niveles_completados++; //aumentamos los niveles concluidos
-					//ACCION: SERIALIZAR NOTIFICACION NIVEL CONCLUIDO
-					//ACCION: MARCAR NIVEL COMO CONCLUIDO
-	 enviar(socket_nivel,NOTIF_NIVEL_CUMPLIDO,notificacion_nivel_cumplido,logger);  // a quien se lo envia realmente
+	                		niveles_completados++; //aumentamos los niveles concluidos
+	 				enviar(socket_nivel,NOTIF_NIVEL_CUMPLIDO,notificacion_nivel_cumplido,logger);  // a quien se lo envia realmente
 					break;  //por acá se sale del while(1) [personaje sale del nivel]
 				}
 	
 		 }//fin while(1) [personaje en nivel]
 	
-			//en este punto es donde definitivamente se sale de un nivel. esto significa desconectarse del hilo planificador y del nivel
+		//en este punto es donde definitivamente se sale de un nivel. esto significa desconectarse del hilo planificador y del nivel
 	
-		 //ACCION: DESCONECTAR DEL NIVEL
-		 //ACCION: DESCONECTAR DEL HILO PLANIFICADOR DEL NIVEL
-			close(socket_nivel);
-			close(socket_planificador);
+
+		close(socket_nivel);
+		close(socket_planificador);
 		 //después del fin while(1), el personaje pide info del próximo nivel
 		 //si el personaje murió, entonces no marcó el nivel como concludio, y va a pedir la info del nivel en el que estaba. esto es dudoso, ya que la consigna dice que "notifica su intención de reiniciar el nivel"
+		//en fin, el pedido de la info del proximo nivel la hace automaticamente el while plan de niveles
 	
 			if(game_over) //a menos que el personaje haya perdido todas sus vidas
 		 	{
-					//REINICIAR PLAN DE NIVELES
+				//REINICIAR PLAN DE NIVELES
 			         niveles_completados=0;
 			         log_info(logger, "Game over - reiniciando plan de niveles","INFO");
 		 	}
 	
 
-	} //fin plan_de_niveles==niveles_completados
+	} //FIN PLAN DE NIVELES
 
 
 	//el personaje, al terminar su plan de niveles, se conecta al hilo orquestador y se lo notifica
 
 	//ACCION: CONECTAR CON EL HILO ORQUESTADOR
-   socket_orquestador=init_socket_externo(puerto_orquestador,ip_puerto_orquestador,logger);
-   log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
+	socket_orquestador=init_socket_externo(puerto_orquestador,ip_puerto_orquestador,logger);
+	log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 	//ELABORAR NOTIFICACION DE PLAN TERMINADO
-    notificacion_plan_terminado->personaje=(uint8_t *)strdup(nombre);  // revisar q le voy a mandar al orquestador
+	notificacion_plan_terminado->personaje=(uint8_t *)strdup(nombre);  // revisar q le voy a mandar al orquestador
 	enviar(socket_orquestador,NOTIF_PLAN_TERMINADO,notificacion_plan_terminado,logger);
 
-//	while(1); //y queda a la espera indefinidamente? no debería terminar el proceso cuando termina el plan de niveles, así que supongo que hay que dejarlo ahí
-//  para evitar el warning, igual no se si tienen que ser tipo int o si pueden ser tipo void nuestros main
+	//while(1); //y queda a la espera indefinidamente? no debería terminar el proceso cuando termina el plan de niveles, así que supongo que hay que dejarlo ahí
 
-	printf("%s\n",recursos_por_nivel[3]);
+	//	printf("%s\n",recursos_por_nivel[3]); que es esta linea????
 
-return 0;
-
+	return 0;
 }
 
 int conf_es_valida(t_config * configuracion)
