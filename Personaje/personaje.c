@@ -371,6 +371,12 @@ int main(int argc, char **argv) {
 						}
 				} //FIN CASO RECURSO DENEGADO
 			} //FIN SITUACION DE SOLICITAR RECURSO (LLEGO A DESTINO)
+			
+			else if(!llego(posicion, destino)) //si NO llegó a destino (no hacer nada más)
+			{
+				turno_concluido->bloqueado=0;
+				enviar(socket_planificador,NOTIF_TURNO_CONCLUIDO,turno_concluido,logger);				
+			}
 
 			
 			if(consiguio_total_recursos)
