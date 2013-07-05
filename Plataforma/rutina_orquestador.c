@@ -11,6 +11,7 @@
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>
+#include <commons/string.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <sys/types.h>
@@ -24,7 +25,7 @@
 #include <sys/inotify.h>
 
 #include "rutina_orquestador.h"
-#include "rutina_planificador.h"
+#include "rutina_planificador.h"  //y bueno, ya fue
 #include "plataforma.h"
 
 #include <serial.h>
@@ -48,6 +49,9 @@ static int puerto_planif = 7000;
 void manejar_anuncio_nivel(int socket_nivel);
 void manejar_sol_info(int socket_nivel);
 t_info_nivel_planificador * crear_info_nivel(char * nombre);
+void manejar_recs_liberados(int socket);
+t_nodo_nivel * ubicar_nivel_por_socket(int socket);
+t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec);
 
 
 void rutina_orquestador(/*?*/)
@@ -131,7 +135,7 @@ parametro *armar_parametro(t_list ** colas)
 }
 
 
-void manejar_sol_info(int socket)
+void manejar_sol_info(int socket) //todo testear
 {
 	t_info_nivel_planificador * info;
 	t_solicitud_info_nivel * solicitud;
@@ -171,6 +175,91 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre)
 	}
 
 	return NULL;
+}
+
+
+void manejar_recs_liberados(int socket) //todo testear
+{
+	char * liberados;
+	char * resto;
+	char * reasignaciones;
+	char rec;
+	char rec_ant;
+	t_nodo_nivel * nivel;
+	t_notif_recursos_liberados * notificacion;
+	t_notif_recursos_reasignados * informe;
+	int i;
+
+	nivel = ubicar_nivel_por_socket(socket);
+
+	resto=malloc(1);
+	resto[0]='\0';
+
+	reasignaciones=malloc(1);
+	reasignaciones[0]='\0';
+
+	rec_ant='\0';
+
+	notificacion = recibir(socket, NOTIF_RECURSOS_LIBERADOS);
+	liberados=(char *)notificacion->recursos_liberados;
+	free(notificacion); //aunque libere notificacion, liberados sigue existiendo
+
+
+	while(liberados[i]!='\0')
+	{
+		static t_nodo_bloq_por_recurso * nodo_cola;
+
+		rec=liberados[i];
+
+		if (rec!=rec_ant) nodo_cola = ubicar_cola_por_rec(nivel->colas[BLOQUEADOS], rec);
+
+		if(list_size(nodo_cola->personajes)==0) //si no hay nadie bloqueado por ese recurso
+		{
+			char aux[2];
+			aux[0]=rec;
+			aux[1]='\0';
+			string_append(&resto, aux); //agrego el recurso al string de recursos que quedan definitivamente libres
+		}
+
+		else //si hay alguien para desencolar
+		{
+			char informe_parcial[3]; //esto es un string del tipo "@F", o sea "le di una flor a Mario"
+			t_nodo_personaje * personaje;
+			t_concesion_recurso * concedido;
+
+			concedido=malloc(sizeof(t_concesion_recurso));
+			concedido->recurso=rec;
+			//------GUARDA, ACA ES DONDE HAY QUE SINCRONIZAR!!!!!--------// TODO
+			personaje = desencolar(nodo_cola->personajes);
+
+			informe_parcial[0]=personaje->char_personaje;
+			informe_parcial[1]=rec;
+			informe_parcial[2]='\0';
+			string_append(&reasignaciones, informe_parcial);
+
+			enviar(personaje->socket, NOTIF_RECURSO_CONCEDIDO, concedido, NULL); //todo agregar logger
+			encolar(nivel->colas[LISTOS], personaje);
+			//-----FIN SECCION CRITICA----///
+			/*Issues con la sincronización:
+			1. El orquestador no está conociendo los semáforos que usa cada planificador! Agregarlo al nodo del nivel y ya fue?
+			2. Qué tan rebuscados pueden ser los escenarios que se nos presenten?
+			3. Qué pasa si un personaje que estaba por ser liberado se me desconectó?
+			*/
+		}
+
+		rec_ant=rec;
+		i++;
+	} //fin de procesamiento del string de recursos liberados
+	free(liberados);
+
+	informe=malloc(sizeof(t_notif_recursos_reasignados));
+	informe->asignaciones=(uint8_t *)reasignaciones;
+	informe->remanentes=(uint8_t *) resto; //estos casteos, la verdad....
+
+	enviar(nivel->socket, NOTIF_RECURSOS_REASIGNADOS, informe, NULL); //todo agregar logger
+
+	//todo free reasignados and resto? creeeo que si
+	//that's all folks
 }
 
 
@@ -235,4 +324,41 @@ void rutina_inotify()
 		inotify_rm_watch(file_descriptor, watch_descriptor);
 		close(file_descriptor);
 
+}
+
+t_nodo_nivel * ubicar_nivel_por_socket(int socket)
+{
+	int cant_niveles;
+	int i=0;
+
+	cant_niveles=list_size(lista_niveles);
+
+	while(i<cant_niveles)
+	{
+		t_nodo_nivel * nv_actual;
+
+		nv_actual = (t_nodo_nivel *) list_get(lista_niveles, i);
+		if (nv_actual->socket == socket) return nv_actual;
+		i++;
+	}
+
+	return NULL; //deberia ser una busqueda segura y no llegar nunca aca
+}
+
+t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec)
+{
+	int cant_colas;
+	int i=0;
+
+	cant_colas = list_size(lista_colas);
+
+	while(i<cant_colas)
+	{
+		t_nodo_bloq_por_recurso * cola_actual;
+		cola_actual = (t_nodo_bloq_por_recurso *) list_get(lista_colas, i);
+		if(cola_actual->char_recurso == ID_rec) return cola_actual;
+		i++;
+	}
+
+	return NULL; //deberia ser una busqueda segura y no llegar nunca aca
 }
