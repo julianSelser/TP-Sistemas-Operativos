@@ -32,7 +32,7 @@
 int quantum;
 int retraso;
 
-int main()
+int main() //todo tomar archivo de config por argv? por ahora esta hardcodeado en todos lados
 {
 	iniciar_serializadora();
 
