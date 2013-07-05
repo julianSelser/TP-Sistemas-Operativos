@@ -240,6 +240,11 @@ void manejar_recs_liberados(int socket) //todo testear
 			enviar(personaje->socket, NOTIF_RECURSO_CONCEDIDO, concedido, NULL); //todo agregar logger
 			encolar(nivel->colas[LISTOS], personaje);
 			//-----FIN SECCION CRITICA----///
+			/*Issues con la sincronización:
+			1. El orquestador no está conociendo los semáforos que usa cada planificador! Agregarlo al nodo del nivel y ya fue?
+			2. Qué tan rebuscados pueden ser los escenarios que se nos presenten?
+			3. Qué pasa si un personaje que estaba por ser liberado se me desconectó?
+			*/
 		}
 
 		rec_ant=rec;
