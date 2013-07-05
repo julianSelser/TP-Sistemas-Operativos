@@ -225,6 +225,7 @@
     char *srlz_ubicacion_de_recurso(void *data, int *tamanio);				//20
     char *srlz_datos_delPersonaje_alNivel(void *data, int *tamanio);		//21
     char *srlz_solicitud_recupero_deadlock(void *data, int *tamanio);		//22
+    char *srlz_concesion_recurso(void *data, int *tamanio);					//23
 
     //faltan en el .c y capaz no se usa
     char *srlz_notificacion_muerte_personaje(void *data,int *tamanio);//11
@@ -251,6 +252,7 @@
     void *deserializar_ubicacion_de_recurso(char *buffer);					//20
     void *deserializar_datos_delPersonaje_alNivel(char *buffer);			//21
     void *deserializar_solicitud_recupero_deadlock(char *buffer);			//22
+    void *deserializar_concesion_recurso(char *buffer);						//23
 
     //faltan en el .c y capaz no se usa
     void *deserializar_notificacion_muerte_personaje(char *buffer);//11
