@@ -22,8 +22,6 @@
 
 
 // falta setear los sockets para cerrarse con execve
-#define N_MENSAJES 22//por ahora son 21
-
 
 static p_funcion_deserial vec_deserializador[N_MENSAJES];
 static p_funcion_serial vec_serializador[N_MENSAJES];
@@ -634,7 +632,8 @@ char *srlz_envio_deDatos_delNivel_alOrquestador(void *data, int *tamanio){
 int init_socket_externo(int puerto, char *direccion, t_log *logger)
 {
 	int unSocket;
-	struct sockaddr_in socketInfo; // aca eclipse me dice que la variable no se usa...esta loco...se usa abajo...
+	struct linger lo = { 1, 0 };
+	struct sockaddr_in socketInfo;
 
 	// Crear un socket:
 	// AF_INET: Socket de internet IPv4
@@ -644,6 +643,8 @@ int init_socket_externo(int puerto, char *direccion, t_log *logger)
 		/*todo logear:Error al crear socket*/
 		exit(1);
 	}
+
+	setsockopt(unSocket, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
 
 	socketInfo.sin_family = AF_INET;
 	socketInfo.sin_addr.s_addr = inet_addr(direccion);
