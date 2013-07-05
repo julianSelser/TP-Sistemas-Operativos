@@ -120,7 +120,7 @@ t_nodo_personaje *armar_nodo_personaje(t_datos_delPersonaje_alPlanificador *dato
 	t_nodo_personaje *personaje = malloc(sizeof(t_nodo_personaje));
 
 	personaje->char_personaje = datos->char_personaje;
-	personaje->nombre = (char *)datos->nombre_personaje;
+	personaje->nombre = datos->nombre_personaje;
 	personaje->socket = socket;
 
 	free(datos);

@@ -484,7 +484,7 @@ void reubicar_recursos(t_list *necesidades){
 	//borrar lista de necesidades y sus nodos de memoria
 	list_destroy_and_destroy_elements(necesidades, free);
 
-	notificacion->recursos_liberados = (uint8_t*)recursos_liberados;
+	notificacion->recursos_liberados = recursos_liberados;
 
 	enviar(socket_orquestador, NOTIF_RECURSOS_LIBERADOS, notificacion, logger);
 }

@@ -182,7 +182,7 @@ int enviar(int socket, int tipo, void *struct_mensaje, t_log *logger)
 //1
 void *deserializar_solicitud_info_nivel(char *buffer){
 	t_solicitud_info_nivel *solicitud = malloc(sizeof(t_solicitud_info_nivel));
-	solicitud->nivel_solicitado = (uint8_t*)strdup(buffer);
+	solicitud->nivel_solicitado = strdup(buffer);
     return solicitud;
 }
 
@@ -197,9 +197,9 @@ void * deserializar_info_nivel_y_planificador(char *buffer){
 	memcpy(&info->puerto_planificador,buffer + offset,tmp=sizeof(uint16_t));
 	offset+=tmp;
 
-	info->ip_nivel = (uint8_t*)strdup(buffer+offset);
-	offset += strlen((char*)info->ip_nivel) + 1;
-	info->ip_planificador = (uint8_t*)strdup(buffer+offset);
+	info->ip_nivel = strdup(buffer+offset);
+	offset += strlen(info->ip_nivel) + 1;
+	info->ip_planificador = strdup(buffer+offset);
 
 	return info;
 }
@@ -281,7 +281,7 @@ void *deserializar_notificacion_muerte_personaje(char *buffer){return NULL;}
 //13
 void *deserializar_notif_recursos_liberados(char *buffer){
 	t_notif_recursos_liberados * rec_liberados = malloc(sizeof(t_notif_recursos_liberados));
-	rec_liberados->recursos_liberados = (uint8_t*)strdup(buffer);
+	rec_liberados->recursos_liberados = strdup(buffer);
 	return rec_liberados;
 }
 
@@ -290,8 +290,8 @@ void *deserializar_notif_recursos_liberados(char *buffer){
 void *deserializar_notif_recursos_reasignados(char *buffer){
 	t_notif_recursos_reasignados *reasignados = malloc(sizeof(t_notif_recursos_reasignados));
 
-	reasignados->asignaciones = (uint8_t*)strdup(buffer);
-	reasignados->remanentes = (uint8_t*)strdup(( buffer+strlen((char*)reasignados->asignaciones)+1 ));
+	reasignados->asignaciones = strdup(buffer);
+	reasignados->remanentes = strdup(( buffer+strlen(reasignados->asignaciones)+1 ));
 
 	return reasignados;
 }
@@ -300,7 +300,7 @@ void *deserializar_notif_recursos_reasignados(char *buffer){
 //15
 void *deserializar_solicitud_recupero_deadlock(char *buffer){
 	t_solicitud_recupero_deadlock *solicitud = malloc(sizeof(t_solicitud_recupero_deadlock));
-	solicitud->pjes_deadlock = (uint8_t*)strdup(buffer);
+	solicitud->pjes_deadlock = strdup(buffer);
 	return solicitud;
 }
 
@@ -324,7 +324,7 @@ void *deserializar_personaje_condenado(char *buffer){
 //18
 void *deserializar_notificacion_plan_terminado(char *buffer){
 	t_notificacion_plan_terminado *termino = malloc(sizeof(t_notificacion_plan_terminado));
-	termino->personaje = (uint8_t*)strdup(buffer);
+	termino->personaje = strdup(buffer);
 	return termino;
 }
 
@@ -334,7 +334,7 @@ void *deserializar_datos_delPersonaje_alPlanificador(char *buffer){
 	int offset;
 	t_datos_delPersonaje_alPlanificador *datos = malloc(sizeof(t_datos_delPersonaje_alPlanificador));
 	memcpy(&datos->char_personaje, buffer, offset = sizeof(uint8_t));
-	datos->nombre_personaje= (uint8_t*)strdup((char*)(buffer+offset));
+	datos->nombre_personaje= strdup((buffer+offset));
 	return datos;
 }
 
@@ -357,8 +357,8 @@ void *deserializar_datos_delPersonaje_alNivel(char *buffer){
 	t_datos_delPersonaje_alNivel *datos = malloc(sizeof(t_datos_delPersonaje_alNivel));
 
 	memcpy(&datos->char_personaje, buffer, sizeof(uint8_t));
-	datos->nombre_personaje = (uint8_t*)strdup((buffer+sizeof(uint8_t)));
-	datos->necesidades = (uint8_t*)strdup( ( buffer  +  sizeof(uint8_t)  +  strlen((char*)datos->nombre_personaje)  +  1 ) );
+	datos->nombre_personaje = strdup((buffer+sizeof(uint8_t)));
+	datos->necesidades = strdup( ( buffer  +  sizeof(uint8_t)  +  strlen(datos->nombre_personaje)  +  1 ) );
 
 	return datos;
 }
@@ -368,9 +368,9 @@ void *deserializar_datos_delPersonaje_alNivel(char *buffer){
 void *deserializar_envio_deDatos_delNivel_alOrquestador(char *buffer){
 	t_envio_deDatos_delNivel_alOrquestador *datos = malloc(sizeof(t_envio_deDatos_delNivel_alOrquestador));
 
-	datos->nombre = (uint8_t*)strdup(buffer);
-	datos->recursos_nivel = (uint8_t*)strdup(buffer+strlen((char*)datos->nombre)+1);
-	memcpy(&datos->puerto_nivel, buffer+strlen((char*)datos->nombre)+1+strlen((char*)datos->recursos_nivel)+1, sizeof(uint16_t) );
+	datos->nombre = strdup(buffer);
+	datos->recursos_nivel = strdup(buffer+strlen(datos->nombre)+1);
+	memcpy(&datos->puerto_nivel, buffer+strlen(datos->nombre)+1+strlen(datos->recursos_nivel)+1, sizeof(uint16_t) );
 
 	return datos;
 }
@@ -385,9 +385,9 @@ void *deserializar_envio_deDatos_delNivel_alOrquestador(char *buffer){
 //1
 char *srlz_solicitud_info_nivel(void *data, int *tamanio){
 	t_solicitud_info_nivel *sol = data;
-	char* buffer = malloc(strlen((char*)sol->nivel_solicitado)+1);
+	char* buffer = malloc(strlen(sol->nivel_solicitado)+1);
 
-    memcpy(buffer,sol->nivel_solicitado, *tamanio = strlen((char*)sol->nivel_solicitado)+1 );
+    memcpy(buffer,sol->nivel_solicitado, *tamanio = strlen(sol->nivel_solicitado)+1 );
 
     free(sol->nivel_solicitado);
 	free(data);
@@ -399,15 +399,15 @@ char *srlz_solicitud_info_nivel(void *data, int *tamanio){
 char *srlz_info_nivel_y_planificador(void *data, int *tamanio){
 	int tmp =0,offset=0;
 	t_info_nivel_planificador *d = data;
-	char *buffer = malloc(*tamanio = sizeof(uint16_t) + sizeof(uint16_t) + strlen((char*)d->ip_nivel)+1 + strlen((char*)d->ip_planificador)+1);
+	char *buffer = malloc(*tamanio = sizeof(uint16_t) + sizeof(uint16_t) + strlen(d->ip_nivel)+1 + strlen(d->ip_planificador)+1);
 
 	memcpy(buffer, &d->puerto_nivel,tmp=sizeof(uint16_t));
     offset+=tmp;
     memcpy(buffer+offset, &d->puerto_planificador,tmp=sizeof(uint16_t));
     offset+=tmp;
-    memcpy(buffer+offset, d->ip_nivel, tmp = strlen((char*)d->ip_nivel)+1);
+    memcpy(buffer+offset, d->ip_nivel, tmp = strlen(d->ip_nivel)+1);
     offset+=tmp;
-    memcpy(buffer+offset, d->ip_planificador, tmp = strlen((char*)d->ip_planificador)+1);
+    memcpy(buffer+offset, d->ip_planificador, tmp = strlen(d->ip_planificador)+1);
 
     free(d->ip_planificador);
     free(d->ip_nivel);
@@ -495,8 +495,8 @@ char *srlz_notificacion_muerte_personaje(void *data,int *tamanio){return NULL;}
 //13
 char *srlz_notif_recursos_liberados(void *data, int *tamanio){
 	t_notif_recursos_liberados *d = data;
-	char *buffer = malloc( *tamanio = strlen((char*)d->recursos_liberados) + 1 );
-	memcpy(buffer, (char*)d->recursos_liberados, *tamanio);
+	char *buffer = malloc( *tamanio = strlen(d->recursos_liberados) + 1 );
+	memcpy(buffer, d->recursos_liberados, *tamanio);
 	free(d->recursos_liberados);
 	free(data);
 	return buffer;
@@ -507,10 +507,10 @@ char *srlz_notif_recursos_liberados(void *data, int *tamanio){
 char *srlz_notif_recursos_reasignados(void *data, int *tamanio){
 	int offset;
 	t_notif_recursos_reasignados *d = data;
-	char *buffer = malloc( *tamanio = strlen((char*)d->asignaciones)+1  +  strlen((char*)d->remanentes)+1 );
+	char *buffer = malloc( *tamanio = strlen(d->asignaciones)+1  +  strlen(d->remanentes)+1 );
 
-	memcpy(buffer, (char*)d->asignaciones, offset = strlen((char*)d->asignaciones)+1 );
-	memcpy(buffer+offset, (char*)d->remanentes, strlen((char*)d->remanentes)+1 );
+	memcpy(buffer, d->asignaciones, offset = strlen(d->asignaciones)+1 );
+	memcpy(buffer+offset, d->remanentes, strlen(d->remanentes)+1 );
 
 	free(d->asignaciones);
 	free(d->remanentes);
@@ -522,8 +522,8 @@ char *srlz_notif_recursos_reasignados(void *data, int *tamanio){
 //15
 char *srlz_solicitud_recupero_deadlock(void *data, int *tamanio){
 	t_solicitud_recupero_deadlock *d = data;
-	char *buffer = malloc(*tamanio = strlen((char*)d->pjes_deadlock)+1);
-	memcpy(buffer, d->pjes_deadlock, strlen((char*)d->pjes_deadlock)+1);
+	char *buffer = malloc(*tamanio = strlen(d->pjes_deadlock)+1);
+	memcpy(buffer, d->pjes_deadlock, strlen(d->pjes_deadlock)+1);
 	free(d->pjes_deadlock);
 	free(d);
 	return buffer;
@@ -551,9 +551,9 @@ char *srlz_personaje_condenado(void *data, int *tamanio){
 //18
 char *srlz_notificacion_plan_terminado(void *data,int *tamanio){
 	t_notificacion_plan_terminado *d = data;
-	char *buffer = malloc( strlen((char*)d->personaje)+1 );
+	char *buffer = malloc( strlen(d->personaje)+1 );
 
-	memcpy(buffer, (char*)d->personaje, *tamanio = strlen((char*)d->personaje)+1 );
+	memcpy(buffer, d->personaje, *tamanio = strlen(d->personaje)+1 );
 
 	free(d->personaje);
 	free(d);
@@ -565,10 +565,10 @@ char *srlz_notificacion_plan_terminado(void *data,int *tamanio){
 char *srlz_datos_delPersonaje_alPlanificador(void *data, int *tamanio){
 	int offset;
 	t_datos_delPersonaje_alPlanificador *d = data;
-	char *buffer = malloc( sizeof(uint8_t) + strlen((char*)d->nombre_personaje) + 1 );
+	char *buffer = malloc( sizeof(uint8_t) + strlen(d->nombre_personaje) + 1 );
 
 	memcpy(buffer, &d->char_personaje, offset = sizeof(uint8_t));
-	memcpy(buffer+offset, d->nombre_personaje, *tamanio = 1 + strlen((char*)d->nombre_personaje));
+	memcpy(buffer+offset, d->nombre_personaje, *tamanio = 1 + strlen(d->nombre_personaje));
 	*tamanio += offset;
 
 	free(d->nombre_personaje);
@@ -590,13 +590,13 @@ char *srlz_ubicacion_de_recurso(void *data, int *tamanio){
 char *srlz_datos_delPersonaje_alNivel(void *data, int *tamanio){
 	int tmp, offset = 0;
 	t_datos_delPersonaje_alNivel *d = data;
-	char *buffer = malloc( *tamanio = sizeof(uint8_t)  +  strlen((char*)d->necesidades)+1  +  strlen((char*)d->nombre_personaje)+1 );
+	char *buffer = malloc( *tamanio = sizeof(uint8_t)  +  strlen(d->necesidades)+1  +  strlen(d->nombre_personaje)+1 );
 
-	memcpy(buffer, (char*)&d->char_personaje, tmp = sizeof(uint8_t));
+	memcpy(buffer, &d->char_personaje, tmp = sizeof(uint8_t));
 	offset += tmp;
-	memcpy(buffer+offset, d->nombre_personaje, tmp = strlen((char*)d->nombre_personaje)+1);
+	memcpy(buffer+offset, d->nombre_personaje, tmp = strlen(d->nombre_personaje)+1);
 	offset += tmp;
-	memcpy(buffer+offset, d->necesidades, strlen((char*)d->necesidades)+1);
+	memcpy(buffer+offset, d->necesidades, strlen(d->necesidades)+1);
 
 	free(d->necesidades);
 	free(d->nombre_personaje);
@@ -609,11 +609,11 @@ char *srlz_datos_delPersonaje_alNivel(void *data, int *tamanio){
 char *srlz_envio_deDatos_delNivel_alOrquestador(void *data, int *tamanio){
 	int tmp, offset = 0;
 	t_envio_deDatos_delNivel_alOrquestador *d = data;
-	char *buffer = malloc(*tamanio = sizeof(uint16_t) + strlen((char*)d->nombre)+1 + strlen((char*)d->recursos_nivel)+1);
+	char *buffer = malloc(*tamanio = sizeof(uint16_t) + strlen(d->nombre)+1 + strlen(d->recursos_nivel)+1);
 
-	memcpy(buffer, d->nombre, tmp = strlen((char*)d->nombre)+1);
+	memcpy(buffer, d->nombre, tmp = strlen(d->nombre)+1);
 	offset += tmp;
-	memcpy(buffer+offset, d->recursos_nivel, tmp = strlen((char*)d->recursos_nivel)+1);
+	memcpy(buffer+offset, d->recursos_nivel, tmp = strlen(d->recursos_nivel)+1);
 	offset += tmp;
 	memcpy(buffer+offset, &d->puerto_nivel, sizeof(uint16_t));
 
@@ -688,7 +688,7 @@ int init_socket_escucha(int puerto, int optval, t_log *logger){
 
 
 //OJO: esta funcion solo deberia ser usada dentro de un select()
-int is_connected(int socket){
+bool is_connected(int socket){
 	char buffer[1];
-	return recv(socket, buffer, 1, MSG_PEEK | MSG_DONTWAIT);
+	return recv(socket, buffer, sizeof buffer, MSG_PEEK|MSG_DONTWAIT)>0;
 }

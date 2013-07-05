@@ -186,7 +186,7 @@ int main(int argc, char **argv) {
 		
 		nivel_a_pedir = strdup(plan_de_niveles[niveles_completados]);
 	
-		solicitud_info_nivel->nivel_solicitado=(uint8_t *)strdup(nivel_a_pedir);
+		solicitud_info_nivel->nivel_solicitado=strdup(nivel_a_pedir);
 		log_info(logger, string_from_format("Proximo Nivel:%s",nivel_a_pedir), "INFO");
 	
 		socket_orquestador = init_socket_externo(socket_orquestador, ip_orquestador, logger);
@@ -197,8 +197,8 @@ int main(int argc, char **argv) {
 		info_nivel_y_planificador = recibir(socket_orquestador, INFO_NIVEL_Y_PLANIFICADOR);  //22222222222222222
 				
 		/* sentencias de testing
-		info_nivel_y_planificador->ip_nivel=(uint8_t*)"127.0.0.1";
-		info_nivel_y_planificador->ip_planificador=(uint8_t*)"127.0.0.1";
+		info_nivel_y_planificador->ip_nivel="127.0.0.1";
+		info_nivel_y_planificador->ip_planificador="127.0.0.1";
 		info_nivel_y_planificador->puerto_nivel=5400;
 		info_nivel_y_planificador->puerto_planificador=5600; */
 		
@@ -216,12 +216,12 @@ int main(int argc, char **argv) {
 		//ANUNCIO AL NIVEL Y AL PLANIFICADOR
 	
 		datos_personaje_planificador->char_personaje=simbolo;
-		datos_personaje_planificador->nombre_personaje=(uint8_t*)strdup(nombre);
+		datos_personaje_planificador->nombre_personaje=strdup(nombre);
 		enviar(socket_planificador,ENVIO_DE_DATOS_AL_PLANIFICADOR,datos_personaje_planificador,logger);
 		
 		datos_personaje_nivel->char_personaje=simbolo;
-		datos_personaje_nivel->nombre_personaje=(uint8_t*) strdup(nombre);
-		datos_personaje_nivel->necesidades=(uint8_t*)strdup(recursos_por_nivel[niveles_completados]);
+		datos_personaje_nivel->nombre_personaje= strdup(nombre);
+		datos_personaje_nivel->necesidades=strdup(recursos_por_nivel[niveles_completados]);
 		enviar(socket_nivel,ENVIO_DE_DATOS_PERSONAJE_AL_NIVEL,datos_personaje_nivel,logger);
 	
 		//FIN ANUNCIO
@@ -417,7 +417,7 @@ int main(int argc, char **argv) {
 	log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 	//ELABORAR NOTIFICACION DE PLAN TERMINADO
-	notificacion_plan_terminado->personaje=(uint8_t *)strdup(nombre);  // revisar q le voy a mandar al orquestador
+	notificacion_plan_terminado->personaje=strdup(nombre);  // revisar q le voy a mandar al orquestador
 	enviar(socket_orquestador,NOTIF_PLAN_TERMINADO,notificacion_plan_terminado,logger);
 
 	//while(1); //y queda a la espera indefinidamente? no debería terminar el proceso cuando termina el plan de niveles, así que supongo que hay que dejarlo ahí

@@ -49,7 +49,7 @@
 
 	//1 - struct del mensaje que le envia el personaje al orquestador para recibir como respuesta la informacion que necesita (ips/puertos)
     typedef struct {
-    	uint8_t *nivel_solicitado;
+    	char *nivel_solicitado;
     }__attribute__((packed)) t_solicitud_info_nivel;
 
 
@@ -57,59 +57,59 @@
 	typedef struct{
 		uint16_t puerto_nivel;
 		uint16_t puerto_planificador;
-		uint8_t *ip_nivel;
-		uint8_t *ip_planificador;
+		char *ip_nivel;
+		char *ip_planificador;
 	}__attribute__((packed)) t_info_nivel_planificador ;
 
 
 	//3 - struct simbolico del mensaje movimiento permitido(no se usa)/*	FIJARSE DESPUES EN PERSONAJE SI HAY UN RECIBIR DESPUES DEL GETNEXTMSG	*/
 	typedef struct {
-		uint8_t permitido;
+		char permitido;
 	} __attribute__((packed)) t_mov_permitido ;
 
 
 	//4 - struct que simboliza una solicitud de movimiento del personaje al nivel
 	typedef struct {
-		uint8_t char_personaje;
-		uint8_t x;
-		uint8_t y;
+		char char_personaje;
+		char x;
+		char y;
 	} __attribute__((packed)) t_solicitud_movimiento;
 
 
 	//5 - struct del mensaje que envia el nivel al personaje, aprobando o no una solicitud de movimiento
 	typedef struct{
-		uint8_t aprobado;
+		char aprobado;
 	} __attribute__((packed)) t_resp_solicitud_movimiento;
 
 
 	//6 - struct del mensaje que envia el personaje al nivel pidiendo la ubicacion de un recurso, "recurso" es el char de aquel
 	typedef struct{
-		uint8_t recurso;
+		char recurso;
 	} __attribute__((packed)) t_solicitud_ubicacion_recurso;
 
 
 	//7 - struct del mensaje que envia el personaje al nivel pidiendo una instancia de un recurso
 	typedef struct{
-		uint8_t instancia_recurso;
+		char instancia_recurso;
 	} __attribute__((packed)) t_solcitud_instancia_recurso;
 
 
 	//8 - struct del mensaje que envia el nivel al personaje en respuesta al pedido de instancia de un recurso, concediendolo o no
 	typedef struct{
-		uint8_t concedido;
+		char concedido;
 	} __attribute__((packed)) t_rspta_solicitud_instancia_recurso;
 
 
 	//9 - struct del mensaje turno concluido que el personaje envia al hilo planificador en cada dada de quantum
 	typedef struct{
-		uint8_t bloqueado ;// usarlo como booleano
-		uint8_t recurso_de_bloqueo;
+		char bloqueado ;// usarlo como booleano
+		char recurso_de_bloqueo;
 	} __attribute__((packed)) t_turno_concluido;
 
 
 	//10 - struct del mensaje que envia el personaje al nivel cuando termino de reunir sus objetivos
 	typedef struct{
-		uint8_t char_personaje;
+		char char_personaje;
 	} __attribute__((packed)) t_notificacion_nivel_cumplido;
 
 
@@ -123,68 +123,68 @@
 
 	//13 - struct del mensaje que envia el nivel al orquestador con los recursos liberados de la forma "ACDC"
 	typedef struct{
-		uint8_t *recursos_liberados;
+		char *recursos_liberados;
 	}__attribute__((packed)) t_notif_recursos_liberados;
 
 
 	//14 - struct del mensaje que envia el orquestador al nivel con los recursos reasignados de la forma "#A&B" y remanentes: "CACA"
 	typedef struct{
-		uint8_t *asignaciones;
-		uint8_t *remanentes;
+		char *asignaciones;
+		char *remanentes;
 	}__attribute__((packed)) t_notif_recursos_reasignados;
 
 
 	//15 - struct del mensaje que envia el hilo que chequea deadlock del nivel al orquestador con los personajes en deadlock
 	typedef struct{
-		uint8_t *pjes_deadlock;
+		char *pjes_deadlock;
 	} __attribute__((packed)) t_solicitud_recupero_deadlock;
 
 
 	//16 - struct del mensaje que envia el orquestador al nivel para notificarlo de la muerte de un personaje
 	typedef struct{
-		uint8_t char_personaje;
+		char char_personaje;
 	}__attribute__((packed)) t_notif_eleccion_de_victima;
 
 
 	//17 - struct del mensaje que envia el orquestador al personaje cuando debe morir a causa de interbloqueo
 	typedef struct{
-		uint8_t condenado ; // lo tratamos como booleano
+		char condenado ; // lo tratamos como booleano
 		// creo que también es simbólico porque ni bien recibe esto, el personaje va y se muere
 	} __attribute__((packed)) t_personaje_condenado;
 
 
 	//18 - struct del mensaje que envia el personaje al orquestador cuando termino su plan de nivel...ojo con este...
 	typedef struct{
-		uint8_t * personaje;
+		char * personaje;
 	} __attribute__((packed)) t_notificacion_plan_terminado;
 
 
 	//19 - struct del mensaje que envia el personaje al planificador cuando conecta por primera vez
 	typedef struct {
-		uint8_t char_personaje;
-		uint8_t *nombre_personaje;
+		char char_personaje;
+		char *nombre_personaje;
 	} __attribute__((packed)) t_datos_delPersonaje_alPlanificador;
 
 
 	//20 - struct del mensaje que envia el nivel al personaje para que sepa donde esta ubicado el recurso
 	typedef struct{
-		uint8_t x;
-		uint8_t y;
+		char x;
+		char y;
 	} __attribute__((packed)) t_ubicacion_recurso ;
 	
 
 	//21 - mensaje que un personaje envia al nivel cada vez que se quiere conectar por primera vez
 	typedef struct{
-		uint8_t char_personaje;
-		uint8_t *nombre_personaje;
-		uint8_t *necesidades;
+		char char_personaje;
+		char *nombre_personaje;
+		char *necesidades;
 	} __attribute__((packed)) t_datos_delPersonaje_alNivel;
 
 
 	//22 - mensaje que el nivel le envia al orquestador con sus datos apenas arranca
 	typedef struct{
-		uint8_t *nombre;
-		uint8_t *recursos_nivel;
+		char *nombre;
+		char *recursos_nivel;
 		uint16_t puerto_nivel;
 	} __attribute__((packed)) t_envio_deDatos_delNivel_alOrquestador;
 
@@ -196,7 +196,7 @@
 
 	//la cabecera que se lee en todos los mensajes
 	typedef struct {
-		uint8_t tipo;
+		char tipo;
 		uint16_t len;
 	} __attribute__((packed)) t_cabecera;
 
@@ -263,9 +263,9 @@
 	t_cabecera *deserializar_cabecera(char *buffer);
 
 	//funciones de socket
+	bool is_connected(int socket);
 	int init_socket_externo(int puerto, char *direccion, t_log *logger);
 	int init_socket_escucha(int puerto, int optval, t_log *logger);
-	int is_connected(int socket);
 
 	// funcion de inicializacion
 	void iniciar_serializadora();

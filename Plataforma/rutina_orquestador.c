@@ -90,7 +90,7 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 	/*nuevo_nivel->IP = malloc(strlen(IP_local)+1)
 	strcpy(nuevo_nivel->IP, IP_local)*/
 	nuevo_nivel->puerto_planif = puerto_planif;
-	nuevo_nivel->nombre=(char *)(datos_nivel_entrante->nombre);
+	nuevo_nivel->nombre=(datos_nivel_entrante->nombre);
 	//esa ultima linea funciona solo si la informacion a la que apunta nombre no se libera
 
 	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el niel
@@ -141,7 +141,7 @@ void manejar_sol_info(int socket) //todo testear
 	t_solicitud_info_nivel * solicitud;
 
 	solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
-	info = crear_info_nivel((char *)solicitud->nivel_solicitado);
+	info = crear_info_nivel(solicitud->nivel_solicitado);
 
 	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, NULL); //TODO AGREGAR LOGGER!!!
 	free(solicitud->nivel_solicitado);
@@ -201,7 +201,7 @@ void manejar_recs_liberados(int socket) //todo testear
 	rec_ant='\0';
 
 	notificacion = recibir(socket, NOTIF_RECURSOS_LIBERADOS);
-	liberados=(char *)notificacion->recursos_liberados;
+	liberados=notificacion->recursos_liberados;
 	free(notificacion); //aunque libere notificacion, liberados sigue existiendo
 
 
@@ -253,8 +253,8 @@ void manejar_recs_liberados(int socket) //todo testear
 	free(liberados);
 
 	informe=malloc(sizeof(t_notif_recursos_reasignados));
-	informe->asignaciones=(uint8_t *)reasignaciones;
-	informe->remanentes=(uint8_t *) resto; //estos casteos, la verdad....
+	informe->asignaciones=reasignaciones;
+	informe->remanentes= resto; //estos casteos, la verdad....
 
 	enviar(nivel->socket, NOTIF_RECURSOS_REASIGNADOS, informe, NULL); //todo agregar logger
 

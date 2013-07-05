@@ -287,7 +287,7 @@ char * detectar_deadlock()
 void *msg_recupero_deadlock(char *pjes){
 	t_solicitud_recupero_deadlock *solicitud = malloc(sizeof(t_solicitud_recupero_deadlock));
 
-	solicitud->pjes_deadlock = (uint8_t*)strdup(pjes);
+	solicitud->pjes_deadlock = strdup(pjes);
 
 	return solicitud;
 }
