@@ -29,8 +29,8 @@
 #include "Nivel.h"
 
 int indexof(char * array, char c, int size);
-int puede_terminar(char pje_actual, char * recs, uint8_t * instancias, int cant_recursos);
-int liberar_recursos(char pje_actual, char * recs, uint8_t * instancias, int cant_recursos);
+int puede_terminar(char pje_actual, char * recs, char * instancias, int cant_recursos);
+int liberar_recursos(char pje_actual, char * recs, char * instancias, int cant_recursos);
 t_nodo_personaje * ubicar_pje_por_ID(char ID);
 char * detectar_deadlock();
 
@@ -200,11 +200,11 @@ char * detectar_deadlock()
 {
 
 	char * pjes;
-	uint8_t * finish;
+	char * finish;
 	char * involucrados;
 
 	char * recs;
-	uint8_t * instancias;
+	char * instancias;
 
 	int cant_pjes;
 	int cant_recursos;
@@ -308,7 +308,7 @@ int indexof(char * array, char c, int size)
 //ojo, las dos funciones que siguen son muy parecidas
 //todo compartir codigo?
 
-int puede_terminar(char pje_actual, char * recs, uint8_t * instancias, int cant_recursos)
+int puede_terminar(char pje_actual, char * recs, char * instancias, int cant_recursos)
 {
 	int cant_necesidades;
 	t_list * necesidad;
@@ -339,7 +339,7 @@ int puede_terminar(char pje_actual, char * recs, uint8_t * instancias, int cant_
 	return termina;
 }
 
-int liberar_recursos(char pje_actual, char * recs, uint8_t * instancias, int cant_recursos) //todo
+int liberar_recursos(char pje_actual, char * recs, char * instancias, int cant_recursos) //todo
 {
 	int cant_necesidades;
 	t_list * necesidad;

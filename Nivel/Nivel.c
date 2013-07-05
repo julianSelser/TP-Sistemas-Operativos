@@ -37,7 +37,7 @@ int puerto_orquestador, socket_orquestador, escucha;
 int tiempo_chequeo_deadlock;
 int recovery;
 int filas, columnas;
-uint8_t cantidad_de_recursos;
+int cantidad_de_recursos;
 t_config * configuracion;
 
 t_log *logger;

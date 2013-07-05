@@ -22,16 +22,16 @@
 	{
 		char * nombre;
 		char ID;
-		uint8_t x;
-		uint8_t y;
-		uint8_t total;
-		uint8_t disp;
+		char x;
+		char y;
+		char total;
+		char disp;
 	} t_caja;
 
 	typedef struct
 	{
-		uint8_t asig;
-		uint8_t max;
+		char asig;
+		char max;
 		char ID_recurso;
 	} t_necesidad;
 
@@ -40,8 +40,8 @@
 		char ID;
 		char *nombre;
 		int socket;
-		uint8_t x;
-		uint8_t y;
+		char x;
+		char y;
 		t_list * necesidades;
 	} t_nodo_personaje;
 
@@ -55,7 +55,7 @@
 	extern int socket_orquestador;
 	extern int tiempo_chequeo_deadlock;
 	extern int recovery;
-	extern uint8_t cantidad_de_recursos;
+	extern int cantidad_de_recursos;
 
 	extern t_log * logger;
 

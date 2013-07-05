@@ -236,8 +236,8 @@ int main(int argc, char **argv) {
 		{
 	
 			
-			uint8_t mje_a_recibir = 17; 
-	        	uint8_t  proximo_recurso;
+			char mje_a_recibir = 17;
+	        	char  proximo_recurso;
 	
 		        t_solicitud_movimiento *solicitud_movimiento;
 		        solicitud_movimiento=malloc(sizeof(t_solicitud_movimiento));
