@@ -24,7 +24,7 @@
 #include <sys/inotify.h>
 
 #include "rutina_orquestador.h"
-#include "rutina_planificador.h"
+#include "rutina_planificador.h"  //y bueno, ya fue
 #include "plataforma.h"
 
 #include <serial.h>
