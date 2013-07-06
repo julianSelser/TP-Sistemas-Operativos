@@ -401,17 +401,19 @@ void manejar_notif_eleccion_victima(int socket){
 
 	for(i=0 ; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID!=notif_victima->char_personaje ; aux=aux->next,i++);
 
-	if(aux==NULL) /*todo loguear: la victima elegida no estaba en la lista, ver si esto puede llegar a pasar*/;
+	if(aux==NULL)
+		/*todo loguear: la victima elegida no estaba en la lista, ver si esto puede llegar a pasar*/;
+	else{
+		nodo_victima = list_remove(lista_personajes, i);
 
-	nodo_victima = list_remove(lista_personajes, i);
+		reubicar_recursos(nodo_victima->necesidades); //esto ya manda el mensaje de recursos liberados al orquestador
 
-	reubicar_recursos(nodo_victima->necesidades); //esto ya manda el mensaje de recursos liberados al orquestador
+		BorrarItem(&lista_items, nodo_victima->ID);
 
-	BorrarItem(&lista_items, nodo_victima->ID);
-
-	free(nodo_victima->nombre);
-	free(nodo_victima);
-	free(notif_victima);
+		free(nodo_victima->nombre);
+		free(nodo_victima);
+		free(notif_victima);
+	}
 }
 
 
@@ -588,26 +590,14 @@ void levantar_config(int argc, char ** argv){
 	for(i=1; i<=cantidad_de_recursos; i++)
 	{
 		char ** datos_caja;
-		char * nombre_caja;
-		char numero_caja[2];
 		t_caja * nodo_caja;
-
-		//todo revisar condiciones de error de malloc?
-
-		numero_caja[0] = i+0x30; //quick fix a falta de itoa
-		numero_caja[1] = '\0';
-
-		nombre_caja = malloc(5); //porque la palabra Caja ocupa 4 bytes
-		strcpy(nombre_caja, "Caja");
-		string_append(&nombre_caja, numero_caja); //o sea, Caja1, Caja2, etc
+		char * nombre_caja =  string_from_format("Caja%d", i);
 
 		datos_caja = config_get_array_value(configuracion, nombre_caja);
 
 		nodo_caja = malloc(sizeof(t_caja));
 
-		nodo_caja->nombre = malloc (strlen(datos_caja[0]));
-		strcpy(nodo_caja->nombre, datos_caja[0]); //nombre es un puntero
-
+		nodo_caja->nombre = strdup(datos_caja[0]);
 		nodo_caja->ID = datos_caja[1][0];
 		nodo_caja->disp = nodo_caja->total = atoi(datos_caja[2]); //todo verificar condicion de error de atoi?
 		nodo_caja->x = atoi(datos_caja[3]); //todo idem
