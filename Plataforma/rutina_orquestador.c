@@ -52,6 +52,9 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre);
 void manejar_recs_liberados(int socket);
 t_nodo_nivel * ubicar_nivel_por_socket(int socket);
 t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec);
+void manejar_sol_recovery(int socket);
+char decidir(char * involucrados);
+t_nodo_personaje * extraer(char ID, t_list * lista_colas);
 
 
 void rutina_orquestador(/*?*/)
@@ -258,10 +261,80 @@ void manejar_recs_liberados(int socket) //todo testear
 
 	enviar(nivel->socket, NOTIF_RECURSOS_REASIGNADOS, informe, NULL); //todo agregar logger
 
-	//todo free reasignados and resto? creeeo que si
-	//that's all folks
+	//teoricamente enviar libera reasignaciones y resto
 }
 
+void manejar_sol_recovery(int socket) //todo testear
+{
+	char ID_victima;
+	t_nodo_personaje * victima;
+	t_nodo_nivel * nivel;
+
+	t_solicitud_recupero_deadlock * solicitud;
+	t_notif_eleccion_de_victima * respuesta;
+	t_personaje_condenado * condena;
+
+	nivel=ubicar_nivel_por_socket(socket);
+
+	solicitud=recibir(socket, SOLICITUD_RECUPERO_DEADLOCK);
+	ID_victima=decidir(solicitud->pjes_deadlock);
+	free(solicitud->pjes_deadlock);
+	free(solicitud);
+
+	//TODO SINCRONIZACION
+	victima=extraer(ID_victima, nivel->colas[BLOQUEADOS]);
+	//FIN SECCION CRITICA
+
+	respuesta=malloc(sizeof(t_notif_eleccion_de_victima));
+	respuesta->char_personaje=ID_victima;
+
+	enviar(socket, NOTIF_ELECCION_VICTIMA, respuesta, NULL); //todo agregar logger
+
+	condena=malloc(sizeof(t_personaje_condenado));
+	//todo ponerle algo adentro a este mensaje?
+
+	enviar(victima->socket, NOTIF_PERSONAJE_CONDENADO, condena, NULL); //todo agregar logger
+	close(victima->socket); //todo es buena idea hacer esto?
+	free(victima->nombre);
+	free(victima);
+}
+
+char decidir(char * involucrados)
+{
+	return involucrados[0]; //todo es legal esto?
+}
+
+t_nodo_personaje * extraer(char ID, t_list * lista_colas)
+{
+	t_nodo_bloq_por_recurso * cola_actual;
+	int j=0;
+	int cant_colas;
+
+	cant_colas = list_size(lista_colas);
+
+	while(j<cant_colas)
+	{
+		t_nodo_personaje * pje_actual;
+		int i=0;
+		int cant_pjes;
+
+		cola_actual=(t_nodo_bloq_por_recurso *)list_get(lista_colas, j);
+		cant_pjes = list_size(cola_actual->personajes);
+
+		while(i<cant_pjes)
+		{
+			pje_actual=(t_nodo_personaje *)list_get(cola_actual->personajes, i);
+			if(pje_actual->char_personaje==ID)
+			{
+				list_remove(cola_actual->personajes, i);
+				return pje_actual;
+			}
+			i++;
+		}
+		j++;
+	}
+	return NULL;  //pero en realidad debería ser una búsqueda segura y nunca llegar acá
+}
 
 void rutina_inotify()
 {
