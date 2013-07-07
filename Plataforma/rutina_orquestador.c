@@ -82,6 +82,8 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 
 	datos_nivel_entrante = recibir(socket_nivel, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR);
 
+	log_info(logger_orquestador, string_from_format("Se conecto el nivel %s", datos_nivel_entrante->nombre), "INFO");
+
 	nuevo_nivel = malloc(sizeof (t_nodo_nivel));
 	nuevo_nivel->socket = socket_nivel;
 
@@ -121,6 +123,7 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 	free(datos_nivel_entrante);
 
 	list_add(lista_niveles, nuevo_nivel);
+	log_debug(logger_orquestador, "Se crearon las estructuras necesarias para manejarlo", "DEBUG");
 
 	p = armar_parametro(nuevo_nivel->colas, logger_planif);
 
@@ -131,6 +134,7 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 	nuevo_nivel->sem_bloqueados = &(p->semaforos[2]);
 
 	lanzar_planificador(p);
+	log_debug(logger_orquestador, string_from_format("Se lanzó el planificador correspondiente, que va a escuchar en el puerto %d.", puerto_planif), "DEBUG");
 	puerto_planif++;
 }
 
@@ -162,9 +166,13 @@ void manejar_sol_info(int socket) //todo testear
 	t_solicitud_info_nivel * solicitud;
 
 	solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
+	log_info(logger_orquestador, string_from_format("Un personaje quiere saber donde está el nivel %s", solicitud->nivel_solicitado), "INFO");
 	info = crear_info_nivel(solicitud->nivel_solicitado);
+	log_debug(logger_orquestador, "Se creó la estructura con la información", "DEBUG");
 
 	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, logger_orquestador);
+	log_info(logger_orquestador, "Se respondió con la información", "INFO");
+
 	free(solicitud->nivel_solicitado);
 	free(solicitud);
 }
@@ -222,6 +230,7 @@ void manejar_recs_liberados(int socket) //todo testear
 	rec_ant='\0';
 
 	notificacion = recibir(socket, NOTIF_RECURSOS_LIBERADOS);
+	log_info(logger_orquestador, string_from_format("El nivel %s liberó los siguientes recursos: %s", nivel->nombre, notificacion->recursos_liberados), "INFO");
 	liberados=notificacion->recursos_liberados;
 	free(notificacion); //aunque libere notificacion, liberados sigue existiendo
 
@@ -271,6 +280,7 @@ void manejar_recs_liberados(int socket) //todo testear
 				sem_wait(nivel->sem_listos);
 				encolar(nivel->colas[LISTOS], personaje); //paso el personaje a listos.
 				sem_post(nivel->sem_listos);
+				log_info(logger_orquestador, string_from_format("Se liberó a %s, que estaba esperando un recurso %c", personaje->nombre, rec), "INFO");
 			}
 		}
 
@@ -281,7 +291,8 @@ void manejar_recs_liberados(int socket) //todo testear
 
 	informe=malloc(sizeof(t_notif_recursos_reasignados));
 	informe->asignaciones=reasignaciones;
-	informe->remanentes= resto; //estos casteos, la verdad....
+	informe->remanentes= resto;
+	log_info(logger_orquestador, string_from_format("Sobraron los siguientes recursos: %s", resto), "INFO");
 
 	enviar(nivel->socket, NOTIF_RECURSOS_REASIGNADOS, informe, logger_orquestador);
 
@@ -301,13 +312,17 @@ void manejar_sol_recovery(int socket) //todo testear
 	nivel=ubicar_nivel_por_socket(socket);
 
 	solicitud=recibir(socket, SOLICITUD_RECUPERO_DEADLOCK);
+	log_info(logger_orquestador, string_from_format("Hay un interbloqueo en el nivel %s, están involucrados los personajes %s", nivel->nombre, solicitud->pjes_deadlock));
+
 	ID_victima=decidir(solicitud->pjes_deadlock);
+
 	free(solicitud->pjes_deadlock);
 	free(solicitud);
 
 	sem_wait(nivel->sem_bloqueados);
 	victima=extraer(ID_victima, nivel->colas[BLOQUEADOS]);
 	sem_post(nivel->sem_bloqueados);
+	log_info(logger_orquestador, string_from_format("Se mató a %s para solucionar el interbloqueo", victima->nombre), "INFO");
 
 	respuesta=malloc(sizeof(t_notif_eleccion_de_victima));
 	respuesta->char_personaje=ID_victima;
