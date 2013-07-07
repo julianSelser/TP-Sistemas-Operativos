@@ -44,6 +44,7 @@
 #define BUF_LEN     ( 1024 * EVENT_SIZE )
 
 t_list * lista_niveles;
+t_log * logger_orquestador;
 
 static int puerto_planif = 7000;
 
@@ -56,9 +57,12 @@ void rutina_orquestador(/*?*/)
 	int socketNuevoNivel;
 	int socketEscucha = init_socket_escucha(10000, 1, NULL);
 
+	logger_orquestador = log_create("orquestador.log,", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
+
 	lista_niveles=list_create();
 
-	printf("\n a la espera de nuevos niveles...\n\n");
+	log_info(logger_orquestador, "\n a la espera de nuevos niveles...\n\n", "INFO");
+
 	while(1){
 			socketNuevoNivel = accept(socketEscucha, NULL, 0);
 			//no lanzo el planificador inmediatamente, sino que espero a que el nivel me mande el mensaje de anuncio
@@ -160,7 +164,7 @@ void manejar_sol_info(int socket) //todo testear
 	solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
 	info = crear_info_nivel(solicitud->nivel_solicitado);
 
-	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, NULL); //TODO AGREGAR LOGGER!!!
+	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, logger_orquestador);
 	free(solicitud->nivel_solicitado);
 	free(solicitud);
 }
@@ -251,7 +255,7 @@ void manejar_recs_liberados(int socket) //todo testear
 			personaje = desencolar(nodo_cola->personajes);
 			sem_post(nivel->sem_bloqueados);
 
-			if(enviar(personaje->socket, NOTIF_RECURSO_CONCEDIDO, concedido, NULL) < 0)//todo agregar logger
+			if(enviar(personaje->socket, NOTIF_RECURSO_CONCEDIDO, concedido, logger_orquestador) < 0)
 			{ //si enviar<0, significa que el personaje no esta (se desconecto por x razon)
 				free(personaje->nombre);
 				free(personaje); //elimino al nodo del personaje
@@ -279,7 +283,7 @@ void manejar_recs_liberados(int socket) //todo testear
 	informe->asignaciones=reasignaciones;
 	informe->remanentes= resto; //estos casteos, la verdad....
 
-	enviar(nivel->socket, NOTIF_RECURSOS_REASIGNADOS, informe, NULL); //todo agregar logger
+	enviar(nivel->socket, NOTIF_RECURSOS_REASIGNADOS, informe, logger_orquestador);
 
 	//teoricamente enviar libera reasignaciones y resto
 }
@@ -308,12 +312,12 @@ void manejar_sol_recovery(int socket) //todo testear
 	respuesta=malloc(sizeof(t_notif_eleccion_de_victima));
 	respuesta->char_personaje=ID_victima;
 
-	enviar(socket, NOTIF_ELECCION_VICTIMA, respuesta, NULL); //todo agregar logger
+	enviar(socket, NOTIF_ELECCION_VICTIMA, respuesta, logger_orquestador);
 
 	condena=malloc(sizeof(t_personaje_condenado));
 	//todo ponerle algo adentro a este mensaje?
 
-	enviar(victima->socket, NOTIF_PERSONAJE_CONDENADO, condena, NULL); //todo agregar logger
+	enviar(victima->socket, NOTIF_PERSONAJE_CONDENADO, condena, logger_orquestador);
 	close(victima->socket); //todo es buena idea hacer esto?
 	free(victima->nombre);
 	free(victima);
