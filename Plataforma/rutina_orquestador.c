@@ -232,22 +232,28 @@ void manejar_recs_liberados(int socket) //todo testear
 
 			concedido=malloc(sizeof(t_concesion_recurso));
 			concedido->recurso=rec;
-			//------GUARDA, ACA ES DONDE HAY QUE SINCRONIZAR!!!!!--------// TODO
+
+			sem_wait(nivel->sem_bloqueados);
 			personaje = desencolar(nodo_cola->personajes);
+			sem_post(nivel->sem_bloqueados);
 
-			informe_parcial[0]=personaje->char_personaje;
-			informe_parcial[1]=rec;
-			informe_parcial[2]='\0';
-			string_append(&reasignaciones, informe_parcial);
+			if(enviar(personaje->socket, NOTIF_RECURSO_CONCEDIDO, concedido, NULL) < 0)//todo agregar logger
+			{ //si enviar<0, significa que el personaje no esta (se desconecto por x razon)
+				free(personaje->nombre);
+				free(personaje); //elimino al nodo del personaje
+				continue; //quise darle algo a un personaje ausente, vuelvo a empezar para este recurso
+			}
 
-			enviar(personaje->socket, NOTIF_RECURSO_CONCEDIDO, concedido, NULL); //todo agregar logger
-			encolar(nivel->colas[LISTOS], personaje);
-			//-----FIN SECCION CRITICA----///
-			/*Issues con la sincronización:
-			1. El orquestador no está conociendo los semáforos que usa cada planificador! Agregarlo al nodo del nivel y ya fue?
-			2. Qué tan rebuscados pueden ser los escenarios que se nos presenten?
-			3. Qué pasa si un personaje que estaba por ser liberado se me desconectó?
-			*/
+			else //el enviar fue exitoso: el personaje estaba
+			{
+				informe_parcial[0]=personaje->char_personaje;
+				informe_parcial[1]=rec;
+				informe_parcial[2]='\0';
+				string_append(&reasignaciones, informe_parcial); //agrego la reasignacion al mensaje que va a ir al nivel
+				sem_wait(nivel->sem_listos);
+				encolar(nivel->colas[LISTOS], personaje); //paso el personaje a listos.
+				sem_post(nivel->sem_listos);
+			}
 		}
 
 		rec_ant=rec;
@@ -281,9 +287,9 @@ void manejar_sol_recovery(int socket) //todo testear
 	free(solicitud->pjes_deadlock);
 	free(solicitud);
 
-	//TODO SINCRONIZACION
+	sem_wait(nivel->sem_bloqueados);
 	victima=extraer(ID_victima, nivel->colas[BLOQUEADOS]);
-	//FIN SECCION CRITICA
+	sem_post(nivel->sem_bloqueados);
 
 	respuesta=malloc(sizeof(t_notif_eleccion_de_victima));
 	respuesta->char_personaje=ID_victima;
