@@ -46,15 +46,6 @@
 t_list * lista_niveles;
 
 static int puerto_planif = 7000;
-void manejar_anuncio_nivel(int socket_nivel);
-void manejar_sol_info(int socket_nivel);
-t_info_nivel_planificador * crear_info_nivel(char * nombre);
-void manejar_recs_liberados(int socket);
-t_nodo_nivel * ubicar_nivel_por_socket(int socket);
-t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec);
-void manejar_sol_recovery(int socket);
-char decidir(char * involucrados);
-t_nodo_personaje * extraer(char ID, t_list * lista_colas);
 
 
 void rutina_orquestador(/*?*/)
@@ -79,6 +70,7 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 {
 	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante;
 	t_nodo_nivel * nuevo_nivel;
+	parametro * p;
 	int i=0;
 
 	datos_nivel_entrante = recibir(socket_nivel, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR);
@@ -113,14 +105,22 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 
 	list_add(lista_niveles, nuevo_nivel);
 
-	lanzar_planificador(nuevo_nivel->colas);
+	p = armar_parametro(nuevo_nivel->colas);
+
+	//ahora que arme la estructura "parametro", me guardo la direccion a los semaforos
+
+	nuevo_nivel->sem_listos = &(p->semaforos[0]);
+	nuevo_nivel->sem_vacia = &(p->semaforos[1]);
+	nuevo_nivel->sem_bloqueados = &(p->semaforos[2]);
+
+	lanzar_planificador(p);
 	puerto_planif++;
 }
 
-void lanzar_planificador(t_list ** colas)
+void lanzar_planificador(parametro * p)
 {
 	pthread_t nuevo_hilo;
-	pthread_create(&nuevo_hilo, NULL, (void*)rutina_planificador, armar_parametro(colas));
+	pthread_create(&nuevo_hilo, NULL, (void*)rutina_planificador, p);
 }
 
 parametro *armar_parametro(t_list ** colas)
