@@ -71,6 +71,9 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante;
 	t_nodo_nivel * nuevo_nivel;
 	parametro * p;
+	t_log * logger_planif;
+	char * log_name;
+
 	int i=0;
 
 	datos_nivel_entrante = recibir(socket_nivel, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR);
@@ -87,6 +90,16 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 	nuevo_nivel->puerto_planif = puerto_planif;
 	nuevo_nivel->nombre=(datos_nivel_entrante->nombre);
 	//esa ultima linea funciona solo si la informacion a la que apunta nombre no se libera
+
+	//aca armo el logger que va a usar el planificador
+	log_name = malloc(1);
+	log_name[0]='\0';
+	string_append(&log_name, "planif_");
+	string_append(&log_name, nuevo_nivel->nombre);
+	string_append(&log_name, ".log");
+	logger_planif=log_create(log_name, "PLANIFICADOR", 1, LOG_LEVEL_TRACE);
+	free(log_name);
+	//creado el logger, pelada la gallina
 
 	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el niel
 	{
@@ -105,7 +118,7 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 
 	list_add(lista_niveles, nuevo_nivel);
 
-	p = armar_parametro(nuevo_nivel->colas);
+	p = armar_parametro(nuevo_nivel->colas, logger_planif);
 
 	//ahora que arme la estructura "parametro", me guardo la direccion a los semaforos
 
@@ -123,7 +136,7 @@ void lanzar_planificador(parametro * p)
 	pthread_create(&nuevo_hilo, NULL, (void*)rutina_planificador, p);
 }
 
-parametro *armar_parametro(t_list ** colas)
+parametro *armar_parametro(t_list ** colas, t_log * logger)
 {
 	parametro *p = malloc(sizeof(parametro));
 
@@ -133,6 +146,7 @@ parametro *armar_parametro(t_list ** colas)
 	p->colas[BLOQUEADOS]=colas[BLOQUEADOS];
 	p->logger_planificador = NULL;
 	p->puerto = puerto_planif;
+	p->logger_planificador = logger;
 
 	return p;
 }

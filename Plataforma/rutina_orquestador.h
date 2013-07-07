@@ -31,7 +31,7 @@ typedef struct
 void rutina_orquestador(/*?*/);
 
 void rutina_inotify();
-parametro *armar_parametro(t_list ** colas);
+parametro *armar_parametro(t_list ** colas, t_log * logger);
 void lanzar_planificador(parametro * p);
 void manejar_anuncio_nivel(int socket_nivel);
 void manejar_sol_info(int socket_nivel);
