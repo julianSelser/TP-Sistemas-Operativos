@@ -50,6 +50,7 @@
 	//1 - struct del mensaje que le envia el personaje al orquestador para recibir como respuesta la informacion que necesita (ips/puertos)
     typedef struct {
     	char *nivel_solicitado;
+    	char solicitor;
     }__attribute__((packed)) t_solicitud_info_nivel;
 
 
