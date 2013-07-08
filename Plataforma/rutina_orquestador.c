@@ -45,6 +45,8 @@
 
 t_list * lista_niveles;
 t_log * logger_orquestador;
+char * jugadores;
+int cant_personajes_victoriosos;
 
 static int puerto_planif = 7000;
 
@@ -58,6 +60,11 @@ void rutina_orquestador(/*?*/)
 	int socketEscucha = init_socket_escucha(10000, 1, NULL);
 
 	logger_orquestador = log_create("orquestador.log,", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
+
+	jugadores=malloc(1);
+	jugadores[0]='\0';
+	cant_personajes_victoriosos = 0;
+
 
 	lista_niveles=list_create();
 
@@ -166,7 +173,12 @@ void manejar_sol_info(int socket) //todo testear
 	t_solicitud_info_nivel * solicitud;
 
 	solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
-	log_info(logger_orquestador, string_from_format("Un personaje quiere saber donde está el nivel %s", solicitud->nivel_solicitado), "INFO");
+	log_info(logger_orquestador, string_from_format("El personaje %c quiere saber donde está el nivel %s", solicitud->solicitor ,solicitud->nivel_solicitado), "INFO");
+	if (agregar_sin_repetidos(jugadores, solicitud->solicitor))
+	{
+		log_info(logger_orquestador, "Entro un nuevo personaje al juego", "INFO");
+	}
+
 	info = crear_info_nivel(solicitud->nivel_solicitado);
 	log_debug(logger_orquestador, "Se creó la estructura con la información", "DEBUG");
 
@@ -376,6 +388,24 @@ t_nodo_personaje * extraer(char ID, t_list * lista_colas)
 	return NULL;  //pero en realidad debería ser una búsqueda segura y nunca llegar acá
 }
 
+void manejar_plan_terminado(int socket)
+{
+	t_notificacion_plan_terminado * notificacion;
+
+	notificacion = recibir(socket, NOTIF_PLAN_TERMINADO);
+
+	log_info(logger_orquestador, string_from_format("%s terminó su plan de niveles!", notificacion->personaje), "INFO");
+
+	cant_personajes_victoriosos++;
+
+	if (cant_personajes_victoriosos == strlen(jugadores))
+	{
+		log_info(logger_orquestador, "Todos los personajes terminaron su plan de niveles! Terminando el hilo orquestador...", "INFO");
+		pthread_exit(NULL);
+	}
+}
+
+
 void rutina_inotify()
 {
 		t_config *plataforma_conf;
@@ -474,4 +504,27 @@ t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec)
 	}
 
 	return NULL; //deberia ser una busqueda segura y no llegar nunca aca
+}
+
+int agregar_sin_repetidos(char * string, char c)
+{
+	int i=0;
+	int len;
+	char * aux;
+
+	len = strlen(string);
+
+	while(i<len)
+	{
+		if (string[i] == c) return 0;
+	}
+
+	aux = malloc(2);
+	aux[1]=c;
+	aux[2]='\0';
+
+	string_append(&string, aux);
+	free(aux);
+
+	return 1;
 }

@@ -42,6 +42,8 @@ t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec)
 void manejar_sol_recovery(int socket);
 char decidir(char * involucrados);
 t_nodo_personaje * extraer(char ID, t_list * lista_colas);
+void manejar_plan_terminado(int socket);
+int agregar_sin_repetidos(char * string, char c);
 
 
 #endif /* RUTINA_ORQUESTADOR_H_ */
