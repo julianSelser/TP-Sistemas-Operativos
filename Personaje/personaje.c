@@ -186,6 +186,7 @@ int main(int argc, char **argv) {
 		
 		nivel_a_pedir = strdup(plan_de_niveles[niveles_completados]);
 	
+		solicitud_info_nivel->solicitor = simbolo;
 		solicitud_info_nivel->nivel_solicitado=strdup(nivel_a_pedir);
 		log_info(logger, string_from_format("Proximo Nivel:%s",nivel_a_pedir), "INFO");
 	
