@@ -267,6 +267,7 @@
 
 	//funciones de socket
 	bool is_connected(int socket);
+	char *get_ip_string(int socket);
 	int init_socket_externo(int puerto, char *direccion, t_log *logger);
 	int init_socket_escucha(int puerto, int optval, t_log *logger);
 

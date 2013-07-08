@@ -399,7 +399,7 @@ char *srlz_solicitud_info_nivel(void *data, int *tamanio){
 	char* buffer = malloc(strlen(sol->nivel_solicitado)+1);
 
     memcpy(buffer, sol->nivel_solicitado, *tamanio = strlen(sol->nivel_solicitado)+1 );
-    memcpy(buffer+(*tamanio)++, sol->solicitor, sizeof(char));
+    memcpy(buffer+(*tamanio)++, &sol->solicitor, sizeof(char));
 
     free(sol->nivel_solicitado);
 	free(data);
@@ -648,6 +648,21 @@ char *srlz_concesion_recurso(void *data, int *tamanio){
 
 /********************************************** FUNCIONES DE SOCKET **************************************************/
 
+
+
+//recibe un socket y devuelve su IP como un string
+char *get_ip_string(int socket){
+	struct sockaddr_storage addr;
+	socklen_t len = sizeof addr;
+	char *IP = malloc(INET_ADDRSTRLEN);
+
+	getpeername(socket, (struct sockaddr*)&addr, &len);
+
+	struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+	inet_ntop(AF_INET, &s->sin_addr, IP, INET_ADDRSTRLEN);
+
+	return IP;
+}
 
 
 //devuelve un socket para comunicacion listo para usar, escribiendo en el logger pasado y terminando el programa ante errores
