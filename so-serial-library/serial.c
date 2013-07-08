@@ -185,6 +185,7 @@ int enviar(int socket, int tipo, void *struct_mensaje, t_log *logger)
 void *deserializar_solicitud_info_nivel(char *buffer){
 	t_solicitud_info_nivel *solicitud = malloc(sizeof(t_solicitud_info_nivel));
 	solicitud->nivel_solicitado = strdup(buffer);
+	solicitud->solicitor = buffer[ (strlen(buffer)+1) + 1 ];
     return solicitud;
 }
 
@@ -397,7 +398,8 @@ char *srlz_solicitud_info_nivel(void *data, int *tamanio){
 	t_solicitud_info_nivel *sol = data;
 	char* buffer = malloc(strlen(sol->nivel_solicitado)+1);
 
-    memcpy(buffer,sol->nivel_solicitado, *tamanio = strlen(sol->nivel_solicitado)+1 );
+    memcpy(buffer, sol->nivel_solicitado, *tamanio = strlen(sol->nivel_solicitado)+1 );
+    memcpy(buffer+(*tamanio)++, sol->solicitor, sizeof(char));
 
     free(sol->nivel_solicitado);
 	free(data);

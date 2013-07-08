@@ -50,7 +50,7 @@
 	//1 - struct del mensaje que le envia el personaje al orquestador para recibir como respuesta la informacion que necesita (ips/puertos)
     typedef struct {
     	char *nivel_solicitado;
-    	char solicitor; //todo este campo es nuevo! actualizar serializadores
+    	char solicitor;
     }__attribute__((packed)) t_solicitud_info_nivel;
 
 
@@ -192,7 +192,7 @@
 	//23 - mensaje que le manda al orquestador al personaje cuando le da el recurso por el que estaba bloqueado
 	typedef struct{
 		char recurso; //esto es simbolico,probablemente no lo necesite
-	}__attribute__((packed)) t_concesion_recurso; //todo serializadores de esto
+	}__attribute__((packed)) t_concesion_recurso;
 
 
 	//la cabecera que se lee en todos los mensajes
