@@ -199,8 +199,6 @@ void * deserializar_info_nivel_y_planificador(char *buffer){
 	offset+=tmp;
 
 	info->ip_nivel = strdup(buffer+offset);
-	offset += strlen(info->ip_nivel) + 1;
-	info->ip_planificador = strdup(buffer+offset);
 
 	return info;
 }
@@ -410,17 +408,14 @@ char *srlz_solicitud_info_nivel(void *data, int *tamanio){
 char *srlz_info_nivel_y_planificador(void *data, int *tamanio){
 	int tmp =0,offset=0;
 	t_info_nivel_planificador *d = data;
-	char *buffer = malloc(*tamanio = sizeof(uint16_t) + sizeof(uint16_t) + strlen(d->ip_nivel)+1 + strlen(d->ip_planificador)+1);
+	char *buffer = malloc(*tamanio = sizeof(uint16_t) + sizeof(uint16_t) + strlen(d->ip_nivel)+1 );
 
 	memcpy(buffer, &d->puerto_nivel,tmp=sizeof(uint16_t));
     offset+=tmp;
     memcpy(buffer+offset, &d->puerto_planificador,tmp=sizeof(uint16_t));
     offset+=tmp;
     memcpy(buffer+offset, d->ip_nivel, tmp = strlen(d->ip_nivel)+1);
-    offset+=tmp;
-    memcpy(buffer+offset, d->ip_planificador, tmp = strlen(d->ip_planificador)+1);
 
-    free(d->ip_planificador);
     free(d->ip_nivel);
     free(d);
 	return buffer;

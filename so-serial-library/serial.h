@@ -59,7 +59,6 @@
 		uint16_t puerto_nivel;
 		uint16_t puerto_planificador;
 		char *ip_nivel;
-		char *ip_planificador;
 	}__attribute__((packed)) t_info_nivel_planificador ;
 
 
