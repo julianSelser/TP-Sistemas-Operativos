@@ -31,27 +31,30 @@
 
 int quantum;
 int retraso;
+extern char **environ;
 
-int main() //todo tomar archivo de config por argv? por ahora esta hardcodeado en todos lados
+int main() //todo tomar archivo de config por argv? no habria que pasarle tambien el archivo de solicitudes para koopa?
 {
+	char *argv[] = { "koopa", "solicitudes.lst" , NULL };
 	iniciar_serializadora();
 
 	t_config *plataforma_conf = config_create("arch.conf");
 	quantum = config_get_int_value(plataforma_conf, "quantum");
 	retraso = config_get_int_value(plataforma_conf, "retraso");
 
-	pthread_t orquestador;
-
 	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
 
 	log_debug(logger_plataforma, "Se lanza el hilo orquestador!", "DEBUG");
-	pthread_create(&orquestador, NULL,(void*)rutina_orquestador, NULL);
 
+	pthread_t orquestador;
+	pthread_create(&orquestador, NULL,(void*)rutina_orquestador, NULL);
 	pthread_join(orquestador, NULL);
 
 	log_destroy(logger_plataforma);
 
-	return 0;
+	execve("koopa", argv, environ);
+
+	return EXIT_SUCCESS;
 }
 
 
