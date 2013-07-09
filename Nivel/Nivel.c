@@ -93,6 +93,7 @@ int main(int argc, char ** argv)
     FD_ZERO(&maestro);
     FD_ZERO(&read_fds);
     FD_SET(escucha, &maestro);
+    FD_SET(socket_orquestador, &maestro);
 
     //necesito tener el fdmax (max valor de socket)
     fdmax = socket_orquestador > escucha? socket_orquestador : escucha;
@@ -135,6 +136,7 @@ int main(int argc, char ** argv)
                 		if(i==socket_orquestador)
                 		{
                 			/*	todo: FALTA DEDINIR QUE PASA CUANDO SE LLEGA A EXECVE Y EL ORQUESTADOR SE DESCONECTA	*/
+                			nivel_gui_terminar();
                 			exit(EXIT_SUCCESS);
                 		}
                 		else //se desconecto un personaje

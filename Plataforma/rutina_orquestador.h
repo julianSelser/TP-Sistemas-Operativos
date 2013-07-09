@@ -9,6 +9,7 @@
 #include <commons/config.h>
 #include <semaphore.h>
 #include <serial.h>
+#include <fcntl.h>
 
 #ifndef RUTINA_ORQUESTADOR_H_
 #define RUTINA_ORQUESTADOR_H_
@@ -30,20 +31,33 @@ typedef struct
 
 void rutina_orquestador(/*?*/);
 
-void rutina_inotify();
-parametro *armar_parametro(t_list ** colas, t_log * logger);
+void rutina_inotify(int inotify_fd);
 void lanzar_planificador(parametro * p);
-void manejar_anuncio_nivel(int socket_nivel);
-void manejar_sol_info(int socket_nivel);
-t_info_nivel_planificador * crear_info_nivel(char * nombre);
-void manejar_recs_liberados(int socket);
+parametro *armar_parametro(t_nodo_nivel * nivel, t_log * logger);
 t_nodo_nivel * ubicar_nivel_por_socket(int socket);
-t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec);
-void manejar_sol_recovery(int socket);
-char decidir(char * involucrados);
+t_info_nivel_planificador * crear_info_nivel(char * nombre);
 t_nodo_personaje * extraer(char ID, t_list * lista_colas);
-void manejar_plan_terminado(int socket);
+t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec);
+char decidir(char * involucrados);
 int agregar_sin_repetidos(char * string, char c);
+
+
+//manejador de peticiones
+void manejar_peticion(int socket);
+
+//manejadores de mensajes
+void manejar_sol_recovery(int socket);
+void manejar_plan_terminado(int socket);
+void manejar_sol_info(int socket_nivel);
+void manejar_recs_liberados(int socket);
+void manejar_anuncio_nivel(int socket_nivel);
+
+//no miren esto, es feo, hagan como que no esta
+#define FD_SETEO 	fcntl(inotify_fd, F_SETFL, FD_CLOEXEC);	\
+					FD_ZERO(&maestro);						\
+					FD_ZERO(&read_fds);						\
+					FD_SET(socketEscucha, &maestro);		\
+					FD_SET(inotify_fd, &maestro);			\
 
 
 #endif /* RUTINA_ORQUESTADOR_H_ */

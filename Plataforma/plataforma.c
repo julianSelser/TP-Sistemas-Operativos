@@ -33,14 +33,12 @@ int quantum;
 int retraso;
 extern char **environ;
 
-int main(int argc, char **argv)
+int main() //todo tomar archivo de config por argv? no habria que pasarle tambien el archivo de solicitudes para koopa?
 {
-	if(argc!=3) perror("Uso: Plataforma <archivo_configuracion> <archivo_solicitudes_koopa>"), exit(EXIT_FAILURE); //ya se que queda feo :D
-
-	char *argskoopa[] = { "koopa", argv[2]/*el nombre del archivo de solicitudes*/ , NULL };
+	char *argv[] = { "koopa", "solicitudes.lst" , NULL };
 	pthread_t orquestador;
 	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
-	t_config *plataforma_conf = config_create(argv[1]);
+	t_config *plataforma_conf = config_create("arch.conf");
 
 	quantum = config_get_int_value(plataforma_conf, "quantum");
 	retraso = config_get_int_value(plataforma_conf, "retraso");
@@ -55,7 +53,7 @@ int main(int argc, char **argv)
 
 	log_destroy(logger_plataforma);
 
-	execve("koopa", argskoopa, environ);
+	execve("koopa", argv, environ);
 
 	return EXIT_SUCCESS;
 }

@@ -25,22 +25,13 @@
 #include <sys/inotify.h>
 
 #include "rutina_orquestador.h"
-#include "rutina_planificador.h"  //y bueno, ya fue
+#include "rutina_planificador.h"
 #include "plataforma.h"
 
 #include <serial.h>
 
 
-// El tamaño de un evento es igual al tamaño de la estructura de inotify
-// mas el tamaño maximo de nombre de archivo que nosotros soportemos
-// en este caso el tamaño de nombre maximo que vamos a manejar es de 24
-// caracteres. Esto es porque la estructura inotify_event tiene un array
-// sin dimension ( Ver C-Talks I - ANSI C ).
 #define EVENT_SIZE  ( sizeof (struct inotify_event) + 24 )
-
-// El tamaño del buffer es igual a la cantidad maxima de eventos simultaneos
-// que quiero manejar por el tamaño de cada uno de los eventos. En este caso
-// Puedo manejar hasta 1024 eventos simultaneos.
 #define BUF_LEN     ( 1024 * EVENT_SIZE )
 
 t_list * lista_niveles;
@@ -53,78 +44,130 @@ static int puerto_planif = 7000;
 
 void rutina_orquestador(/*?*/)
 {
-	pthread_t inotify;
-	pthread_create(&inotify,NULL,(void*)rutina_inotify,NULL);
 
-	int socketNuevoNivel;
+	int inotify_fd = inotify_init();
 	int socketEscucha = init_socket_escucha(10000, 1, NULL);
+	int i, nuevo_fd, fdmax = socketEscucha>inotify_fd?socketEscucha:inotify_fd;
+	fd_set maestro, read_fds;
 
+	//hacemos que el fd de inotify  escuche por el evento de modificacion
+	inotify_add_watch(inotify_fd, (char*)get_current_dir_name(), IN_MODIFY);
+
+	//inicializamos las variables globales
 	logger_orquestador = log_create("orquestador.log,", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
-
-	jugadores=malloc(1);
-	jugadores[0]='\0';
+	jugadores=strdup("");//es lo mismo que jugadores=malloc(1);jugadores[0]='\0';
 	cant_personajes_victoriosos = 0;
-
-
 	lista_niveles=list_create();
 
 	log_info(logger_orquestador, "\n a la espera de nuevos niveles...\n\n", "INFO");
 
-	while(1){
-			socketNuevoNivel = accept(socketEscucha, NULL, 0);
-			//no lanzo el planificador inmediatamente, sino que espero a que el nivel me mande el mensaje de anuncio
-	}
+	FD_SETEO;//macro que setea los fd para select()
 
+	while(1)
+	{
+		read_fds = maestro;
+		if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
+			perror("select");//todo loguear: error de select...que sentido tiene logear esto? si revienta aca mala leche
+			exit(1);
+		}
+
+		// loopea los fd's
+		for(i = 0 ; i <= fdmax ; i++)
+		{
+			if (FD_ISSET(i, &read_fds)) // buscar los seteados
+			{
+				if (i == socketEscucha)
+				{
+					nuevo_fd = accept(socketEscucha,NULL,0); // si es el escucha se tiene un nuevofd
+
+					FD_SET(nuevo_fd, &maestro);
+
+					if (nuevo_fd > fdmax) // chequear si el nuevo fd es mas grande que el maximo
+					{
+						fdmax = nuevo_fd;
+					}
+				}
+
+				if(i == inotify_fd) // si es el fd de inotify correr la rutina de inotify
+				{
+					rutina_inotify(inotify_fd);
+				}
+
+				else // si no es una nueva conexion es un mensaje...
+				{
+					if(is_connected(i))  	//si el socket sigue estando conectado
+					{
+						manejar_peticion(i);
+					}
+					else // si se desconecto, se nos escapo un nivel o un personaje
+					{
+						close(i);
+						FD_CLR(i, &maestro);
+					}
+
+				}
+			} // fin actividad en socket
+		} // fin for
+	}
 }
 
-void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
-{
-	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante;
-	t_nodo_nivel * nuevo_nivel;
-	parametro * p;
-	t_log * logger_planif;
-	char * log_name;
 
+void manejar_peticion(int socket){
+	switch(getnextmsg(socket))
+	{
+
+	case SOLICITUD_RECUPERO_DEADLOCK:
+										manejar_sol_recovery(socket);
+										break;
+	case NOTIF_PLAN_TERMINADO:
+										manejar_plan_terminado(socket);
+										break;
+	case SOLICITUD_INFO_NIVEL:
+										manejar_sol_info(socket);
+										break;
+	case NOTIF_RECURSOS_LIBERADOS:
+										manejar_recs_liberados(socket);
+										break;
+	case ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR:
+										manejar_anuncio_nivel(socket);
+										break;
+	default:
+			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));//todo esto deberia loguearse como error
+			break;
+	} //end switch
+}
+
+void manejar_anuncio_nivel(int socket_nivel)
+{
 	int i=0;
+	t_log * logger_planif;
+	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante;
+	t_nodo_nivel * nuevo_nivel = malloc(sizeof (t_nodo_nivel));
 
 	datos_nivel_entrante = recibir(socket_nivel, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR);
 
 	log_info(logger_orquestador, string_from_format("Se conecto el nivel %s", datos_nivel_entrante->nombre), "INFO");
 
-	nuevo_nivel = malloc(sizeof (t_nodo_nivel));
 	nuevo_nivel->socket = socket_nivel;
-
-	nuevo_nivel->colas[0] = list_create();
-	nuevo_nivel->colas[1] = list_create();
-	//nuevo_nivel->IP todo asignar a esta variable la IP del nivel!!! no se como se hace
+	nuevo_nivel->IP = get_ip_string(socket_nivel);
+	nuevo_nivel->colas[LISTOS] = list_create();
+	nuevo_nivel->colas[BLOQUEADOS] = list_create();
+	nuevo_nivel->nombre = datos_nivel_entrante->nombre;
 	nuevo_nivel->puerto = datos_nivel_entrante->puerto_nivel;
-	/*nuevo_nivel->IP = malloc(strlen(IP_local)+1)
-	strcpy(nuevo_nivel->IP, IP_local)*/
 	nuevo_nivel->puerto_planif = puerto_planif;
-	nuevo_nivel->nombre=(datos_nivel_entrante->nombre);
-	//esa ultima linea funciona solo si la informacion a la que apunta nombre no se libera
 
 	//aca armo el logger que va a usar el planificador
-	log_name = malloc(1);
-	log_name[0]='\0';
-	string_append(&log_name, "planif_");
-	string_append(&log_name, nuevo_nivel->nombre);
-	string_append(&log_name, ".log");
-	logger_planif=log_create(log_name, "PLANIFICADOR", 1, LOG_LEVEL_TRACE);
-	free(log_name);
+	logger_planif = log_create(string_from_format("planif_%s.log", nuevo_nivel->nombre), "PLANIFICADOR", 1, LOG_LEVEL_TRACE);
 	//creado el logger, pelada la gallina
 
-	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el niel
+	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el nivel
 	{
-		t_nodo_bloq_por_recurso * info_recurso;
-		info_recurso = malloc(sizeof(t_nodo_bloq_por_recurso));
+		t_nodo_bloq_por_recurso * info_recurso=info_recurso = malloc(sizeof(t_nodo_bloq_por_recurso));
 		info_recurso->char_recurso=datos_nivel_entrante->recursos_nivel[i];
 		info_recurso->personajes=list_create();
 		list_add(nuevo_nivel->colas[BLOQUEADOS], info_recurso); //crear cola de bloqueados para el recurso actual
 		i++;
 	}
-
-	nuevo_nivel->colas[LISTOS] = list_create();
 
 	free(datos_nivel_entrante->recursos_nivel);
 	free(datos_nivel_entrante);
@@ -132,15 +175,7 @@ void manejar_anuncio_nivel(int socket_nivel) //faltan las ip, pero funciona
 	list_add(lista_niveles, nuevo_nivel);
 	log_debug(logger_orquestador, "Se crearon las estructuras necesarias para manejarlo", "DEBUG");
 
-	p = armar_parametro(nuevo_nivel->colas, logger_planif);
-
-	//ahora que arme la estructura "parametro", me guardo la direccion a los semaforos
-
-	nuevo_nivel->sem_listos = &(p->semaforos[0]);
-	nuevo_nivel->sem_vacia = &(p->semaforos[1]);
-	nuevo_nivel->sem_bloqueados = &(p->semaforos[2]);
-
-	lanzar_planificador(p);
+	lanzar_planificador(armar_parametro(nuevo_nivel, logger_planif));
 	log_debug(logger_orquestador, string_from_format("Se lanzó el planificador correspondiente, que va a escuchar en el puerto %d.", puerto_planif), "DEBUG");
 	puerto_planif++;
 }
@@ -151,21 +186,24 @@ void lanzar_planificador(parametro * p)
 	pthread_create(&nuevo_hilo, NULL, (void*)rutina_planificador, p);
 }
 
-parametro *armar_parametro(t_list ** colas, t_log * logger)
+parametro *armar_parametro(t_nodo_nivel * nuevo_nivel, t_log * logger)
 {
 	parametro *p = malloc(sizeof(parametro));
 
 	//ya arme las colas desde antes
-
-	p->colas[LISTOS]=colas[LISTOS];
-	p->colas[BLOQUEADOS]=colas[BLOQUEADOS];
+	p->colas[LISTOS]=nuevo_nivel->colas[LISTOS];
+	p->colas[BLOQUEADOS]=nuevo_nivel->colas[BLOQUEADOS];
 	p->logger_planificador = NULL;
 	p->puerto = puerto_planif;
 	p->logger_planificador = logger;
 
+	//ahora que arme la estructura "parametro", me guardo la direccion a los semaforos
+	nuevo_nivel->sem_listos = &(p->semaforos[0]);
+	nuevo_nivel->sem_vacia = &(p->semaforos[1]);
+	nuevo_nivel->sem_bloqueados = &(p->semaforos[2]);
+
 	return p;
 }
-
 
 void manejar_sol_info(int socket) //todo testear
 {
@@ -233,13 +271,9 @@ void manejar_recs_liberados(int socket) //todo testear
 
 	nivel = ubicar_nivel_por_socket(socket);
 
-	resto=malloc(1);
-	resto[0]='\0';
+	resto=strdup("");
 
-	reasignaciones=malloc(1);
-	reasignaciones[0]='\0';
-
-	rec_ant='\0';
+	reasignaciones=strdup("");
 
 	notificacion = recibir(socket, NOTIF_RECURSOS_LIBERADOS);
 	log_info(logger_orquestador, string_from_format("El nivel %s liberó los siguientes recursos: %s", nivel->nombre, notificacion->recursos_liberados), "INFO");
@@ -353,7 +387,7 @@ void manejar_sol_recovery(int socket) //todo testear
 
 char decidir(char * involucrados)
 {
-	return involucrados[0]; //todo es legal esto?
+	return involucrados[0];
 }
 
 t_nodo_personaje * extraer(char ID, t_list * lista_colas)
@@ -406,67 +440,37 @@ void manejar_plan_terminado(int socket)
 }
 
 
-void rutina_inotify()
+void rutina_inotify(int inotify_fd)
 {
-		t_config *plataforma_conf;
+	int offset = 0;
+	char buffer[BUF_LEN];
+	int length = read(inotify_fd, buffer, BUF_LEN);
+	if (length < 0) {
+		perror("read");//todo logear este error, no usemos perror
+	}
 
-		char buffer[BUF_LEN];
+	while (offset < length)
+	{
+		struct inotify_event *event = (struct inotify_event *) &buffer[offset];
 
-		// Al inicializar inotify este nos devuelve un descriptor de archivo
-		int file_descriptor = inotify_init();
-		if (file_descriptor < 0) {
-			perror("inotify_init");
-		}
+		if (event->len)
+		{
+			if (event->mask & IN_MODIFY)
+			{
+				if(!strcmp(event->name,"arch.conf"))
+				{
+					t_config *plataforma_conf = config_create("arch.conf");sleep(1);//el sleep no lo saquen porfavor
+					quantum = config_get_int_value(plataforma_conf, "quantum");
+					retraso = config_get_int_value(plataforma_conf, "retraso");
 
-		// Creamos un monitor sobre un path indicando que eventos queremos escuchar
+					printf("\n modificacion en el archivo de configuracion...\n quantum: %d\n retraso: %d\n\n",quantum,retraso);
 
-		int watch_descriptor = inotify_add_watch(file_descriptor, (char*)get_current_dir_name(), IN_MODIFY);
-
-		// El file descriptor creado por inotify, es el que recibe la información sobre los eventos ocurridos
-		// para leer esta información el descriptor se lee como si fuera un archivo comun y corriente pero
-		// la diferencia esta en que lo que leemos no es el contenido de un archivo sino la información
-		// referente a los eventos ocurridos
-
-		while(1){
-			int length = read(file_descriptor, buffer, BUF_LEN);
-			if (length < 0) {
-				perror("read");
-			}
-
-			int offset = 0;
-
-			// Luego del read buffer es un array de n posiciones donde cada posición contiene
-			// un eventos ( inotify_event ) junto con el nombre de este.
-			while (offset < length) {
-
-				// El buffer es de tipo array de char, o array de bytes. Esto es porque como los
-				// nombres pueden tener nombres mas cortos que 24 caracteres el tamaño va a ser menor
-				// a sizeof( struct inotify_event ) + 24.
-				struct inotify_event *event = (struct inotify_event *) &buffer[offset];
-
-				// El campo "len" nos indica la longitud del tamaño del nombre
-				if (event->len) {
-					// Dentro de "mask" tenemos el evento que ocurrio y sobre donde ocurrio
-					// sea un archivo o un directorio
-					if (event->mask & IN_MODIFY) {
-						if(!strcmp(event->name,"arch.conf"))
-						{
-							plataforma_conf = config_create("arch.conf");
-
-							quantum = config_get_int_value(plataforma_conf, "quantum");
-							retraso = config_get_int_value(plataforma_conf, "retraso");
-							printf("\n modificacion en el archivo de configuracion...\n quantum: %d\n retraso: %d\n\n",quantum,retraso);
-
-							config_destroy(plataforma_conf);
-						}
-					}
+					config_destroy(plataforma_conf);
 				}
-				offset += sizeof (struct inotify_event) + event->len;
 			}
 		}
-		inotify_rm_watch(file_descriptor, watch_descriptor);
-		close(file_descriptor);
-
+		offset += sizeof (struct inotify_event) + event->len;
+	}
 }
 
 t_nodo_nivel * ubicar_nivel_por_socket(int socket)
@@ -516,7 +520,7 @@ int agregar_sin_repetidos(char * string, char c)
 
 	while(i<len)
 	{
-		if (string[i] == c) return 0;
+		if (string[i] == c) return false;
 	}
 
 	aux = malloc(2);
@@ -526,5 +530,5 @@ int agregar_sin_repetidos(char * string, char c)
 	string_append(&string, aux);
 	free(aux);
 
-	return 1;
+	return true;
 }

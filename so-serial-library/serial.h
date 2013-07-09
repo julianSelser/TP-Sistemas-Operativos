@@ -114,9 +114,7 @@
 	} __attribute__((packed)) t_notificacion_nivel_cumplido;
 
 
-	//11 - ESTE LE LLEGA AL NIVEL DE PARTE DEL PERSONAJE Y ESTA MAL
-	typedef struct{
-	}__attribute__((packed)) t_notificacion_muerte_personaje;
+	/*11 - FALTA	*/
 
 
 	/*12 - FALTA 	*/
@@ -229,7 +227,7 @@
     char *srlz_concesion_recurso(void *data, int *tamanio);					//23
 
     //faltan en el .c y capaz no se usa
-    char *srlz_notificacion_muerte_personaje(void *data,int *tamanio);//11
+    char *srlz_notificacion_muerte_personaje(void *data,int *tamanio);		//11
 
 
     //listo
@@ -256,7 +254,7 @@
     void *deserializar_concesion_recurso(char *buffer);						//23
 
     //faltan en el .c y capaz no se usa
-    void *deserializar_notificacion_muerte_personaje(char *buffer);//11
+    void *deserializar_notificacion_muerte_personaje(char *buffer);			//11
 
 
 	//funciones de envio/recepcion
