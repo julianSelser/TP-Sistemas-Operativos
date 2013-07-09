@@ -6,7 +6,6 @@
  */
 
 
-
 #ifndef PLATAFORMA_H_
 #define PLATAFORMA_H_
 

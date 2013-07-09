@@ -1,4 +1,4 @@
-/*
+/**
  * rutina_planificador.h
  *
  *  Created on: Jun 6, 2013
