@@ -36,17 +36,18 @@ extern char **environ;
 int main() //todo tomar archivo de config por argv? no habria que pasarle tambien el archivo de solicitudes para koopa?
 {
 	char *argv[] = { "koopa", "solicitudes.lst" , NULL };
-	iniciar_serializadora();
-
+	pthread_t orquestador;
+	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
 	t_config *plataforma_conf = config_create("arch.conf");
+
 	quantum = config_get_int_value(plataforma_conf, "quantum");
 	retraso = config_get_int_value(plataforma_conf, "retraso");
+	config_destroy(plataforma_conf);
 
-	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
+	iniciar_serializadora();
 
-	log_debug(logger_plataforma, "Se lanza el hilo orquestador!", "DEBUG");
+	log_debug(logger_plataforma, "Se lanza el hilo orquestador!", "DEBUG"); // todo estamos logeando solo esto...es medio al pedo el loger de Plataforma
 
-	pthread_t orquestador;
 	pthread_create(&orquestador, NULL,(void*)rutina_orquestador, NULL);
 	pthread_join(orquestador, NULL);
 
