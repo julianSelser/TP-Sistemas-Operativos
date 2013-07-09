@@ -20,7 +20,6 @@ typedef struct
 	t_list * colas[2];
 	char * nombre;
 	int puerto_planif;
-	char  * IP_planif;
 	int puerto;
 	char * IP;
 	sem_t * sem_listos;
