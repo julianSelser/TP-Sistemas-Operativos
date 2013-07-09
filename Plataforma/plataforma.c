@@ -33,12 +33,14 @@ int quantum;
 int retraso;
 extern char **environ;
 
-int main() //todo tomar archivo de config por argv? no habria que pasarle tambien el archivo de solicitudes para koopa?
+int main(int argc, char **argv)
 {
-	char *argv[] = { "koopa", "solicitudes.lst" , NULL };
+	if(argc!=3) perror("Uso: Plataforma <arch_config> <arch_solicitudes_koopa>"),exit(EXIT_FAILURE);//ya se que queda feo aca
+
+	char *argkoopa[] = { "koopa", argv[2] , NULL };
 	pthread_t orquestador;
 	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
-	t_config *plataforma_conf = config_create("arch.conf");
+	t_config *plataforma_conf = config_create(argv[1]);
 
 	quantum = config_get_int_value(plataforma_conf, "quantum");
 	retraso = config_get_int_value(plataforma_conf, "retraso");
@@ -46,14 +48,14 @@ int main() //todo tomar archivo de config por argv? no habria que pasarle tambie
 
 	iniciar_serializadora();
 
-	log_debug(logger_plataforma, "Se lanza el hilo orquestador!", "DEBUG"); // todo estamos logeando solo esto...es medio al pedo el loger de Plataforma
+	log_debug(logger_plataforma, "Se lanza el hilo orquestador!", "DEBUG");
 
 	pthread_create(&orquestador, NULL,(void*)rutina_orquestador, NULL);
 	pthread_join(orquestador, NULL);
 
 	log_destroy(logger_plataforma);
 
-	execve("koopa", argv, environ);
+	execve("koopa", argkoopa, environ);
 
 	return EXIT_SUCCESS;
 }
