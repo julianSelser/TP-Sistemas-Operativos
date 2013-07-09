@@ -18,10 +18,8 @@
 #include <string.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <fcntl.h>
 #include "serial.h"
-
-
-//todo: falta setear los sockets para cerrarse con execve
 
 
 static p_funcion_deserial vec_deserializador[N_MENSAJES];
@@ -681,6 +679,7 @@ int init_socket_externo(int puerto, char *direccion, t_log *logger)
 		/*todo logear:Error al crear socket*/
 		exit(1);
 	}
+	fcntl(unSocket, F_SETFL, FD_CLOEXEC);
 
 	setsockopt(unSocket, SOL_SOCKET, SO_LINGER, &lo, sizeof(lo));
 
@@ -707,6 +706,7 @@ int init_socket_escucha(int puerto, int optval, t_log *logger){
 		/*todo logear:error creando socket*/
 		exit(1);
 	}
+	fcntl(socketEscucha, F_SETFL, FD_CLOEXEC);
 
 	// Hacer que el SO libere el puerto inmediatamente luego de cerrar el socket.
 	setsockopt(socketEscucha, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
