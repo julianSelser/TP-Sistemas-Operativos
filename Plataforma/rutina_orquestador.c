@@ -68,6 +68,7 @@ void rutina_orquestador(/*?*/)
 		read_fds = maestro;
 		if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
 			perror("select");//todo loguear: error de select...que sentido tiene logear esto? si revienta aca mala leche
+			log_error(logger_orquestador,"error de select!","ERRROR");
 			exit(1);
 		}
 
@@ -132,7 +133,9 @@ void manejar_peticion(int socket){
 										manejar_anuncio_nivel(socket);
 										break;
 	default:
-			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));//todo esto deberia loguearse como error
+			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));
+			//todo esto deberia loguearse como error
+			log_error(logger_orquestador,"mensaje  inexistente !","ERROR");
 			break;
 	} //end switch
 }
@@ -158,7 +161,7 @@ void manejar_anuncio_nivel(int socket_nivel)
 
 	//aca armo el logger que va a usar el planificador
 	logger_planif = log_create(string_from_format("planif_%s.log", nuevo_nivel->nombre), "PLANIFICADOR", 1, LOG_LEVEL_TRACE);
-	//creado el logger, pelada la gallina
+	//creado el logger, pelada la gallina (ajajaja)
 
 	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el nivel
 	{
