@@ -215,7 +215,7 @@ void manejar_sol_info(int socket) //todo testear
 
 	solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
 	log_info(logger_orquestador, string_from_format("El personaje %c quiere saber donde está el nivel %s", solicitud->solicitor ,solicitud->nivel_solicitado), "INFO");
-	if (agregar_sin_repetidos(jugadores, solicitud->solicitor))
+	if (agregar_sin_repetidos(&jugadores, solicitud->solicitor))
 	{
 		log_info(logger_orquestador, "Entro un nuevo personaje al juego", "INFO");
 	}
@@ -247,7 +247,7 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre)
 		nivel_actual = (t_nodo_nivel *)list_get(lista_niveles, i);
 		if(strcmp(nivel_actual->nombre, nombre))
 		{
-			temp->ip_nivel=nivel_actual->IP;
+			temp->ip_nivel=strdup(nivel_actual->IP);
 			temp->puerto_nivel=nivel_actual->puerto;
 			temp->puerto_planificador=nivel_actual->puerto_planif;
 			return temp;
@@ -512,17 +512,15 @@ t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec)
 	return NULL; //deberia ser una busqueda segura y no llegar nunca aca
 }
 
-int agregar_sin_repetidos(char * string, char c)
+int agregar_sin_repetidos(char **string, char c)
 {
 	int i=0;
-	int len;
+	int len = strlen(*string);
 	char * aux;
-
-	len = strlen(string);
 
 	while(i<len)
 	{
-		if (string[i] == c) return false;
+		if (*string[i] == c) return false;
 		++i;
 	}
 
@@ -530,7 +528,7 @@ int agregar_sin_repetidos(char * string, char c)
 	aux[0]=c;
 	aux[1]='\0';
 
-	string_append(&string, aux);
+	string_append(string, aux);
 	free(aux);
 
 	return true;
