@@ -399,6 +399,8 @@ void manejar_solicitud_instancia_recurso(int socket){
 
 void manejar_notif_eleccion_victima(int socket){
 	int i;
+	char* nombre_victima;
+
 	t_nodo_personaje *nodo_victima;
 	t_link_element *aux = lista_personajes->head;
 	t_notif_eleccion_de_victima *notif_victima = recibir(socket_orquestador, NOTIF_ELECCION_VICTIMA);
@@ -410,7 +412,8 @@ void manejar_notif_eleccion_victima(int socket){
 	  log_info(logger,"victima no encontrada","INFO");
 	else{
 		nodo_victima = list_remove(lista_personajes, i);
-
+		nombre_victima=strdup(nodo_victima->nombre);
+        log_info(logger,string_from_format("la victima es :%s",nombre_victima));
 		reubicar_recursos(nodo_victima->necesidades); //esto ya manda el mensaje de recursos liberados al orquestador
 
 		BorrarItem(&lista_items, nodo_victima->ID);

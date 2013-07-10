@@ -136,6 +136,8 @@ int rutina_chequeo_deadlock()
 		sem_wait(&sem_general); //semaforo para lockear la lista de personaes y la de recursos. si tomo este semaforo, el hilo principal no puede atender mensajes
 		pjes_en_deadlock = detectar_deadlock(); //ver aclaración
 
+	//	log_info(logger,"")
+
 		cant_pjes_en_deadlock = strlen(pjes_en_deadlock);
 
 		if (cant_pjes_en_deadlock) //es decir, si hay al menos dos (imposible que haya uno)
@@ -201,6 +203,7 @@ char * detectar_deadlock()
 
 	char * pjes;
 	char * finish;
+	char ** pjes_nombre;
 	char * involucrados;
 
 	char * recs;
@@ -217,11 +220,13 @@ char * detectar_deadlock()
 
 	finish = malloc (cant_pjes); 
 	pjes = malloc (cant_pjes);
+    pjes_nombre = malloc(cant_pjes);
 
 	for(i=0; i<cant_pjes; i++)
 	{
 		pjes[i] = ((t_nodo_personaje *)list_get(lista_personajes, i))->ID; //vector con los chars de todos los personajes presentes
 		finish[i] = 0; //vector finish, ver silberschatz
+		pjes_nombre[i]=((t_nodo_personaje *)list_get(lista_personajes, i))->nombre;//array con todos los nombres de los personajes
 	} 
 
 	cant_recursos = list_size(lista_cajas);
@@ -236,10 +241,10 @@ char * detectar_deadlock()
 	}
 
 
-
 	while(cambio)
 	{
 		char pje_actual;
+
 
 		cambio = 0;
 		for(i=0; i<cant_pjes; i++) //recorro el vector de personajes
@@ -265,9 +270,11 @@ char * detectar_deadlock()
 		if(finish[i]==0)
 		{
 			char * pje_deadlock;
+
 			pje_deadlock = malloc(2);
 			pje_deadlock[0] = pjes[i];
 			pje_deadlock[1] = '\0';
+			log_info(logger,string_from_format("este personaje esta en deadlock:%s",pjes_nombre[i]));
 
 			string_append(&involucrados, pje_deadlock);
 			free(pje_deadlock);
@@ -279,7 +286,7 @@ char * detectar_deadlock()
 	free(finish);
 	free(recs);
 	free(instancias);
-
+	free(pjes_nombre);
 	return involucrados;
 }
 
