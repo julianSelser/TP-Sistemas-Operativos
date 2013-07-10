@@ -54,7 +54,6 @@ void rutina_planificador(parametro *info)
 		sem_wait(sem_cola_listos);
 		personaje = desencolar(listos);
 		sem_post(sem_cola_listos);
-		sem_post(sem_cola_vacia);
 
 		for(i=0; i<quantum ; i++)
 		{
@@ -73,19 +72,19 @@ void rutina_planificador(parametro *info)
 		sleep(retraso);
 
 		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
-		if(!resultado->bloqueado && !desconexion)
+		if(!desconexion /*&& !resultado->bloqueado*/)
 		{
 			sem_wait(sem_cola_listos);
 			encolar(listos, personaje);
 			sem_post(sem_cola_listos);
+			sem_post(sem_cola_vacia);
+			//free(resultado);
 		}
-		else{
+		else if(desconexion){
 			free(personaje->nombre);
 			free(personaje);
 		}
 
-		//libera el resultado que viene por "recibir"
-		free(resultado);
 	}
 	//todo: ver como hacer la liberacion del parametro y las listas(capaz las hace el orquestador)
 }
