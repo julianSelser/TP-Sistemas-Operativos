@@ -11,6 +11,8 @@
 #include <serial.h>
 #include <fcntl.h>
 
+#define _GNU_SOURCE
+
 #ifndef RUTINA_ORQUESTADOR_H_
 #define RUTINA_ORQUESTADOR_H_
 
