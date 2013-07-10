@@ -265,7 +265,7 @@ void manejar_recs_liberados(int socket) //todo testear
 	char * resto;
 	char * reasignaciones;
 	char rec;
-	char rec_ant;
+	int rec_ant=300;// :|
 	t_nodo_nivel * nivel;
 	t_notif_recursos_liberados * notificacion;
 	t_notif_recursos_reasignados * informe;
@@ -523,11 +523,12 @@ int agregar_sin_repetidos(char * string, char c)
 	while(i<len)
 	{
 		if (string[i] == c) return false;
+		++i;
 	}
 
 	aux = malloc(2);
-	aux[1]=c;
-	aux[2]='\0';
+	aux[0]=c;
+	aux[1]='\0';
 
 	string_append(&string, aux);
 	free(aux);
