@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
 		int socket_nivel;
 		int socket_planificador;
 		int recursos_obtenidos;
-		int posicion[2] = {0,0};
+		int posicion[2] = {0,1};
 		int destino[2]; 
 		int sabe_donde_ir;
 		int consiguio_total_recursos;
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
 		solicitud_info_nivel->nivel_solicitado=strdup(nivel_a_pedir);
 		log_info(logger, string_from_format("Proximo Nivel:%s",nivel_a_pedir), "INFO");
 
-		socket_orquestador = init_socket_externo(socket_orquestador, ip_orquestador, logger);
+		socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
 		log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");		// 1111111111111111111
 
 		enviar(socket_orquestador,SOLICITUD_INFO_NIVEL,solicitud_info_nivel,logger);
