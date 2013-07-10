@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
 		int socket_nivel;
 		int socket_planificador;
 		int recursos_obtenidos;
-		int posicion[2] = {0,1};
+		int posicion[2] = {1,1};
 		int destino[2]; 
 		int sabe_donde_ir;
 		int consiguio_total_recursos;
