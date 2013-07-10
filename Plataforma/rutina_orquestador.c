@@ -269,7 +269,7 @@ void manejar_recs_liberados(int socket) //todo testear
 	t_nodo_nivel * nivel;
 	t_notif_recursos_liberados * notificacion;
 	t_notif_recursos_reasignados * informe;
-	int i;
+	int i = 0;
 
 	nivel = ubicar_nivel_por_socket(socket);
 
