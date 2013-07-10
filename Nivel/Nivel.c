@@ -244,7 +244,7 @@ void manejar_ingreso_personaje(int socket){
 	}
 
 	list_add(lista_personajes, nodo_p);
-	CrearPersonaje(&lista_items, nodo_p->ID, 0, 0);//crea el personaje en (0,0)
+	CrearPersonaje(&lista_items, nodo_p->ID, 1, 1);//crea el personaje en (1,1)
 
 	free(datos->necesidades);
 	free(datos);
