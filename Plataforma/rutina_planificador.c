@@ -67,8 +67,8 @@ void rutina_planificador(parametro *info)
 				sem_wait(sem_cola_vacia);
 				break;
 			}
+			printf("\n dado quantum\n\n");
 		}
-		printf("\n dado quantum\n\n");
 		sleep(retraso);
 
 		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
