@@ -72,13 +72,13 @@ void rutina_planificador(parametro *info)
 		sleep(retraso);
 
 		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
-		if(!desconexion /*&& !resultado->bloqueado*/)
+		if(!desconexion && !resultado->bloqueado)
 		{
 			sem_wait(sem_cola_listos);
 			encolar(listos, personaje);
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
-			//free(resultado);
+			free(resultado);
 		}
 		else if(desconexion){
 			free(personaje->nombre);
