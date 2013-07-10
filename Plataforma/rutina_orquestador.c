@@ -94,7 +94,7 @@ void rutina_orquestador(/*?*/)
 					rutina_inotify(inotify_fd);
 				}
 
-				else // si no es una nueva conexion es un mensaje...
+				if(i!=inotify_fd && i!=socketEscucha) // si no son los socket especiales es un mensaje...
 				{
 					if(is_connected(i))  	//si el socket sigue estando conectado
 					{
@@ -105,8 +105,8 @@ void rutina_orquestador(/*?*/)
 						close(i);
 						FD_CLR(i, &maestro);
 					}
-
 				}
+
 			} // fin actividad en socket
 		} // fin for
 	}
@@ -165,7 +165,7 @@ void manejar_anuncio_nivel(int socket_nivel)
 
 	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el nivel
 	{
-		t_nodo_bloq_por_recurso * info_recurso=info_recurso = malloc(sizeof(t_nodo_bloq_por_recurso));
+		t_nodo_bloq_por_recurso * info_recurso = malloc(sizeof(t_nodo_bloq_por_recurso));
 		info_recurso->char_recurso=datos_nivel_entrante->recursos_nivel[i];
 		info_recurso->personajes=list_create();
 		list_add(nuevo_nivel->colas[BLOQUEADOS], info_recurso); //crear cola de bloqueados para el recurso actual
@@ -461,7 +461,7 @@ void rutina_inotify(int inotify_fd)
 			{
 				if(!strcmp(event->name,"arch.conf"))
 				{
-					t_config *plataforma_conf = config_create("arch.conf");sleep(1);//el sleep no lo saquen porfavor
+					t_config *plataforma_conf = config_create("arch.conf");sleep(5);//el sleep no lo saquen porfavor
 					quantum = config_get_int_value(plataforma_conf, "quantum");
 					retraso = config_get_int_value(plataforma_conf, "retraso");
 
