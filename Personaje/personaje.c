@@ -420,14 +420,12 @@ int main(int argc, char **argv) {
 	//el personaje, al terminar su plan de niveles, se conecta al hilo orquestador y se lo notifica
 
 	//ACCION: CONECTAR CON EL HILO ORQUESTADOR
-	socket_orquestador=init_socket_externo(puerto_orquestador,ip_puerto_orquestador,logger);
+	socket_orquestador=init_socket_externo(puerto_orquestador,ip_orquestador,logger);
 	log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 	//ELABORAR NOTIFICACION DE PLAN TERMINADO
 	notificacion_plan_terminado->personaje=strdup(nombre);  // revisar q le voy a mandar al orquestador
 	enviar(socket_orquestador,NOTIF_PLAN_TERMINADO,notificacion_plan_terminado,logger);
-
-	//while(1); //y queda a la espera indefinidamente? no debería terminar el proceso cuando termina el plan de niveles, así que supongo que hay que dejarlo ahí
 
 	//	printf("%s\n",recursos_por_nivel[3]); que es esta linea????
 
