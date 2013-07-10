@@ -4,6 +4,7 @@
  *  Created on: Jun 6, 2013
  *      Author: julian
  */
+#include <unistd.h>
 #include "serial.h"
 #include "plataforma.h" //por que esta el typedef de parametro
 

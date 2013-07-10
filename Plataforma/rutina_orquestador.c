@@ -249,7 +249,6 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre)
 		{
 			temp->ip_nivel=nivel_actual->IP;
 			temp->puerto_nivel=nivel_actual->puerto;
-			temp->ip_planificador=nivel_actual->IP_planif;
 			temp->puerto_planificador=nivel_actual->puerto_planif;
 			return temp;
 		}

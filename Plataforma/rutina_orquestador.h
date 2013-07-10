@@ -11,6 +11,8 @@
 #include <serial.h>
 #include <fcntl.h>
 
+#define _GNU_SOURCE
+
 #ifndef RUTINA_ORQUESTADOR_H_
 #define RUTINA_ORQUESTADOR_H_
 
@@ -20,7 +22,6 @@ typedef struct
 	t_list * colas[2];
 	char * nombre;
 	int puerto_planif;
-	char  * IP_planif;
 	int puerto;
 	char * IP;
 	sem_t * sem_listos;
