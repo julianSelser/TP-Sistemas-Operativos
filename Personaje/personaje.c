@@ -10,6 +10,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <signal.h>
+#include <ctype.h>
 
 #include <commons/log.h>
 #include <commons/config.h>
@@ -103,6 +104,13 @@ int main(int argc, char **argv) {
 	plan_de_niveles = string_split(temp_plan_niveles, ",");
 	free(temp_plan_niveles);
 
+	log_name = malloc(strlen(nombre)+1);
+	strcpy(log_name, nombre);
+	string_append(&log_name,".log"); // queda : nombre.log
+
+	logger = log_create(log_name, "PERSONAJE", 1, LOG_LEVEL_TRACE);
+	free(log_name);//hacer free a log_name???????? seh
+
 	i=0;
 
 	recursos_por_nivel = malloc(cantidad_niveles * sizeof(char)); // conozco e el tamaño de char*?
@@ -114,11 +122,9 @@ int main(int argc, char **argv) {
 		char * string_recursos;
 		int pos;
 
-		clave = malloc(1);
-		clave[0] = '\0';
-		string_append(&clave, "obj[" );
-		string_append(&clave, plan_de_niveles[i]);
-		string_append(&clave, "]");
+		clave = string_from_format("obj[%s]", isspace(plan_de_niveles[i][0])? (plan_de_niveles[i]+1) : plan_de_niveles[i]);
+
+		if(!config_has_property(configuracion, clave)) {log_error(logger, "Archivo de configuracion invalido");exit(EXIT_FAILURE);}
 
 		temp_recursos = config_get_string_value(configuracion, clave);
 		string_recursos = malloc(1);
@@ -137,21 +143,14 @@ int main(int argc, char **argv) {
 			}
 			pos++;
 		}
-		free(temp_recursos);
 		recursos_por_nivel[i] = malloc(strlen(string_recursos)+1);
 		strcpy(recursos_por_nivel[i], string_recursos); // queda vector de todos los niveles en los q en cada
 		// posicion hay una cadena con todos los recursos de ese nivel .
 		free(string_recursos);
+		free(clave);
 		i++;
 	}
 
-
-	log_name = malloc(strlen(nombre)+1);
-	strcpy(log_name, nombre);
-	string_append(&log_name,".log"); // queda : nombre.log
-
-	logger = log_create(log_name, "PERSONAJE", 0, LOG_LEVEL_TRACE);
-	free(log_name);//hacer free a log_name???????? seh
 
 	//-------------FIN LECTURA ARCHIVO CONFIG--------------//
 
