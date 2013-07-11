@@ -43,8 +43,8 @@ int main(int argc, char **argv)
 	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
 	t_config *plataforma_conf = config_create(config_name=argv[1]);
 
-	quantum = config_get_int_value(plataforma_conf, "quantum");
-	retraso = config_get_int_value(plataforma_conf, "retraso");
+	quantum = config_get_double_value(plataforma_conf, "quantum");
+	retraso = config_get_double_value(plataforma_conf, "retraso");
 	config_destroy(plataforma_conf);
 
 	iniciar_serializadora();
