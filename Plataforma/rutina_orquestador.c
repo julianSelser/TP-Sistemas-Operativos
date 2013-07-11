@@ -223,7 +223,7 @@ void manejar_sol_info(int socket) //todo testear
 	info = crear_info_nivel(solicitud->nivel_solicitado);
 	log_debug(logger_orquestador, "Se creó la estructura con la información", "DEBUG");
 
-	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, logger_orquestador);
+	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, logger_orquestador);//todo: si un personaje pide un nivel que no esta info==NULL y revienta
 	log_info(logger_orquestador, "Se respondió con la información", "INFO");
 
 	free(solicitud->nivel_solicitado);
@@ -245,7 +245,7 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre)
 		t_nodo_nivel * nivel_actual;
 
 		nivel_actual = (t_nodo_nivel *)list_get(lista_niveles, i);
-		if(strcmp(nivel_actual->nombre, nombre))
+		if(strcmp(nivel_actual->nombre, nombre)==0)
 		{
 			temp->ip_nivel=strdup(nivel_actual->IP);
 			temp->puerto_nivel=nivel_actual->puerto;
