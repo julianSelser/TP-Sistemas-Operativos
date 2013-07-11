@@ -56,12 +56,11 @@ void rutina_orquestador(/*?*/)
 	inotify_add_watch(inotify_fd, (char*)get_current_dir_name(), IN_MODIFY);
 
 	//inicializamos las variables globales
-	logger_orquestador = log_create("orquestador.log,", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
 	jugadores=strdup("");//es lo mismo que jugadores=malloc(1);jugadores[0]='\0';
 	cant_personajes_victoriosos = 0;
 	lista_niveles=list_create();
-
-	log_info(logger_orquestador, "\n a la espera de nuevos niveles...\n\n", "INFO");
+	logger_orquestador = log_create("orquestador.log,", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
+	log_info(logger_orquestador, "El orquestador esta comienza a esperar niveles", "INFO");
 
 	FD_SETEO;//macro que setea los fd para select()
 
@@ -70,7 +69,7 @@ void rutina_orquestador(/*?*/)
 		read_fds = maestro;
 		if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
 			perror("select");//todo loguear: error de select...que sentido tiene logear esto? si revienta aca mala leche
-			log_error(logger_orquestador,"error de select!","ERRROR");
+			log_error(logger_orquestador,"Error de select!","ERRROR");
 			exit(1);
 		}
 
@@ -106,13 +105,14 @@ void rutina_orquestador(/*?*/)
 					{
 						char index;
 						t_nodo_nivel *nodo = ubicar_nivel_por_socket(i,&index)!=NULL? list_remove(lista_niveles, index) : NULL;
-						if(nodo!=NULL){
-							log_info(logger_orquestador, string_from_format("cerrando el planificador del nivel: %s", nodo->nombre), "INFO");
+						if(nodo!=NULL)
+						{
+							//TODO FALTAN LIBERAR TODAS LAS ESTRUCTURAS DE LOS PLANIFICADORES...lo hago si queda tiempo...alto memory leak
 							pthread_cancel(nodo->hilo_planificador);
 							free(nodo->nombre);
 							free(nodo->IP);
 							free(nodo);
-							//TODO FALTAN LIBERAR TODAS LAS ESTRUCTURAS DE LOS PLANIFICADORES...lo hago si queda tiempo
+							log_info(logger_orquestador, string_from_format("Cerrando el planificador del nivel: %s", nodo->nombre), "INFO");
 						}
 						close(i);
 						FD_CLR(i, &maestro);
@@ -147,24 +147,22 @@ void manejar_peticion(int socket){
 	default:
 			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));
 			//todo esto deberia loguearse como error
-			log_error(logger_orquestador,"mensaje  inexistente !","ERROR");
+			log_error(logger_orquestador,"Mensaje  inexistente !","ERROR");
 			break;
 	} //end switch
 }
 
 void manejar_anuncio_nivel(int socket_nivel)
 {
-	int i=0;
 	t_link_element *aux;
-	t_log * logger_planif;
-	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante;
-
-	datos_nivel_entrante = recibir(socket_nivel, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR);
+	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante = recibir(socket_nivel, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR);
 
 	for(aux=lista_niveles->head; aux!=NULL && strcmp(datos_nivel_entrante->nombre,((t_nodo_nivel*)aux->data)->nombre)!=0 ; aux=aux->next);
 
 	if(aux==NULL)
 	{
+		int i=0;
+		t_log * logger_planif;
 		t_nodo_nivel * nuevo_nivel = malloc(sizeof (t_nodo_nivel));
 
 		log_info(logger_orquestador, string_from_format("Se conecto el nivel %s", datos_nivel_entrante->nombre), "INFO");
@@ -486,7 +484,7 @@ void rutina_inotify(int inotify_fd)
 					quantum = config_get_int_value(plataforma_conf, "quantum");
 					retraso = config_get_int_value(plataforma_conf, "retraso");
 
-					printf("\n modificacion en el archivo de configuracion...\n quantum: %d\n retraso: %d\n\n",quantum,retraso);
+					log_info(logger_orquestador, string_from_format("\n modificacion en el archivo de configuracion...\n quantum: %d\n retraso: %d\n\n",quantum,retraso), "INFO");
 
 					config_destroy(plataforma_conf);
 				}
