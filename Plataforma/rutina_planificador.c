@@ -30,6 +30,7 @@
 void rutina_planificador(parametro *info)
 {
 	int i;
+	char buf[100];
 	//esto liberarlo, lo que llega por "recibir" es responsabilidad del usuario
 	//(estas variables contendran de-serializaciones)
 	t_turno_concluido *resultado;
@@ -58,7 +59,9 @@ void rutina_planificador(parametro *info)
 		for(i=0; i<quantum ; i++)
 		{
 			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )) break;
-				 resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
+			if(( desconexion = recv(personaje->socket, buf, 100, MSG_PEEK)<=0 )) break;//nadie vio esta linea, la escribio roberto
+
+			resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
 
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
