@@ -104,6 +104,16 @@ void rutina_orquestador(/*?*/)
 					}
 					else // si se desconecto, se nos escapo un nivel o un personaje
 					{
+						char index;
+						t_nodo_nivel *nodo = ubicar_nivel_por_socket(i,&index)!=NULL? list_remove(lista_niveles, index) : NULL;
+						if(nodo!=NULL){
+							log_info(logger_orquestador, string_from_format("cerrando el planificador del nivel: %s", nodo->nombre), "INFO");
+							pthread_cancel(nodo->hilo_planificador);
+							free(nodo->nombre);
+							free(nodo->IP);
+							free(nodo);
+							//TODO FALTAN LIBERAR TODAS LAS ESTRUCTURAS DE LOS PLANIFICADORES...lo hago si queda tiempo
+						}
 						close(i);
 						FD_CLR(i, &maestro);
 					}
@@ -145,50 +155,55 @@ void manejar_peticion(int socket){
 void manejar_anuncio_nivel(int socket_nivel)
 {
 	int i=0;
+	t_link_element *aux;
 	t_log * logger_planif;
 	t_envio_deDatos_delNivel_alOrquestador * datos_nivel_entrante;
-	t_nodo_nivel * nuevo_nivel = malloc(sizeof (t_nodo_nivel));
 
 	datos_nivel_entrante = recibir(socket_nivel, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR);
 
-	log_info(logger_orquestador, string_from_format("Se conecto el nivel %s", datos_nivel_entrante->nombre), "INFO");
+	for(aux=lista_niveles->head; aux!=NULL && strcmp(datos_nivel_entrante->nombre,((t_nodo_nivel*)aux->data)->nombre)!=0 ; aux=aux->next);
 
-	nuevo_nivel->socket = socket_nivel;
-	nuevo_nivel->IP = get_ip_string(socket_nivel);
-	nuevo_nivel->colas[LISTOS] = list_create();
-	nuevo_nivel->colas[BLOQUEADOS] = list_create();
-	nuevo_nivel->nombre = datos_nivel_entrante->nombre;
-	nuevo_nivel->puerto = datos_nivel_entrante->puerto_nivel;
-	nuevo_nivel->puerto_planif = puerto_planif;
-
-	//aca armo el logger que va a usar el planificador
-	logger_planif = log_create(string_from_format("planif_%s.log", nuevo_nivel->nombre), "PLANIFICADOR", 1, LOG_LEVEL_TRACE);
-	//creado el logger, pelada la gallina (ajajaja)
-
-	while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el nivel
+	if(aux==NULL)
 	{
-		t_nodo_bloq_por_recurso * info_recurso = malloc(sizeof(t_nodo_bloq_por_recurso));
-		info_recurso->char_recurso=datos_nivel_entrante->recursos_nivel[i];
-		info_recurso->personajes=list_create();
-		list_add(nuevo_nivel->colas[BLOQUEADOS], info_recurso); //crear cola de bloqueados para el recurso actual
-		i++;
-	}
+		t_nodo_nivel * nuevo_nivel = malloc(sizeof (t_nodo_nivel));
 
+		log_info(logger_orquestador, string_from_format("Se conecto el nivel %s", datos_nivel_entrante->nombre), "INFO");
+
+		nuevo_nivel->socket = socket_nivel;
+		nuevo_nivel->IP = get_ip_string(socket_nivel);
+		nuevo_nivel->colas[LISTOS] = list_create();
+		nuevo_nivel->colas[BLOQUEADOS] = list_create();
+		nuevo_nivel->nombre = datos_nivel_entrante->nombre;
+		nuevo_nivel->puerto = datos_nivel_entrante->puerto_nivel;
+		nuevo_nivel->puerto_planif = puerto_planif;
+
+		//aca armo el logger que va a usar el planificador
+		logger_planif = log_create(string_from_format("planif_%s.log", nuevo_nivel->nombre), "PLANIFICADOR", 1, LOG_LEVEL_TRACE);
+		//creado el logger, pelada la gallina (ajajaja)
+
+		while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el nivel
+		{
+			t_nodo_bloq_por_recurso * info_recurso = malloc(sizeof(t_nodo_bloq_por_recurso));
+			info_recurso->char_recurso=datos_nivel_entrante->recursos_nivel[i];
+			info_recurso->personajes=list_create();
+			list_add(nuevo_nivel->colas[BLOQUEADOS], info_recurso); //crear cola de bloqueados para el recurso actual
+			i++;
+		}
+
+
+		list_add(lista_niveles, nuevo_nivel);
+		log_debug(logger_orquestador, "Se crearon las estructuras necesarias para manejarlo", "DEBUG");
+
+		pthread_create(&nuevo_nivel->hilo_planificador, NULL, (void*)rutina_planificador, armar_parametro(nuevo_nivel, logger_planif));
+		log_debug(logger_orquestador, string_from_format("Se lanzó el planificador correspondiente, que va a escuchar en el puerto %d.", puerto_planif), "DEBUG");
+		puerto_planif++;
+	}
+	else{
+		log_debug(logger_orquestador, string_from_format("El nivel: %s trato de entrar, pero ya existía una instancia de este en el sistema", datos_nivel_entrante->nombre), "INFO");
+		shutdown(socket_nivel, 2);
+	}
 	free(datos_nivel_entrante->recursos_nivel);
 	free(datos_nivel_entrante);
-
-	list_add(lista_niveles, nuevo_nivel);
-	log_debug(logger_orquestador, "Se crearon las estructuras necesarias para manejarlo", "DEBUG");
-
-	lanzar_planificador(armar_parametro(nuevo_nivel, logger_planif));
-	log_debug(logger_orquestador, string_from_format("Se lanzó el planificador correspondiente, que va a escuchar en el puerto %d.", puerto_planif), "DEBUG");
-	puerto_planif++;
-}
-
-void lanzar_planificador(parametro * p)
-{
-	pthread_t nuevo_hilo;
-	pthread_create(&nuevo_hilo, NULL, (void*)rutina_planificador, p);
 }
 
 parametro *armar_parametro(t_nodo_nivel * nuevo_nivel, t_log * logger)
@@ -258,7 +273,7 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre)
 		i++;
 	}
 
-	log_info(logger_orquestador, string_from_format("Un personaje pidió por el nivel:%s  que NO EXISTIA", nombre), "INFO");
+	log_info(logger_orquestador, string_from_format("Un personaje pidió por el nivel: %s  que NO EXISTIA", nombre), "INFO");
 	temp->ip_nivel = strdup("NIVEL NO ENCONTRADO");
 
 	return temp; //si sale por aca, no se encontro el nivel
@@ -277,7 +292,7 @@ void manejar_recs_liberados(int socket) //todo testear
 	t_notif_recursos_reasignados * informe;
 	int i = 0;
 
-	nivel = ubicar_nivel_por_socket(socket);
+	nivel = ubicar_nivel_por_socket(socket,&rec);
 
 	resto=strdup("");
 
@@ -364,7 +379,7 @@ void manejar_sol_recovery(int socket) //todo testear
 	t_notif_eleccion_de_victima * respuesta;
 	t_personaje_condenado * condena;
 
-	nivel=ubicar_nivel_por_socket(socket);
+	nivel=ubicar_nivel_por_socket(socket, &ID_victima);
 
 	solicitud=recibir(socket, SOLICITUD_RECUPERO_DEADLOCK);
 	log_info(logger_orquestador, string_from_format("Hay un interbloqueo en el nivel %s, están involucrados los personajes %s", nivel->nombre, solicitud->pjes_deadlock));
@@ -481,7 +496,7 @@ void rutina_inotify(int inotify_fd)
 	}
 }
 
-t_nodo_nivel * ubicar_nivel_por_socket(int socket)
+t_nodo_nivel * ubicar_nivel_por_socket(int socket, char *index)
 {
 	int cant_niveles;
 	int i=0;
@@ -491,7 +506,7 @@ t_nodo_nivel * ubicar_nivel_por_socket(int socket)
 	while(i<cant_niveles)
 	{
 		t_nodo_nivel * nv_actual;
-
+		*index = i;
 		nv_actual = (t_nodo_nivel *) list_get(lista_niveles, i);
 		if (nv_actual->socket == socket) return nv_actual;
 		i++;
