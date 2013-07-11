@@ -11,8 +11,6 @@
 #include <serial.h>
 #include <fcntl.h>
 
-#define _GNU_SOURCE
-
 #ifndef RUTINA_ORQUESTADOR_H_
 #define RUTINA_ORQUESTADOR_H_
 
@@ -24,6 +22,7 @@ typedef struct
 	int puerto_planif;
 	int puerto;
 	char * IP;
+	pthread_t hilo_planificador;
 	sem_t * sem_listos;
 	sem_t * sem_vacia;
 	sem_t * sem_bloqueados;
@@ -33,9 +32,8 @@ typedef struct
 void rutina_orquestador(/*?*/);
 
 void rutina_inotify(int inotify_fd);
-void lanzar_planificador(parametro * p);
 parametro *armar_parametro(t_nodo_nivel * nivel, t_log * logger);
-t_nodo_nivel * ubicar_nivel_por_socket(int socket);
+t_nodo_nivel * ubicar_nivel_por_socket(int socket, char *index);
 t_info_nivel_planificador * crear_info_nivel(char * nombre);
 t_nodo_personaje * extraer(char ID, t_list * lista_colas);
 t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec);
