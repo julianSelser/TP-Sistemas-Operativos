@@ -14,8 +14,9 @@
 	#define LISTOS 0
 	#define BLOQUEADOS 1
 
-	extern int quantum;
-	extern int retraso;
+	extern float quantum;
+	extern float retraso;
+	extern char *config_name;
 
 	//la info que le llega por aprametro al planificador
 	typedef struct info_planificador{

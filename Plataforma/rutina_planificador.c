@@ -56,7 +56,7 @@ void rutina_planificador(parametro *info)
 		personaje = desencolar(listos);
 		sem_post(sem_cola_listos);
 
-		for(i=0; i<quantum ; i++)
+		for(i=0; i<(int)quantum ; i++)
 		{
 			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )) break;
 			if(( desconexion = recv(personaje->socket, buf, 100, MSG_PEEK)<=0 )) break;//nadie vio esta linea, la escribio roberto
@@ -72,7 +72,7 @@ void rutina_planificador(parametro *info)
 			}
 			printf("\n dado quantum\n\n");
 		}
-		sleep(retraso);
+		usleep((int)retraso*1000000);
 
 		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
 		if(!desconexion && !resultado->bloqueado)

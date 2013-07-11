@@ -53,7 +53,7 @@ void rutina_orquestador(/*?*/)
 	fd_set maestro, read_fds;
 
 	//hacemos que el fd de inotify  escuche por el evento de modificacion
-	inotify_add_watch(inotify_fd, (char*)get_current_dir_name(), IN_MODIFY);
+	inotify_add_watch(inotify_fd, get_current_dir_name(), IN_MODIFY);
 
 	//inicializamos las variables globales
 	jugadores=strdup("");//es lo mismo que jugadores=malloc(1);jugadores[0]='\0';
@@ -463,6 +463,7 @@ void manejar_plan_terminado(int socket)
 
 void rutina_inotify(int inotify_fd)
 {
+	t_config *plataforma_conf;
 	int offset = 0;
 	char buffer[BUF_LEN];
 	int length = read(inotify_fd, buffer, BUF_LEN);
@@ -478,14 +479,12 @@ void rutina_inotify(int inotify_fd)
 		{
 			if (event->mask & IN_MODIFY)
 			{
-				if(!strcmp(event->name,"arch.conf"))
+				if(!strcmp(event->name,config_name))
 				{
-					t_config *plataforma_conf = config_create("arch.conf");sleep(5);//el sleep no lo saquen porfavor
-					quantum = config_get_int_value(plataforma_conf, "quantum");
-					retraso = config_get_int_value(plataforma_conf, "retraso");
-
-					log_info(logger_orquestador, string_from_format("\n modificacion en el archivo de configuracion...\n quantum: %d\n retraso: %d\n\n",quantum,retraso), "INFO");
-
+					log_info(logger_orquestador, string_from_format("\n modificacion en el archivo de configuracion...\n quantum: %.2f\n retraso: %.2f\n\n",quantum,retraso), "INFO");
+					plataforma_conf = config_create(config_name);
+					quantum = strtod(config_get_string_value(plataforma_conf, "quantum"), NULL);
+					retraso = strtod(config_get_string_value(plataforma_conf, "retraso"), NULL);
 					config_destroy(plataforma_conf);
 				}
 			}

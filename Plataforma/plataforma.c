@@ -29,9 +29,10 @@
 #include "rutina_planificador.h"
 #include "plataforma.h"
 
-int quantum;
-int retraso;
 extern char **environ;
+char *config_name;
+float quantum;
+float retraso;
 
 int main(int argc, char **argv)
 {
@@ -40,7 +41,7 @@ int main(int argc, char **argv)
 	char *argkoopa[] = { "koopa", argv[2] , NULL };
 	pthread_t orquestador;
 	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
-	t_config *plataforma_conf = config_create(argv[1]);
+	t_config *plataforma_conf = config_create(config_name=argv[1]);
 
 	quantum = config_get_int_value(plataforma_conf, "quantum");
 	retraso = config_get_int_value(plataforma_conf, "retraso");
