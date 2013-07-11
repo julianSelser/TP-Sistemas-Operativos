@@ -25,13 +25,13 @@ endif
 all: libso-serial-library.so
 
 dependents:
-	-cd /home/utnso/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/Debug && $(MAKE) all
+	-cd /home/julian/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/Debug && $(MAKE) all
 
 # Tool invocations
-libso-serial-library.so: $(OBJS) $(USER_OBJS) /home/utnso/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/Debug/libso-commons-library.so
+libso-serial-library.so: $(OBJS) $(USER_OBJS) /home/julian/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/Debug/libso-commons-library.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/Debug" -shared -o "libso-serial-library.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/julian/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/Debug" -shared -o "libso-serial-library.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -42,6 +42,6 @@ clean:
 
 .PHONY: all clean dependents
 .SECONDARY:
-/home/utnso/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/Debug/libso-commons-library.so:
+/home/julian/git/tp-20131c-juanito-y-los-clonosaurios/so-commons-library/Debug/libso-commons-library.so:
 
 -include ../makefile.targets
