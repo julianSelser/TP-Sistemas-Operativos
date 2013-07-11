@@ -53,7 +53,7 @@ void rutina_orquestador(/*?*/)
 	fd_set maestro, read_fds;
 
 	//hacemos que el fd de inotify  escuche por el evento de modificacion
-	inotify_add_watch(inotify_fd, get_current_dir_name(), IN_MODIFY);
+	inotify_add_watch(inotify_fd, (char*)get_current_dir_name(), IN_MODIFY);
 
 	//inicializamos las variables globales
 	jugadores=strdup("");//es lo mismo que jugadores=malloc(1);jugadores[0]='\0';
@@ -232,10 +232,10 @@ void manejar_sol_info(int socket) //todo testear
 	log_info(logger_orquestador, string_from_format("El personaje %c quiere saber donde está el nivel %s", solicitud->solicitor ,solicitud->nivel_solicitado), "INFO");
 
 	info = crear_info_nivel(solicitud->nivel_solicitado);
-	log_debug(logger_orquestador, "Se creó la estructura con la información", "DEBUG");
 
 	if (strcmp(info->ip_nivel,"NIVEL NO ENCONTRADO") && agregar_sin_repetidos(&jugadores, solicitud->solicitor))
 	{
+		log_debug(logger_orquestador, "Se creó la estructura con la información", "DEBUG");
 		log_info(logger_orquestador, "Entro un nuevo personaje al juego", "INFO");
 	}
 
