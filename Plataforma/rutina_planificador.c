@@ -63,6 +63,9 @@ void rutina_planificador(parametro *info)
 
 			resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
 
+			printf("\n dado quantum\n\n");
+			usleep((int)(retraso*1000000));
+
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
 				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje);
@@ -70,9 +73,7 @@ void rutina_planificador(parametro *info)
 				sem_wait(sem_cola_vacia);
 				break;
 			}
-			printf("\n dado quantum\n\n");
 		}
-		usleep((int)retraso*1000000);
 
 		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
 		if(!desconexion && !resultado->bloqueado)
