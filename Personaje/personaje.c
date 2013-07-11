@@ -162,10 +162,10 @@ int main(int argc, char **argv) {
 
 		char * nivel_a_pedir;
 
-		t_solicitud_info_nivel *solicitud_info_nivel;
+		t_solicitud_info_nivel * solicitud_info_nivel;
 		solicitud_info_nivel=malloc(sizeof(t_solicitud_info_nivel));
 
-		t_info_nivel_planificador * info_nivel_y_planificador; //recibir asigna memoria
+		t_info_nivel_planificador * info_nivel_y_planificador;
 
 		t_notificacion_nivel_cumplido * notificacion_nivel_cumplido;
 		notificacion_nivel_cumplido=malloc(sizeof(t_notificacion_nivel_cumplido));
@@ -197,12 +197,12 @@ int main(int argc, char **argv) {
 
 		info_nivel_y_planificador = recibir(socket_orquestador, INFO_NIVEL_Y_PLANIFICADOR);  //22222222222222222
 
-		/* sentencias de testing
-		info_nivel_y_planificador->ip_nivel="127.0.0.1";
-		info_nivel_y_planificador->ip_planificador="127.0.0.1";
-		info_nivel_y_planificador->puerto_nivel=5400;
-		info_nivel_y_planificador->puerto_planificador=5600; */
-
+		//comprobacion de si existe no el nivel perdido para romper
+		if(!strcmp(info_nivel_y_planificador->ip_nivel, "NIVEL NO ENCONTRADO"))
+		{
+			log_error(logger, "No existe el nivel pedido al orquestador");
+			exit(EXIT_FAILURE);
+		}
 
 		log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
 		close(socket_orquestador);

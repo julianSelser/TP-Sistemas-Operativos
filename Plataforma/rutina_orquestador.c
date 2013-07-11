@@ -5,6 +5,8 @@
  *      Author: julian
  */
 
+#define _GNU_SOURCE
+
 #include <semaphore.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -215,15 +217,16 @@ void manejar_sol_info(int socket) //todo testear
 
 	solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
 	log_info(logger_orquestador, string_from_format("El personaje %c quiere saber donde está el nivel %s", solicitud->solicitor ,solicitud->nivel_solicitado), "INFO");
-	if (agregar_sin_repetidos(&jugadores, solicitud->solicitor))
-	{
-		log_info(logger_orquestador, "Entro un nuevo personaje al juego", "INFO");
-	}
 
 	info = crear_info_nivel(solicitud->nivel_solicitado);
 	log_debug(logger_orquestador, "Se creó la estructura con la información", "DEBUG");
 
-	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, logger_orquestador);//todo: si un personaje pide un nivel que no esta info==NULL y revienta
+	if (strcmp(info->ip_nivel,"NIVEL NO ENCONTRADO") && agregar_sin_repetidos(&jugadores, solicitud->solicitor))
+	{
+		log_info(logger_orquestador, "Entro un nuevo personaje al juego", "INFO");
+	}
+
+	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, logger_orquestador);
 	log_info(logger_orquestador, "Se respondió con la información", "INFO");
 
 	free(solicitud->nivel_solicitado);
@@ -255,7 +258,10 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre)
 		i++;
 	}
 
-	return NULL;
+	log_info(logger_orquestador, string_from_format("Un personaje pidió por el nivel:%s  que NO EXISTIA", nombre), "INFO");
+	temp->ip_nivel = strdup("NIVEL NO ENCONTRADO");
+
+	return temp; //si sale por aca, no se encontro el nivel
 }
 
 
