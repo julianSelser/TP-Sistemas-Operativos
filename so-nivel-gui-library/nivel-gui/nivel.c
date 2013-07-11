@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "nivel.h"
 #include <sys/ioctl.h>
-#include <ncurses.h>
+#include <curses.h>
 
 
 static WINDOW * secwin;
@@ -18,6 +18,7 @@ int nivel_gui_int_validar_inicializado(void);
 void nivel_gui_print_perror(const char* message);
 
 // ------------------------------------------------------
+
 
 
 
@@ -75,7 +76,7 @@ int nivel_gui_dibujar(ITEM_NIVEL* items) {
 	printw("Recursos: ");
 
 	while (temp != NULL) {
-		wmove (secwin, temp->posx, temp->posy);
+		wmove (secwin, temp->posy, temp->posx);
 		if (temp->item_type) {
 			waddch(secwin, temp->id | COLOR_PAIR(3));
 		} else {
@@ -154,6 +155,3 @@ int nivel_gui_int_validar_inicializado(void){
 void nivel_gui_print_perror(const char* message){
 	fprintf(stderr, "%s\n", message);
 }
-
-
-
