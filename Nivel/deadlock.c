@@ -213,7 +213,7 @@ char * detectar_deadlock()
 	int cant_recursos;
 
 	int i;
-	int cambio;
+	int cambio = 0;
 
 
 	cant_pjes = list_size(lista_personajes);
