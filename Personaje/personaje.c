@@ -346,12 +346,12 @@ int main(int argc, char **argv) {
 					//INFORMO QUE ME BLOQUEE
 					//TENGO QUE INFORMARLO SI O SI ACA, SINO COMO ME VAN A CONDENAR O CONCEDER EL RECURSO? ACA TERMINO EL TURNO
 
-					mje_a_recibir = getnextmsg(socket_planificador);  //este msje me termina abruptamente
+					mje_a_recibir = getnextmsg(socket_planificador);
 
 					if(mje_a_recibir == NOTIF_PERSONAJE_CONDENADO)
 					{
 
-						free(recibir(socket_orquestador,NOTIF_PERSONAJE_CONDENADO)); //hay que limpiarlo del socket
+						free(recibir(socket_planificador,NOTIF_PERSONAJE_CONDENADO)); //hay que limpiarlo del socket
 
 						log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
 						//notificar al nivel que murio el personaje
@@ -363,13 +363,12 @@ int main(int argc, char **argv) {
 						}else if(contador_vidas==0){
 							contador_vidas=config_get_int_value(configuracion,"vidas");
 							game_over=1;
-
 						}
 						break; //sale del nivel
 					}
 					else if (mje_a_recibir == NOTIF_RECURSO_CONCEDIDO)
 					{
-						free(recibir(socket_orquestador,NOTIF_RECURSO_CONCEDIDO));//hay que limpiarlo del socket
+						free(recibir(socket_planificador,NOTIF_RECURSO_CONCEDIDO));
 						recursos_obtenidos++;
 						sabe_donde_ir=0;
 						log_info(logger, "Finalmente se concedió el recurso! Personaje desbloqueado.", "INFO");
@@ -377,6 +376,7 @@ int main(int argc, char **argv) {
 				} //FIN CASO RECURSO DENEGADO
 				free(rpta_solicitud_instancia_recurso);
 			} //FIN SITUACION DE SOLICITAR RECURSO (LLEGO A DESTINO)
+
 
 			else if(!llego(posicion, destino)) //si NO llegó a destino (no hacer nada más)
 			{
