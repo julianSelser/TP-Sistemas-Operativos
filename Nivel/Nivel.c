@@ -4,7 +4,7 @@
  *  Created on: 02/06/2013
  *      Author: utnso
  */
- 
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,16 +67,17 @@ int main(int argc, char ** argv)
 
 
 	//lineas que muestran detalles del nivel antes de lanzar la interfaz grafica
-    printf("\n...abriendo puerto para escuchar conexiones...\n");
+	log_info(logger,"...abriendo puerto para escuchar conexiones...\n","INFO");
     escucha = init_socket_escucha(0, 1, logger); //elige puerto libre dinamicamente
     sleep(1);
 
 
-    printf("...conectando al orquestador...\n");
+
+    log_info(logger,"...conectando al orquestador...\n","INFO");
     socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
     sleep(1);
 
-    printf("...enviando datos del nivel al orquestador...\n");
+    log_info(logger,"...enviando datos del nivel al orquestador...\n","INFO");
     enviar(socket_orquestador, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR, msg_datos_delNivel_alOrquestador(), logger);//todo el mensaje al orquestador con los datos
     sleep(1);
 
@@ -206,7 +207,7 @@ void manejar_peticion(int socket){
 										break;
 	default:
 			//printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));//todo esto deberia loguearse como error
-		  //    log_error(logger,string_from_format());
+		  log_error(logger,string_from_format("ANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n", getnextmsg(socket)),"ERROR");
 		break;
 	} //end switch
 	sem_post(&sem_general); //ya atendi el mensaje, permito detectar deadlock
@@ -272,8 +273,8 @@ void manejar_solicitud_movimiento(int socket){
 
 		//si no se encontro personaje...
 		if(aux==NULL)
-			/*todo logear: error grotesco, el personaje que solicita moverse no estaba en la lista*/;
-
+			/*todo logear: error grotesco, el personaje que solicita moverse no estaba en la lista*/
+		log_error(logger,"el personaje que solicita moverse no estaba en la lista");
 		personaje = ((t_nodo_personaje*)aux->data); //asignacion por claridad...
 
 		//actualizar el personaje y dibujarlo
@@ -307,8 +308,8 @@ void manejar_nivel_concluido(int socket){
 
 	//si no encontro personaje...
 	if(aux==NULL)
-		/*todo logear: error grotesco, no se encontro en la lista de personajes al que informa de haber cumplido el nivel*/;
-
+		/*todo logear: error grotesco, no se encontro en la lista de personajes al que informa de haber cumplido el nivel*/
+	log_error(logger,"error : no se encontro en la lista de personajes al que informa de haber cumplido el nivel","ERROR");
 	personaje = list_remove(lista_personajes, i); //saco el nodo de la lista y me lo guardo temporalmente
 	necesidades = personaje->necesidades;
 
@@ -337,8 +338,8 @@ void manejar_solicitud_ubicacion_recurso(int socket){
 
 	//si ciclo todas las cajas...
 	if(aux == NULL)
-		/*todo loguear error grotesco: no hay una caja del recurso pedido*/;
-
+		/*todo loguear error grotesco: no hay una caja del recurso pedido*/
+		log_error(logger,"error: no hay una caja del recurso pedido","ERROR");
 	//asignar valores a la respuesta
 	caja = aux->data;
 	ubicacion->x = caja->x;
@@ -365,8 +366,8 @@ void manejar_solicitud_instancia_recurso(int socket){
 	for(aux=lista_cajas->head ; aux!=NULL && ((t_caja*)aux->data)->ID!=solicitud_instancia->instancia_recurso ; aux=aux->next);
 
 	if(aux == NULL)
-		/*todo loguear error grotesco: se esta pidiendo un recurso que no esta en ninguna caja*/;
-
+		/*todo loguear error grotesco: se esta pidiendo un recurso que no esta en ninguna caja*/
+	log_error(logger,"error: se esta pidiendo un recurso que no esta en ninguna caja","ERROR");
 	caja = aux->data; 	//asignacion por claridad
 
 
@@ -377,8 +378,8 @@ void manejar_solicitud_instancia_recurso(int socket){
 		//buscar el personaje para asignarle el recurso concedido
 		for(aux=lista_personajes->head ; aux!=NULL && ((t_nodo_personaje*)aux->data)->socket!=socket ; aux=aux->next);
 
-		if(aux==NULL)/*todo loguear: error grotesco, el personaje pidiendo un recruso no estaba en la lista*/;
-
+		if(aux==NULL)/*todo loguear: error grotesco, el personaje pidiendo un recruso no estaba en la lista*/
+		log_error(logger,"error: el personaje pidiendo un recruso no estaba en la lista","ERROR");
 		personaje = aux->data;
 
 		//buscar la necesidad a ser satisfecha para asignarla al personaje
@@ -388,8 +389,8 @@ void manejar_solicitud_instancia_recurso(int socket){
 
 		if(nec->asig < nec->max) nec->asig++;
 		else
-			/*todo loguear: un personaje esta pidiendo mas recursos que los inicialmente declarados*/;
-
+			/*todo loguear: un personaje esta pidiendo mas recursos que los inicialmente declarados*/
+		log_error(logger," un personaje esta pidiendo mas recursos que los inicialmente declarados","ERROR");
 		restarRecurso(lista_items, caja->ID);
 		respuesta_solicitud_instancia->concedido = true;
 	}
@@ -412,7 +413,8 @@ void manejar_notif_eleccion_victima(int socket){
 	for(i=0 ; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID!=notif_victima->char_personaje ; aux=aux->next,i++);
 
 	if(aux==NULL)
-		/*todo loguear: la victima elegida no estaba en la lista, ver si esto puede llegar a pasar*/;
+		/*todo loguear: la victima elegida no estaba en la lista, ver si esto puede llegar a pasar*/
+		log_error(logger,"error:la victima elegida no estaba en la lista, ver si esto puede llegar a pasar","ERROR");
 	else{
 		nodo_victima = list_remove(lista_personajes, i);
 		nombre_victima=strdup(nodo_victima->nombre);
@@ -446,20 +448,22 @@ void manejar_recursos_reasignados(int socket){
 	{
 		//buscamos el personaje por su id en la lista de personajes
 		for(paux=lista_personajes->head ; paux!=NULL && ((t_nodo_personaje*)paux->data)->ID!=*c ; paux=paux->next);
-		if(paux==NULL) /*todo loguear: personaje al que se le reasigno recursos no estaba en la lista de personajes*/;
+		if(paux==NULL) /*todo loguear: personaje al que se le reasigno recursos no estaba en la lista de personajes*/
+		log_error(logger,"personaje al que se le reasigno recursos no estaba en la lista de personajes","ERROR");
 		personaje = paux->data;
 
 		//dentro de las necesidades del personaje buscamos el recurso asignado y se lo damos (incrementa asignacion)
 		for(naux=personaje->necesidades->head ; naux!=NULL && ((t_necesidad*)naux->data)->ID_recurso!=*(c+1) ; naux=naux->next);
-		if(naux==NULL) /*todo loguear: no se encontro el recurso a reasignar dentro de las necesidades del personaje*/;
+		if(naux==NULL) /*todo loguear: no se encontro el recurso a reasignar dentro de las necesidades del personaje*/
+		log_error(logger," no se encontro el recurso a reasignar dentro de las necesidades del personaje","ERROR");
 		necesidad = naux->data;
 		necesidad->asig++;
 	}
 
 	for(c=reasignados->remanentes; *c!='\0' ; c++){
 		for(caux=lista_cajas->head ; caux!=NULL && ((t_caja*)caux->data)->ID!=*c ; caux=caux->next);
-		if(caux==NULL) /*todo loguear: no se encontro una caja para asignar el recurso */;
-
+		if(caux==NULL) /*todo loguear: no se encontro una caja para asignar el recurso */
+		log_error(logger,"error:no se encontro una caja para asignar el recurso","ERROR");
 		caja = caux->data;
 		caja->disp++;
 
@@ -577,7 +581,7 @@ void levantar_config(int argc, char ** argv){
 	strcpy(log_name, nombre);
 
 	string_append(&log_name, ".log");
-	logger = log_create(log_name, "NIVEL", 0, LOG_LEVEL_TRACE);
+	logger = log_create(log_name, "NIVEL", 1, LOG_LEVEL_TRACE);  // cambio a 1 para poder mostrar en pantalla
 
 	//podra el personaje reutilizar este codigo?
 	temp_ip_puerto_orq = config_get_string_value(configuracion, "orquestador");
