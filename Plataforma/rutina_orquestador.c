@@ -346,8 +346,8 @@ void manejar_recs_liberados(int socket) //todo testear
 				string_append(&reasignaciones, informe_parcial); //agrego la reasignacion al mensaje que va a ir al nivel
 				sem_wait(nivel->sem_listos);
 				encolar(nivel->colas[LISTOS], personaje); //paso el personaje a listos.
-				sem_post(nivel->sem_vacia);
 				sem_post(nivel->sem_listos);
+				sem_post(nivel->sem_vacia);
 				log_info(logger_orquestador, string_from_format("Se liberó a %s, que estaba esperando un recurso %c", personaje->nombre, rec), "INFO");
 			}
 		}
