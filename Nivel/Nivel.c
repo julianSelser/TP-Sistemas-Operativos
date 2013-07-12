@@ -418,12 +418,12 @@ void manejar_notif_eleccion_victima(int socket){
 	else{
 		nodo_victima = list_remove(lista_personajes, i);
 		nombre_victima=strdup(nodo_victima->nombre);
-        log_info(logger,string_from_format("la victima es :%s",nombre_victima));
+        log_info(logger,string_from_format("la victima es :%s",nombre_victima));  //loguer para la victima elegida
 		reubicar_recursos(nodo_victima->necesidades); //esto ya manda el mensaje de recursos liberados al orquestador
 
 		BorrarItem(&lista_items, nodo_victima->ID);
 
-		free(nodo_victima->nombre);
+		free(nodo_victima->nombre); // este esta de mas
 		free(nodo_victima);
 		free(notif_victima);
 	}
