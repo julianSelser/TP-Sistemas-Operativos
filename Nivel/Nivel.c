@@ -67,17 +67,15 @@ int main(int argc, char ** argv)
 
 
 	//lineas que muestran detalles del nivel antes de lanzar la interfaz grafica
-	log_info(logger,"...abriendo puerto para escuchar conexiones...\n","INFO");
+	printf("...abriendo puerto para escuchar conexiones...\n");
     escucha = init_socket_escucha(0, 1, logger); //elige puerto libre dinamicamente
     sleep(1);
 
-
-
-    log_info(logger,"...conectando al orquestador...\n","INFO");
+    printf("...conectando al orquestador...\n");
     socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
     sleep(1);
 
-    log_info(logger,"...enviando datos del nivel al orquestador...\n","INFO");
+    printf("...enviando datos del nivel al orquestador...\n");
     enviar(socket_orquestador, ENVIO_DE_DATOS_NIVEL_AL_ORQUESTADOR, msg_datos_delNivel_alOrquestador(), logger);//todo el mensaje al orquestador con los datos
     sleep(1);
 
@@ -595,7 +593,7 @@ void levantar_config(int argc, char ** argv){
 	free(ip_puerto_separados);
 
 	tiempo_chequeo_deadlock = config_get_int_value(configuracion, "TiempoChequeoDeadlock");
-	recovery = strcmp("On", config_get_string_value(configuracion, "Recovery"));
+	recovery = !strcmp("On", config_get_string_value(configuracion, "Recovery"));
 
 	cantidad_de_recursos = config_keys_amount(configuracion) - 4; //este 4 esta hardcodeado, pero la realidad es que siempre el archivo de config tiene la cantidad de cajas y cuatro entradas más
 
