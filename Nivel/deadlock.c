@@ -175,8 +175,6 @@ int rutina_chequeo_deadlock()
 			}
 			sem_post(&sem_general);
 
-
-			puts(msj); puts("\n");
 			log_info(logger, msj, "INFO");
 			free(msj);
 
