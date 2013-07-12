@@ -19,4 +19,4 @@
 *.exe
 *.out
 *.app
-/Plataforma
+#/Plataforma ¿por que estaba esto en .gitignore?
