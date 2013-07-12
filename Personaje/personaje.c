@@ -183,10 +183,10 @@ int main(int argc, char **argv) {
 		int sabe_donde_ir;
 		int consiguio_total_recursos;
 
-		nivel_a_pedir = strdup(plan_de_niveles[niveles_completados]);
+		nivel_a_pedir = plan_de_niveles[niveles_completados];
 
 		solicitud_info_nivel->solicitor = simbolo;
-		solicitud_info_nivel->nivel_solicitado=strdup(nivel_a_pedir);
+		solicitud_info_nivel->nivel_solicitado=strdup(( isspace(nivel_a_pedir[0])?(nivel_a_pedir+1) : nivel_a_pedir ));
 		log_info(logger, string_from_format("Proximo Nivel:%s",nivel_a_pedir), "INFO");
 
 		socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
@@ -232,7 +232,8 @@ int main(int argc, char **argv) {
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no.
 		//Se pone en Falso al entrar a un nivel
 		recursos_obtenidos = 0; //cuantos recursos obtuvo
-		consiguio_total_recursos=0; 
+		consiguio_total_recursos=0;
+		game_over=0;
 
 		while(1)
 		{
@@ -299,7 +300,7 @@ int main(int argc, char **argv) {
 				free(rspt_solicitud_movimiento);
 
 				memcpy(posicion,prox_paso,sizeof(posicion)); //me muevo a la proxima posicion
-			} //CON ESTO DOY EL PASITO, SI ES NECESARIO
+			} //CON ESTO DOY EL FASITO, SI ES NECESARIO
 
 			if(llego(posicion, destino)) //EVALUO SI LLEGUE A MI DESTINO
 			{
@@ -360,7 +361,7 @@ int main(int argc, char **argv) {
 							contador_vidas--;
 							recursos_obtenidos=0;
 							//enviar mensaje al orquestador reiniciar nivel
-						}else if(contador_vidas==0){
+						}else{
 							contador_vidas=config_get_int_value(configuracion,"vidas");
 							game_over=1;
 						}
