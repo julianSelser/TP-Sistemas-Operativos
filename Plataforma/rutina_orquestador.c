@@ -461,10 +461,9 @@ void manejar_plan_terminado(int socket)
 
 void rutina_inotify(int inotify_fd)
 {
-	t_config *plataforma_conf;
 	int offset = 0;
 	char buffer[BUF_LEN];
-	int length = read(inotify_fd, buffer, BUF_LEN);
+	int length = read(inotify_fd, buffer, BUF_LEN);usleep(10);
 	if (length < 0) {
 		perror("read");//todo logear este error, no usemos perror
 	}
@@ -479,8 +478,8 @@ void rutina_inotify(int inotify_fd)
 			{
 				if(!strcmp(event->name,config_name))
 				{
+					t_config *plataforma_conf = config_create(config_name);
 					log_info(logger_orquestador, string_from_format("\n modificacion en el archivo de configuracion...\n quantum: %.2f\n retraso: %.2f\n\n",quantum,retraso), "INFO");
-					plataforma_conf = config_create(config_name);
 					quantum = strtod(config_get_string_value(plataforma_conf, "quantum"), NULL);
 					retraso = strtod(config_get_string_value(plataforma_conf, "retraso"), NULL);
 					config_destroy(plataforma_conf);
