@@ -58,12 +58,16 @@ void rutina_planificador(parametro *info)
 
 		for(i=0; i<(int)quantum ; i++)
 		{
-			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )) break;
+			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )){
+
+				break;
+			}
 			if(( desconexion = recv(personaje->socket, buf, 100, MSG_PEEK)<=0 )) break;//nadie vio esta linea, la escribio roberto
 
 			resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
 
-			printf("\n dado quantum\n\n");
+			//printf("\n dado quantum\n\n");
+			log_info(logger_planificador,"dado quantum\n","INFO");
 			usleep((int)(retraso*1000000));
 
 			if((resultado->bloqueado)){
@@ -99,10 +103,14 @@ void rutina_escucha(parametro *info)
 	int socketNuevoPersonaje;
 	int socketEscucha = init_socket_escucha(info->puerto, 1, info->logger_planificador);
 
-	printf("\n escuchando por personajes en el planificador...\n\n");
+//	printf("\n escuchando por personajes en el planificador...\n\n");
+	log_info(logger_planificador,"escuchando por personajes en el planificador...\n","INFO");
 	while (1)
 	{
-		if ((socketNuevoPersonaje = accept(socketEscucha, NULL, 0)) < 0)/* todo log:Error al aceptar conexion entrante */exit(1);
+		if ((socketNuevoPersonaje = accept(socketEscucha, NULL, 0)) < 0){/* todo log:Error al aceptar conexion entrante */
+		log_error(logger_planificador,"Error al aceptar conexion entrante","ERROR");
+			exit(1);
+		}
 		else {
 			t_nodo_personaje *personaje = armar_nodo_personaje( recibir(socketNuevoPersonaje, ENVIO_DE_DATOS_AL_PLANIFICADOR) ,socketNuevoPersonaje);
 			sem_wait(sem_cola_listos);

@@ -136,7 +136,7 @@ int rutina_chequeo_deadlock()
 		sem_wait(&sem_general); //semaforo para lockear la lista de personaes y la de recursos. si tomo este semaforo, el hilo principal no puede atender mensajes
 		pjes_en_deadlock = detectar_deadlock(); //ver aclaración
 
-	//	log_info(logger,"")
+	//	dentro de detectar_deadlock() esta el loguer para los involucrados en deadlock
 
 		cant_pjes_en_deadlock = strlen(pjes_en_deadlock);
 
