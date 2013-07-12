@@ -70,7 +70,7 @@ void rutina_planificador(parametro *info)
 				sem_wait(sem_cola_bloqueados);
 				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje);
 				sem_post(sem_cola_bloqueados);
-				sem_wait(sem_cola_vacia);
+				//sem_wait(sem_cola_vacia);
 				break;
 			}
 		}
@@ -88,9 +88,7 @@ void rutina_planificador(parametro *info)
 			free(personaje->nombre);
 			free(personaje);
 		}
-
 	}
-	//todo: ver como hacer la liberacion del parametro y las listas(capaz las hace el orquestador)
 }
 
 
