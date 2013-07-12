@@ -5,7 +5,7 @@
  *      Author: utnso
  */
  
-
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -626,6 +626,13 @@ void levantar_config(int argc, char ** argv){
 	sleep(1);
 	for (i=0; i < cantidad_de_recursos; i++)	imprimir_nodo_caja((t_caja *)list_get(lista_cajas, i));
 	//linea para controlar que se haya enlistado todito bien
+
+	if(isspace(ip_orquestador[0]))
+	{
+		char *aux = strdup((ip_orquestador+1));
+		free(ip_orquestador);
+		ip_orquestador = aux;
+	}
 
 	//en este punto, se termino de leer el archivo de config y se enlistaron todos los recursos
 	config_destroy(configuracion);
