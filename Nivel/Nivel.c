@@ -153,6 +153,7 @@ int main(int argc, char ** argv)
                 				p = list_remove(lista_personajes, j);
 
                 				reubicar_recursos(p->necesidades);
+                				BorrarItem(&lista_items, p->ID);
 
                 				free(p->nombre);
                 				free(p);
@@ -300,7 +301,7 @@ void manejar_nivel_concluido(int socket){
 	//buscar en la lista de personajes su nodo con el caracter identificador
 	for(i=0 ; aux!=NULL &&((t_nodo_personaje*)aux->data)->ID != conclusion->char_personaje ; aux = aux->next, i++);
 
-	//si no encotro personaje...
+	//si no encontro personaje...
 	if(aux==NULL)
 		/*todo logear: error grotesco, no se encontro en la lista de personajes al que informa de haber cumplido el nivel*/;
 
