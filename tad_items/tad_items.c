@@ -86,7 +86,7 @@ void sumarRecurso(ITEM_NIVEL* ListaItems, char id) {
                 temp = temp->next;
         }
         if ((temp != NULL) && (temp->id == id)) {
-                if ((temp->item_type) && (temp->quantity > 0)) {
+                if ((temp->item_type) && (temp->quantity >= 0)) {
                         temp->quantity = temp->quantity++;
                 }
         }
