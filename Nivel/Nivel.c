@@ -338,8 +338,7 @@ void manejar_solicitud_ubicacion_recurso(int socket){
 
 	//si ciclo todas las cajas...
 	if(aux == NULL)
-		/*todo loguear error grotesco: no hay una caja del recurso pedido*/
-		log_error(logger,"error: no hay una caja del recurso pedido","ERROR");
+		log_error(logger,string_from_format("error: no hay una caja del recurso %c pedido", solicitud_ubicacion->recurso),"ERROR");
 	//asignar valores a la respuesta
 	caja = aux->data;
 	ubicacion->x = caja->x;
@@ -581,7 +580,7 @@ void levantar_config(int argc, char ** argv){
 	strcpy(log_name, nombre);
 
 	string_append(&log_name, ".log");
-	logger = log_create(log_name, "NIVEL", 1, LOG_LEVEL_TRACE);  // cambio a 1 para poder mostrar en pantalla
+	logger = log_create(log_name, "NIVEL", false, LOG_LEVEL_TRACE);
 
 	//podra el personaje reutilizar este codigo?
 	temp_ip_puerto_orq = config_get_string_value(configuracion, "orquestador");
