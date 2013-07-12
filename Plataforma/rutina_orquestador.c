@@ -363,8 +363,6 @@ void manejar_recs_liberados(int socket) //todo testear
 	log_info(logger_orquestador, string_from_format("Sobraron los siguientes recursos: %s", resto), "INFO");
 
 	enviar(nivel->socket, NOTIF_RECURSOS_REASIGNADOS, informe, logger_orquestador);
-
-	//teoricamente enviar libera reasignaciones y resto
 }
 
 void manejar_sol_recovery(int socket) //todo testear
@@ -538,7 +536,7 @@ int agregar_sin_repetidos(char **string, char c)
 
 	while(i<len)
 	{
-		if (*string[i] == c) return false;
+		if ((*string)[i] == c) return false;
 		++i;
 	}
 
