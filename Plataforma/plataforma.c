@@ -36,7 +36,7 @@ float retraso;
 
 int main(int argc, char **argv)
 {
-	if(argc!=3) perror("Uso: Plataforma <arch_config> <arch_solicitudes_koopa>"),exit(EXIT_FAILURE);//ya se que queda feo aca
+	if(argc!=3) {perror("Uso: Plataforma <arch_config> <arch_solicitudes_koopa>");exit(EXIT_FAILURE);}//ya se que queda feo aca
 
 	char *argkoopa[] = { "koopa", argv[2] , NULL };
 	pthread_t orquestador;

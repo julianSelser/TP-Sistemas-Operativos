@@ -71,6 +71,7 @@ int main(int argc, char ** argv)
     escucha = init_socket_escucha(0, 1, logger); //elige puerto libre dinamicamente
     sleep(1);
 
+
     printf("...conectando al orquestador...\n");
     socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
     sleep(1);
@@ -105,8 +106,9 @@ int main(int argc, char ** argv)
 
         read_fds = maestro;
         if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
-            perror("select");//todo loguear: error de select...
-            exit(1);
+         //   perror("select");//todo loguear: error de select...
+           log_error(logger,"error select","ERROR");
+        	exit(1);
         }
 
         // loopea los fd's
@@ -117,6 +119,7 @@ int main(int argc, char ** argv)
                     nuevo_fd = accept(escucha,NULL,0);
                     if (nuevo_fd == -1) {
                         //todo loguear: error aceptando nueva conexion
+                    	log_error(logger,"error:aceptando nueva conexion","ERROR");
                     }
                     else {
                         FD_SET(nuevo_fd, &maestro);
@@ -202,8 +205,9 @@ void manejar_peticion(int socket){
 										manejar_recursos_reasignados(socket);
 										break;
 	default:
-			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));//todo esto deberia loguearse como error
-			break;
+			//printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));//todo esto deberia loguearse como error
+		  //    log_error(logger,string_from_format());
+		break;
 	} //end switch
 	sem_post(&sem_general); //ya atendi el mensaje, permito detectar deadlock
 }
@@ -261,7 +265,7 @@ void manejar_solicitud_movimiento(int socket){
 	//recibir
 	t_solicitud_movimiento *solicitud = recibir(socket, SOLICITUD_MOVIMIENTO_XY);
 
-	if(solicitud->x<columnas && solicitud->y<filas) //si esta dentro del nivel...
+	if(solicitud->x<=columnas && solicitud->y<=filas) //si esta dentro del nivel...
 	{
 		//buscamos el personaje en la lista de personajes...
 		for(aux=lista_personajes->head ; aux!=NULL && ((t_nodo_personaje*)aux->data)->ID != solicitud->char_personaje ; aux=aux->next);
