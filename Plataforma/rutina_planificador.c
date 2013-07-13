@@ -19,6 +19,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <commons/string.h>
 
 #include "rutina_orquestador.h"
 #include "rutina_planificador.h"
