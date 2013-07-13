@@ -11,6 +11,7 @@
 #include <string.h>
 #include <signal.h>
 #include <ctype.h>
+#include <setjmp.h>
 
 #include <commons/log.h>
 #include <commons/config.h>
@@ -24,27 +25,36 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+jmp_buf  ctx1;
+
 t_log * logger;
+char *estado = "entrando"; //a nadie se le ocurra tocar esta variable
 char * nombre;
 char simbolo;
 char * ip_orquestador;
 int puerto_orquestador;
 int max_vidas;
-
+int reset = 0;
 int game_over = 0;
 int contador_vidas;
 
 int conf_es_valida(t_config * configuracion);
-
+void dar_vida();
+void morir();
 int llego();
 int buscar_paso(int * posicion, int * destino, int * prox_paso);
 
 int main(int argc, char **argv) {
-
+	signal(SIGUSR1, dar_vida);
+	signal(SIGTERM, morir);
+	int setter = 1;
+	goto set;
+	realstart:
 	iniciar_serializadora();
 	t_config * configuracion;
 	t_notificacion_plan_terminado * notificacion_plan_terminado;
 	notificacion_plan_terminado=malloc(sizeof(t_notificacion_plan_terminado));
+
 
 	char * log_name;
 	int socket_orquestador;
@@ -61,6 +71,7 @@ int main(int argc, char **argv) {
 	int cantidad_niveles;
 	int niveles_completados;
 	int i;
+
 
 
 	//-------------INICIO LECTURA ARCHIVO CONFIG--------------//
@@ -111,6 +122,8 @@ int main(int argc, char **argv) {
 	logger = log_create(log_name, "PERSONAJE", 1, LOG_LEVEL_TRACE);
 	free(log_name);//hacer free a log_name???????? seh
 
+	ip_orquestador = isspace(*ip_orquestador)?(ip_orquestador+1):ip_orquestador;
+
 	i=0;
 
 	recursos_por_nivel = malloc(cantidad_niveles * sizeof(char)); // conozco e el tamaño de char*?
@@ -154,6 +167,7 @@ int main(int argc, char **argv) {
 
 	//-------------FIN LECTURA ARCHIVO CONFIG--------------//
 
+	game_over=0;
 	niveles_completados=0;
 
 	while (!(cantidad_niveles==niveles_completados)) //mientras no haya terminado el plan de niveles
@@ -181,7 +195,6 @@ int main(int argc, char **argv) {
 		int posicion[2] = {1,1};
 		int destino[2]; 
 		int sabe_donde_ir;
-		int consiguio_total_recursos;
 
 		nivel_a_pedir = plan_de_niveles[niveles_completados];
 
@@ -228,11 +241,11 @@ int main(int argc, char **argv) {
 
 		//FIN ANUNCIO
 
+		estado = "adentro"; //adianchi
 
 		sabe_donde_ir = 0; //booleano que representa si el personaje tiene un destino válido o no.
 		//Se pone en Falso al entrar a un nivel
 		recursos_obtenidos = 0; //cuantos recursos obtuvo
-		consiguio_total_recursos=0;
 		game_over=0;
 
 		while(1)
@@ -322,14 +335,6 @@ int main(int argc, char **argv) {
 					//ACCION: ACTUALIZAR RECURSOS OBTENIDOS. SI CONSIGUIO EL TOTAL, INDICAR consiguio_total_recursos = 1
 					recursos_obtenidos++;
 					// printf("%d\n",recursos_obtenidos); ..recordar borrar el malloc de rpta_solic. ESTO ES TESTING?
-
-					if(recursos_obtenidos == strlen(recursos_por_nivel[niveles_completados]))
-					{
-
-						consiguio_total_recursos = 1; // para que me sirve esta variable
-
-						//	una vez que consiguio total de recursos se deberia desconectar del nivel ?
-					}
 					sabe_donde_ir = 0;
 					log_info(logger, "Se obtuvo el recurso!", "INFO");
 					//y despues no necesita hacer mas nada!
@@ -354,7 +359,7 @@ int main(int argc, char **argv) {
 
 						free(recibir(socket_planificador,NOTIF_PERSONAJE_CONDENADO)); //hay que limpiarlo del socket
 
-						log_info(logger, "Este personaje va a morir para solucionar un interbloqueo", "INFO");
+						log_info(logger, "Este personaje morira para solucionar un interbloqueo por orden del Orquestador", "INFO");
 						//notificar al nivel que murio el personaje
 						//morir(); //morir se encarga de setear game_over si es necesario
 						if(contador_vidas>0){
@@ -386,7 +391,7 @@ int main(int argc, char **argv) {
 			}
 
 
-			if(consiguio_total_recursos)
+			if(recursos_obtenidos == strlen(recursos_por_nivel[niveles_completados]))
 			{
 				log_info(logger, "Nivel finalizado!", "INFO");
 				notificacion_nivel_cumplido->char_personaje=simbolo;
@@ -399,6 +404,18 @@ int main(int argc, char **argv) {
 
 		//en este punto es donde definitivamente se sale de un nivel. esto significa desconectarse del hilo planificador y del nivel
 
+		//vade retro diabolo, vade retro
+		set:
+		setjmp(ctx1);
+		if(setter==1){
+			setter=0;
+			goto realstart;
+		}
+		else if(reset){
+			reset=0;
+			goto set;
+		}
+		//in nombre dil patre, del hijo, del spiritu sancti
 
 		close(socket_nivel);
 		close(socket_planificador);
@@ -416,6 +433,7 @@ int main(int argc, char **argv) {
 
 	} //FIN PLAN DE NIVELES
 
+	estado = "saliendo";
 
 	//el personaje, al terminar su plan de niveles, se conecta al hilo orquestador y se lo notifica
 
@@ -476,5 +494,25 @@ int buscar_paso(int * posicion, int * destino, int * prox_paso) //pone en prox_p
 int llego(int pos[],int dest[]){
 	//true si las componentes son iguales
 	return pos[0]==dest[0] && pos[1]==dest[1];
+}
+
+
+void dar_vida(){
+	contador_vidas++;
+	log_info(logger, string_from_format("El personaje aumenta sus vidas a %d gracias a la señal SIGUSR1 !",contador_vidas),"INFO");
+}
+
+void morir(){
+	if(strcmp(estado, "entrando") && strcmp(estado, "saliendo"))//si no esta entrando o saliendo
+	{
+		if(contador_vidas>0) contador_vidas--;
+		else game_over=1;
+
+		log_info(logger, string_from_format("SIGTERM detectada, el personaje morirá, quedan %d vidas",contador_vidas ),"INFO");
+		reset=1;
+		longjmp(ctx1,1);
+	}
+	else
+		log_info(logger, "SIGTERM ignorada, no se puede matar un personaje que no esta en un nivel","INFO");
 }
 
