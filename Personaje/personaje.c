@@ -309,6 +309,7 @@ int main(int argc, char **argv) {
 					printf("SOLICITUD DE MOVIMIENTO DENEGADO");
 					exit(EXIT_FAILURE); //terminar anormalmente
 				}
+				log_info(logger, string_from_format("Posicion actual (%d,%d)", prox_paso[0], prox_paso[1]), "INFO");
 
 				free(rspt_solicitud_movimiento);
 
