@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <commons/string.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include <stdlib.h>
@@ -106,7 +107,6 @@ int getnextmsg(int socket){
 	char buffer[sizeof(char)];
 
 	if(recv(socket, buffer, sizeof(t_cabecera), MSG_PEEK) < 0){
-		/*todo logear*/;
 		exit(1);
 	}
 
@@ -124,7 +124,6 @@ void *recibir(int socket, int tipo)
 
 	// Primero: Recibir el header para saber cuando ocupa el payload.
 	if (recv(socket, &cabecera, sizeof(t_cabecera), MSG_WAITALL) <= 0) {
-		/*todo logear*/
 		exit(1);
 	}
 
@@ -133,7 +132,6 @@ void *recibir(int socket, int tipo)
 
 	// Tercero: Recibir el payload.
 	if(recv(socket, buffer, cabecera.len, MSG_WAITALL) < 0){
-		/*todo logear*/;
 		exit(1);
 	}
 
@@ -683,7 +681,7 @@ int init_socket_externo(int puerto, char *direccion, t_log *logger)
 	socketInfo.sin_port = htons(puerto);
 
 	connect(unSocket, (struct sockaddr*) &socketInfo, sizeof(socketInfo));
-
+	log_info(logger, string_from_format("Conectando con la direccion %s", direccion), "INFO");
 	return unSocket;
 }
 
@@ -716,6 +714,7 @@ int init_socket_escucha(int puerto, int optval, t_log *logger){
 		exit(1);
 	}
 	listen(socketEscucha, 10);
+	log_info(logger, string_from_format("Se comienza a escuchar por el puerto %d", socketInfo.sin_port),"INFO");
 	return socketEscucha;
 }
 
