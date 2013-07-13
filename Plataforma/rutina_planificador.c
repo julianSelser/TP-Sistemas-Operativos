@@ -54,8 +54,18 @@ void rutina_planificador(parametro *info)
 		sem_wait(sem_cola_vacia);
 		sem_wait(sem_cola_listos);
 		personaje = desencolar(listos);
+		int m;
+		for(m=0;m<list_size(listos);m++){
+				personaje=list_get(listos,m);
+			log_info(logger_planificador,string_from_format("personaje %s",personaje->nombre),"INFO");
+
+				}
+	
+	
 		sem_post(sem_cola_listos);
 
+		char * nombre_personaje = strdup(personaje->nombre); //solo para el loguer
+		
 		for(i=0; i<(int)quantum ; i++)
 		{
 			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )){
@@ -63,9 +73,9 @@ void rutina_planificador(parametro *info)
 				break;
 			}
 			if(( desconexion = recv(personaje->socket, buf, 100, MSG_PEEK)<=0 )) break;//nadie vio esta linea, la escribio roberto
-
+			log_info(logger_planificador,string_from_format("turno de :%s",nombre_personaje),"INFO");
 			resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
-
+			
 			//printf("\n dado quantum\n\n");
 			log_info(logger_planificador,"dado quantum\n","INFO");
 			usleep((int)(retraso*1000000));
@@ -73,6 +83,18 @@ void rutina_planificador(parametro *info)
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
 				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje);
+				int j,k;
+				t_nodo_bloq_por_recurso * recurso; // necesita un malloc?
+				for(j=0;j<list_size(bloqueados);j++){
+				recurso=list_get(bloqueados,j);
+				 	 for(k=0;k<list_size(recurso->personajes);k++){
+				 		// char *name2;
+				 		 personaje=list_get(recurso->personajes,k);
+				 		// name2=strdup(personaje->nombre);
+				 		 log_info(logger_planificador,string_from_format("el personaje :%s",personaje->nombre),"INFO");
+				 	 }
+				}
+				
 				sem_post(sem_cola_bloqueados);
 				//sem_wait(sem_cola_vacia);
 				break;
@@ -84,6 +106,13 @@ void rutina_planificador(parametro *info)
 		{
 			sem_wait(sem_cola_listos);
 			encolar(listos, personaje);
+						int j;
+			for(j=0;j<list_size(listos);j++){
+					personaje=list_get(listos,j);
+				log_info(logger_planificador,string_from_format("personaje %s",personaje->nombre),"INFO");
+
+					}
+
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
 			free(resultado);
@@ -115,6 +144,14 @@ void rutina_escucha(parametro *info)
 			t_nodo_personaje *personaje = armar_nodo_personaje( recibir(socketNuevoPersonaje, ENVIO_DE_DATOS_AL_PLANIFICADOR) ,socketNuevoPersonaje);
 			sem_wait(sem_cola_listos);
 			encolar(listos, personaje);
+			int j;
+
+			for(j=0;j<list_size(listos);j++){
+				personaje=list_get(listos,j);
+				log_info(logger_planificador,string_from_format("personaje:",personaje->nombre),"INFO");
+
+						}
+	
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
 		}
