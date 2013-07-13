@@ -25,7 +25,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-jmp_buf  ctx1;
+sigjmp_buf  ctx1;
 
 t_log * logger;
 char *estado = "entrando"; //a nadie se le ocurra tocar esta variable
@@ -406,14 +406,10 @@ int main(int argc, char **argv) {
 
 		//vade retro diabolo, vade retro
 		set:
-		setjmp(ctx1);
+		sigsetjmp(ctx1,1);
 		if(setter==1){
 			setter=0;
 			goto realstart;
-		}
-		else if(reset){
-			reset=0;
-			goto set;
 		}
 		//in nombre dil patre, del hijo, del spiritu sancti
 
@@ -509,8 +505,8 @@ void morir(){
 		else game_over=1;
 
 		log_info(logger, string_from_format("SIGTERM detectada, el personaje morirá, quedan %d vidas",contador_vidas ),"INFO");
-		reset=1;
-		longjmp(ctx1,1);
+
+		siglongjmp(ctx1,1);
 	}
 	else
 		log_info(logger, "SIGTERM ignorada, no se puede matar un personaje que no esta en un nivel","INFO");
