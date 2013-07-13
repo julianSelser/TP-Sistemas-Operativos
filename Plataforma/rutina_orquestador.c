@@ -479,7 +479,7 @@ void rutina_inotify(int inotify_fd)
 				if(!strcmp(event->name,config_name))
 				{
 					t_config *plataforma_conf = config_create(config_name);
-					log_info(logger_orquestador, string_from_format("\n modificacion en el archivo de configuracion...\n quantum: %.2f\n retraso: %.2f\n\n",quantum,retraso), "INFO");
+					log_info(logger_orquestador, string_from_format("\n modificacion en el archivo de configuracion...\n quantum: %.0f\n retraso: %.2f\n\n",quantum,retraso), "INFO");
 					quantum = strtod(config_get_string_value(plataforma_conf, "quantum"), NULL);
 					retraso = strtod(config_get_string_value(plataforma_conf, "retraso"), NULL);
 					config_destroy(plataforma_conf);
