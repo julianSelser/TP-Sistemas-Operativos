@@ -135,6 +135,8 @@ void encolar(t_list *cola, void *data, char *que_cola, t_log *logger){
 	t_link_element *aux;
 	char *lista = strdup(" ");
 
+	list_add(cola, data);
+
 	for(aux=cola->head; aux!=NULL ; aux=aux->next){
 		string_append(&lista, "->");
 		string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
@@ -145,8 +147,6 @@ void encolar(t_list *cola, void *data, char *que_cola, t_log *logger){
 		log_info(logger, lista, "INFO");
 	}
 	free(lista);
-
-	list_add(cola, data);
 }
 
 void *desencolar(t_list *cola, char *que_cola, t_log *logger){
