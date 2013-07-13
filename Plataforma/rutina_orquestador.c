@@ -41,7 +41,7 @@ t_log * logger_orquestador;
 char * jugadores;
 int cant_personajes_victoriosos;
 
-static int puerto_planif = 7000;
+static int puerto_planif = 23000;
 
 
 void rutina_orquestador(/*?*/)
