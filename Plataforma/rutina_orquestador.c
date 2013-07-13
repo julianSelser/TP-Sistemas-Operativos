@@ -46,9 +46,9 @@ static int puerto_planif = 23000;
 
 void rutina_orquestador(/*?*/)
 {
-
+	logger_orquestador = log_create("orquestador.log,", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
 	int inotify_fd = inotify_init();
-	int socketEscucha = init_socket_escucha(10000, 1, NULL);
+	int socketEscucha = init_socket_escucha(10000, 1, logger_orquestador);
 	int i, nuevo_fd, fdmax = socketEscucha>inotify_fd?socketEscucha:inotify_fd;
 	fd_set maestro, read_fds;
 
@@ -59,7 +59,6 @@ void rutina_orquestador(/*?*/)
 	jugadores=strdup("");//es lo mismo que jugadores=malloc(1);jugadores[0]='\0';
 	cant_personajes_victoriosos = 0;
 	lista_niveles=list_create();
-	logger_orquestador = log_create("orquestador.log,", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
 	log_info(logger_orquestador, "El orquestador esta comienza a esperar niveles", "INFO");
 
 	FD_SETEO;//macro que setea los fd para select()
@@ -328,7 +327,7 @@ void manejar_recs_liberados(int socket) //todo testear
 			concedido->recurso=rec;
 
 			sem_wait(nivel->sem_bloqueados);
-			personaje = desencolar(nodo_cola->personajes);
+			personaje = desencolar(nodo_cola->personajes, NULL, NULL);
 			sem_post(nivel->sem_bloqueados);
 
 			if(enviar(personaje->socket, NOTIF_RECURSO_CONCEDIDO, concedido, logger_orquestador) < 0)
@@ -345,7 +344,7 @@ void manejar_recs_liberados(int socket) //todo testear
 				informe_parcial[2]='\0';
 				string_append(&reasignaciones, informe_parcial); //agrego la reasignacion al mensaje que va a ir al nivel
 				sem_wait(nivel->sem_listos);
-				encolar(nivel->colas[LISTOS], personaje); //paso el personaje a listos.
+				encolar(nivel->colas[LISTOS], personaje, NULL, NULL); //paso el personaje a listos.
 				sem_post(nivel->sem_listos);
 				sem_post(nivel->sem_vacia);
 				log_info(logger_orquestador, string_from_format("Se liberó a %s, que estaba esperando un recurso %c", personaje->nombre, rec), "INFO");

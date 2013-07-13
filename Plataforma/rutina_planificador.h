@@ -18,8 +18,8 @@
 	void rutina_escucha(parametro *info);
 	void rutina_planificador(parametro *info);
 
-	void encolar(t_list *cola, void *data);
-	void *desencolar(t_list *cola);
+	void encolar(t_list *cola, void *data, char *que_cola, t_log *logger);
+	void *desencolar(t_list *cola, char *que_cola, t_log *logger);
 
 	void sigpipe_handler();
 	t_nodo_personaje *armar_nodo_personaje(t_datos_delPersonaje_alPlanificador *datos, int socket);

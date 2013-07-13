@@ -54,7 +54,7 @@ void rutina_planificador(parametro *info)
 
 		sem_wait(sem_cola_vacia);
 		sem_wait(sem_cola_listos);
-		personaje = desencolar(listos);
+		personaje = desencolar(listos, "listos", info->logger_planificador);
 		sem_post(sem_cola_listos);
 
 		for(i=0; i<(int)quantum ; i++)
@@ -68,19 +68,19 @@ void rutina_planificador(parametro *info)
 
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
-				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje);
+				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje, string_from_format("%c de bloqueados",resultado->recurso_de_bloqueo), info->logger_planificador);
 				sem_post(sem_cola_bloqueados);
 				//sem_wait(sem_cola_vacia);
 				break;
 			}
 		}
-		log_info(info->logger_planificador, string_from_format("%s recibio Quantum", personaje->nombre), "INFO");
+		log_info(info->logger_planificador, string_from_format("%s recibio Quantum", personaje->nombre), "INFO", info->logger_planificador);
 
 		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
 		if(!desconexion && !resultado->bloqueado)
 		{
 			sem_wait(sem_cola_listos);
-			encolar(listos, personaje);
+			encolar(listos, personaje, "listos", info->logger_planificador);
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
 			free(resultado);
@@ -107,7 +107,7 @@ void rutina_escucha(parametro *info)
 		else {
 			t_nodo_personaje *personaje = armar_nodo_personaje( recibir(socketNuevoPersonaje, ENVIO_DE_DATOS_AL_PLANIFICADOR) ,socketNuevoPersonaje);
 			sem_wait(sem_cola_listos);
-			encolar(listos, personaje);
+			encolar(listos, personaje, "listos", info->logger_planificador);
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
 		}
@@ -131,11 +131,39 @@ t_nodo_personaje *armar_nodo_personaje(t_datos_delPersonaje_alPlanificador *dato
 
 
 //wrappers por claridad
-void encolar(t_list *cola, void *data){
+void encolar(t_list *cola, void *data, char *que_cola, t_log *logger){
+	t_link_element *aux;
+	char *lista = strdup(" ");
+
+	for(aux=cola->head; aux!=NULL ; aux=aux->next){
+		string_append(&lista, "->");
+		string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
+	}
+
+	if(logger!=NULL && strcmp(lista," ")){//ojo, el strcmp esta bien sin ==0
+		log_info(logger, string_from_format("Se ha modificado la cola de %s al ser agregado un personaje", que_cola), "INFO");
+		log_info(logger, lista, "INFO");
+	}
+	free(lista);
+
 	list_add(cola, data);
 }
 
-void *desencolar(t_list *cola){
+void *desencolar(t_list *cola, char *que_cola, t_log *logger){
+	t_link_element *aux;
+	char *lista = strdup(" ");
+
+	for(aux=cola->head; aux!=NULL ; aux=aux->next){
+		string_append(&lista, "->");
+		string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
+	}
+
+	if(logger!=NULL && strcmp(lista," ")){//ojo, el strcmp esta bien sin ==0
+		log_info(logger, string_from_format("Se ha modificado la cola de %s al ser removido un personaje", que_cola), "INFO");
+		log_info(logger, lista, "INFO");
+	}
+	free(lista);
+
 	return list_remove(cola, 0);
 }
 
