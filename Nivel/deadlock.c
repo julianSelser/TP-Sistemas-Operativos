@@ -180,8 +180,9 @@ int rutina_chequeo_deadlock()
 
 			if (recovery)
 			{
-			enviar(socket_orquestador, SOLICITUD_RECUPERO_DEADLOCK, msg_recupero_deadlock(pjes_en_deadlock), logger);
-			sem_wait(&sem_recovery); //para que no vuelva a detectar deadlock hasta que se haya accionado el recovery
+				log_info(logger, "El recovery esta activado, se procede a enviar la solicitud de recupero al orquestador", "INFO");
+				enviar(socket_orquestador, SOLICITUD_RECUPERO_DEADLOCK, msg_recupero_deadlock(pjes_en_deadlock), logger);
+				sem_wait(&sem_recovery); //para que no vuelva a detectar deadlock hasta que se haya accionado el recovery
 			}
 		}
 		else
@@ -198,10 +199,8 @@ int rutina_chequeo_deadlock()
 
 char * detectar_deadlock()
 {
-
 	char * pjes;
 	char * finish;
-	char ** pjes_nombre;
 	char * involucrados;
 
 	char * recs;
@@ -211,20 +210,17 @@ char * detectar_deadlock()
 	int cant_recursos;
 
 	int i;
-	int cambio = 0;
-
+	int cambio = 1;
 
 	cant_pjes = list_size(lista_personajes);
 
 	finish = malloc (cant_pjes); 
 	pjes = malloc (cant_pjes);
-    pjes_nombre = malloc(cant_pjes);
 
 	for(i=0; i<cant_pjes; i++)
 	{
 		pjes[i] = ((t_nodo_personaje *)list_get(lista_personajes, i))->ID; //vector con los chars de todos los personajes presentes
 		finish[i] = 0; //vector finish, ver silberschatz
-		pjes_nombre[i]=((t_nodo_personaje *)list_get(lista_personajes, i))->nombre;//array con todos los nombres de los personajes
 	} 
 
 	cant_recursos = list_size(lista_cajas);
@@ -272,8 +268,6 @@ char * detectar_deadlock()
 			pje_deadlock = malloc(2);
 			pje_deadlock[0] = pjes[i];
 			pje_deadlock[1] = '\0';
-			log_info(logger,string_from_format("este personaje esta en deadlock:%s",pjes_nombre[i]));
-
 			string_append(&involucrados, pje_deadlock);
 			free(pje_deadlock);
 		}
@@ -284,7 +278,6 @@ char * detectar_deadlock()
 	free(finish);
 	free(recs);
 	free(instancias);
-	free(pjes_nombre);
 	return involucrados;
 }
 
@@ -333,7 +326,7 @@ int puede_terminar(char pje_actual, char * recs, char * instancias, int cant_rec
 		nec_actual = (t_necesidad *)list_get(necesidad, i);
 		posrec = indexof(recs, nec_actual->ID_recurso, cant_recursos);
 
-		if((instancias[posrec])<((nec_actual->max)-(nec_actual->asig)))
+		if((instancias[posrec])<((nec_actual->max)-(nec_actual->asig)) && nodo_pje->bloqueado)
 		{
 			termina = 0;
 			break;

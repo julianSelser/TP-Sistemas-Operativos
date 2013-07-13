@@ -42,6 +42,7 @@
 		int socket;
 		char x;
 		char y;
+		int bloqueado;
 		t_list * necesidades;
 	} t_nodo_personaje;
 

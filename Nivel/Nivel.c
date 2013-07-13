@@ -228,6 +228,7 @@ void manejar_ingreso_personaje(int socket){
 	nodo_p->socket = socket;
 	nodo_p->x = 0;
 	nodo_p->y = 0;
+	nodo_p->bloqueado = false;
 	lista = nodo_p->necesidades = list_create();
 
 	//por cada necesidad enviada
@@ -375,8 +376,7 @@ void manejar_solicitud_instancia_recurso(int socket){
 		//buscar el personaje para asignarle el recurso concedido
 		for(aux=lista_personajes->head ; aux!=NULL && ((t_nodo_personaje*)aux->data)->socket!=socket ; aux=aux->next);
 
-		if(aux==NULL)/*todo loguear: error grotesco, el personaje pidiendo un recruso no estaba en la lista*/
-		log_error(logger,"error: el personaje pidiendo un recruso no estaba en la lista","ERROR");
+		if(aux==NULL)	log_error(logger,"error: el personaje pidiendo un recruso no estaba en la lista","ERROR");
 		personaje = aux->data;
 
 		//buscar la necesidad a ser satisfecha para asignarla al personaje
@@ -391,7 +391,15 @@ void manejar_solicitud_instancia_recurso(int socket){
 		restarRecurso(lista_items, caja->ID);
 		respuesta_solicitud_instancia->concedido = true;
 	}
-	else respuesta_solicitud_instancia->concedido=false;
+	else{
+		for(aux=lista_personajes->head ; aux!=NULL && ((t_nodo_personaje*)aux->data)->socket!=socket ; aux=aux->next);
+
+		if(aux==NULL)	log_error(logger,"error: el personaje pidiendo un recruso no estaba en la lista","ERROR");
+		personaje = aux->data;
+		personaje->bloqueado = true;
+
+		respuesta_solicitud_instancia->concedido=false;
+	}
 
 	enviar(socket, RTA_SOLICITUD_INSTANCIA_RECURSO, respuesta_solicitud_instancia, logger);
 
@@ -445,14 +453,13 @@ void manejar_recursos_reasignados(int socket){
 	{
 		//buscamos el personaje por su id en la lista de personajes
 		for(paux=lista_personajes->head ; paux!=NULL && ((t_nodo_personaje*)paux->data)->ID!=*c ; paux=paux->next);
-		if(paux==NULL) /*todo loguear: personaje al que se le reasigno recursos no estaba en la lista de personajes*/
-		log_error(logger,"personaje al que se le reasigno recursos no estaba en la lista de personajes","ERROR");
+		if(paux==NULL)	log_error(logger,"personaje al que se le reasigno recursos no estaba en la lista de personajes","ERROR");
 		personaje = paux->data;
+		personaje->bloqueado = false;
 
 		//dentro de las necesidades del personaje buscamos el recurso asignado y se lo damos (incrementa asignacion)
 		for(naux=personaje->necesidades->head ; naux!=NULL && ((t_necesidad*)naux->data)->ID_recurso!=*(c+1) ; naux=naux->next);
-		if(naux==NULL) /*todo loguear: no se encontro el recurso a reasignar dentro de las necesidades del personaje*/
-		log_error(logger," no se encontro el recurso a reasignar dentro de las necesidades del personaje","ERROR");
+		if(naux==NULL)	log_error(logger," no se encontro el recurso a reasignar dentro de las necesidades del personaje","ERROR");
 		necesidad = naux->data;
 		necesidad->asig++;
 	}
