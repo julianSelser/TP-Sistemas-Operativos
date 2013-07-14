@@ -97,7 +97,8 @@ int main(int argc, char **argv) {
 	free(ip_puerto_orquestador); // ya no los uso
 	free(temp_ip_puerto_orq);
 
-	ip_orquestador = malloc(strlen(ip_puerto_separados[0]+1)); // aca el +1 tiene que estar afuera
+	//este comentario lo dejo julian, muchachos: el comentario de la linea siguiente estuvo siem
+	ip_orquestador = malloc(strlen(ip_puerto_separados[0])+1); // aca el +1 tiene que estar afuera
 	strcpy(ip_orquestador, ip_puerto_separados[0]);
 	puerto_orquestador = atoi(ip_puerto_separados[1]);
 	free(ip_puerto_separados);

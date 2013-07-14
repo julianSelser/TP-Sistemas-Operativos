@@ -594,7 +594,7 @@ void levantar_config(int argc, char ** argv){
 	ip_puerto_separados = string_split(ip_puerto_orquestador, ":");
 	free(ip_puerto_orquestador);
 
-	ip_orquestador = malloc(strlen(ip_puerto_separados[0]+1));
+	ip_orquestador = malloc(strlen(ip_puerto_separados[0])+1);
 	strcpy(ip_orquestador, ip_puerto_separados[0]);
 	puerto_orquestador = atoi(ip_puerto_separados[1]);
 	free(ip_puerto_separados);
