@@ -714,7 +714,7 @@ int init_socket_escucha(int puerto, int optval, t_log *logger){
 		exit(1);
 	}
 	listen(socketEscucha, 10);
-	log_info(logger, string_from_format("Se comienza a escuchar por el puerto %d", socketInfo.sin_port),"INFO");
+	log_info(logger, string_from_format("Se comienza a escuchar por el puerto %d", ntohs(socketInfo.sin_port)),"INFO");
 	return socketEscucha;
 }
 
