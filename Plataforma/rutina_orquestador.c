@@ -107,11 +107,11 @@ void rutina_orquestador(/*?*/)
 						if(nodo!=NULL)
 						{
 							//TODO FALTAN LIBERAR TODAS LAS ESTRUCTURAS DE LOS PLANIFICADORES...lo hago si queda tiempo...alto memory leak
+							log_info(logger_orquestador, string_from_format("Cerrando el planificador del nivel: %s", nodo->nombre), "INFO");
 							pthread_cancel(nodo->hilo_planificador);
 							free(nodo->nombre);
 							free(nodo->IP);
 							free(nodo);
-							log_info(logger_orquestador, string_from_format("Cerrando el planificador del nivel: %s", nodo->nombre), "INFO");
 						}
 						close(i);
 						FD_CLR(i, &maestro);
