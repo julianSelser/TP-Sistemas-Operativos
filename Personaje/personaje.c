@@ -413,7 +413,7 @@ int main(int argc, char **argv) {
 			setter=0;
 			goto realstart;
 		}
-		//in nombre dil patre, del hijo, del spiritu sancti
+		//in nomine patris, et filii, et spiritus sancti
 
 		close(socket_nivel);
 		close(socket_planificador);
@@ -444,6 +444,9 @@ int main(int argc, char **argv) {
 	enviar(socket_orquestador,NOTIF_PLAN_TERMINADO,notificacion_plan_terminado,logger);
 
 	//	printf("%s\n",recursos_por_nivel[3]); que es esta linea????
+
+	log_info(logger, "Victoria!", "INFO");
+	//todo log destroy!
 
 	return 0;
 }
