@@ -459,7 +459,11 @@ void manejar_recursos_reasignados(int socket){
 
 		//dentro de las necesidades del personaje buscamos el recurso asignado y se lo damos (incrementa asignacion)
 		for(naux=personaje->necesidades->head ; naux!=NULL && ((t_necesidad*)naux->data)->ID_recurso!=*(c+1) ; naux=naux->next);
-		if(naux==NULL)	log_error(logger," no se encontro el recurso a reasignar dentro de las necesidades del personaje","ERROR");
+		if(naux==NULL) //si no se encontro el personaje al que se le reasigno el recurso
+		{
+			string_append(&(reasignados->remanentes), string_from_format("%c", *(c+1))); //lo pasamos como remanente
+			continue;
+		}//esto no es un error, de hecho pasa en el esquema 2
 		necesidad = naux->data;
 		necesidad->asig++;
 	}
