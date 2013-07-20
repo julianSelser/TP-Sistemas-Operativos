@@ -669,7 +669,7 @@ int init_socket_externo(int puerto, char *direccion, t_log *logger)
 	// SOCK_STREAM: Orientado a la conexion, TCP
 	// 0: Usar protocolo por defecto para AF_INET-SOCK_STREAM: Protocolo TCP/IPv4
 	if ((unSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		/*todo logear:Error al crear socket*/
+		if(logger!=NULL) log_error(logger, "Error creando socket", "ERROR");
 		exit(1);
 	}
 	fcntl(unSocket, F_SETFL, FD_CLOEXEC);
@@ -681,7 +681,7 @@ int init_socket_externo(int puerto, char *direccion, t_log *logger)
 	socketInfo.sin_port = htons(puerto);
 
 	connect(unSocket, (struct sockaddr*) &socketInfo, sizeof(socketInfo));
-	log_info(logger, string_from_format("Conectando con la direccion %s", direccion), "INFO");
+	if(logger!=NULL) log_info(logger, string_from_format("Conectando con la direccion %s", direccion), "INFO");
 	return unSocket;
 }
 
@@ -696,7 +696,7 @@ int init_socket_escucha(int puerto, int optval, t_log *logger){
 	// SOCK_STREAM: Orientado a la conexion, TCP
 	// 0: Usar protocolo por defecto para AF_INET-SOCK_STREAM: Protocolo TCP/IPv4
 	if ((socketEscucha = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		/*todo logear:error creando socket*/
+		if(logger!=NULL) log_error(logger, "Error creando socket", "ERROR");
 		exit(1);
 	}
 	fcntl(socketEscucha, F_SETFL, FD_CLOEXEC);
@@ -710,11 +710,11 @@ int init_socket_escucha(int puerto, int optval, t_log *logger){
 
 	// Vincular el socket con una direccion de red almacenada en 'socketInfo'.
 	if (bind(socketEscucha, (struct sockaddr*) &socketInfo, sizeof(socketInfo))	!= 0) {
-		/*todo logear:Error al bindear socket escucha*/
+		if(logger!=NULL) log_error(logger, "Error bindeando socket", "ERROR");
 		exit(1);
 	}
 	listen(socketEscucha, 10);
-	log_info(logger, string_from_format("Se comienza a escuchar por el puerto %d", ntohs(socketInfo.sin_port)),"INFO");
+	if(logger!=NULL)log_info(logger, string_from_format("Se comienza a escuchar por el puerto %d", ntohs(socketInfo.sin_port)),"INFO");
 	return socketEscucha;
 }
 
