@@ -29,13 +29,15 @@
 	/*	MACROS	*/
 
 	//macro que separa los datos del parametro, creando variables de uso comun para facilitar el uso
-	#define DESGLOSE_INFO(x)	t_log *logger_planificador = x->logger_planificador;	\
-								t_list *listos = x->colas[LISTOS];						\
+	#define DESGLOSE_INFO(x)	DESGLOCE_INFO_ESCUCHA(x)								\
 								t_list *bloqueados = x->colas[BLOQUEADOS];				\
-																						\
-								sem_t *sem_cola_listos = &x->semaforos[0];				\
-								sem_t *sem_cola_vacia = &x->semaforos[1];				\
 								sem_t *sem_cola_bloqueados = &x->semaforos[2]			\
+
+	#define DESGLOCE_INFO_ESCUCHA(x)	t_log *logger_planificador = x->logger_planificador;	\
+										t_list *listos = x->colas[LISTOS];						\
+																								\
+										sem_t *sem_cola_listos = &x->semaforos[0];				\
+										sem_t *sem_cola_vacia = &x->semaforos[1];				\
 
 
 #endif /* RUTINA_PLANIFICADOR_H_ */

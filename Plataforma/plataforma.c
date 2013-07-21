@@ -37,10 +37,11 @@ float retraso;
 int main(int argc, char **argv)
 {
 	if(argc!=3) {perror("Uso: Plataforma <arch_config> <arch_solicitudes_koopa>");exit(EXIT_FAILURE);}//ya se que queda feo aca
+	else printf("\033[2J\033[1;1H");
 
 	char *argkoopa[] = { "koopa", argv[2] , NULL };
 	pthread_t orquestador;
-	t_log * logger_plataforma = log_create("plataforma.log", "Plataforma", 1, LOG_LEVEL_TRACE);
+	t_log * logger_plataforma = log_create("plataforma.log", "PLATAFORMA", 1, LOG_LEVEL_TRACE);
 	t_config *plataforma_conf = config_create(config_name=argv[1]);
 
 	quantum = config_get_double_value(plataforma_conf, "quantum");
@@ -49,11 +50,12 @@ int main(int argc, char **argv)
 
 	iniciar_serializadora();
 
-	log_debug(logger_plataforma, "Se lanza el hilo orquestador!", "DEBUG");
+	log_info(logger_plataforma, "Se lanza el hilo orquestador!", "INFO");
 
 	pthread_create(&orquestador, NULL,(void*)rutina_orquestador, NULL);
 	pthread_join(orquestador, NULL);
 
+	log_info(logger_plataforma, "Ejecutando Koopa!", "INFO");
 	log_destroy(logger_plataforma);
 
 	execve("koopa", argkoopa, environ);

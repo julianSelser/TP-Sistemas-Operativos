@@ -162,7 +162,7 @@ void manejar_anuncio_nivel(int socket_nivel)
 		t_log * logger_planif;
 		t_nodo_nivel * nuevo_nivel = malloc(sizeof (t_nodo_nivel));
 
-		log_info(logger_orquestador, string_from_format("Se conecto el nivel %s", datos_nivel_entrante->nombre), "INFO");
+		log_info(logger_orquestador, string_from_format("Se conecto el nivel %s, creando su planificador...", datos_nivel_entrante->nombre), "INFO");
 
 		nuevo_nivel->socket = socket_nivel;
 		nuevo_nivel->IP = get_ip_string(socket_nivel);
@@ -173,7 +173,7 @@ void manejar_anuncio_nivel(int socket_nivel)
 		nuevo_nivel->puerto_planif = puerto_planif;
 
 		//aca armo el logger que va a usar el planificador
-		logger_planif = log_create(string_from_format("planif_%s.log", nuevo_nivel->nombre), "PLANIFICADOR", 1, LOG_LEVEL_TRACE);
+		logger_planif = log_create(string_from_format("planif_%s.log", nuevo_nivel->nombre), string_from_format("PLANIF_%s", nuevo_nivel->nombre), 1, LOG_LEVEL_TRACE);
 		//creado el logger, pelada la gallina (ajajaja)
 
 		while(datos_nivel_entrante->recursos_nivel[i]!='\0') //recorrer los recursos que presenta el nivel
@@ -187,14 +187,12 @@ void manejar_anuncio_nivel(int socket_nivel)
 
 
 		list_add(lista_niveles, nuevo_nivel);
-		log_debug(logger_orquestador, "Se crearon las estructuras necesarias para manejarlo", "DEBUG");
 
 		pthread_create(&nuevo_nivel->hilo_planificador, NULL, (void*)rutina_planificador, armar_parametro(nuevo_nivel, logger_planif));
-		log_debug(logger_orquestador, string_from_format("Se lanzó el planificador correspondiente, que va a escuchar en el puerto %d.", puerto_planif), "DEBUG");
 		puerto_planif++;
 	}
 	else{
-		log_debug(logger_orquestador, string_from_format("El nivel: %s trato de entrar, pero ya existía una instancia de este en el sistema", datos_nivel_entrante->nombre), "INFO");
+		log_error(logger_orquestador, string_from_format("El nivel: %s trato de entrar, pero ya existía una instancia de este en el sistema", datos_nivel_entrante->nombre), "ERROR");
 		shutdown(socket_nivel, 2);
 	}
 	free(datos_nivel_entrante->recursos_nivel);
@@ -223,17 +221,15 @@ parametro *armar_parametro(t_nodo_nivel * nuevo_nivel, t_log * logger)
 void manejar_sol_info(int socket) //todo testear
 {
 	t_info_nivel_planificador * info;
-	t_solicitud_info_nivel * solicitud;
+	t_solicitud_info_nivel * solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
 
-	solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
 	log_info(logger_orquestador, string_from_format("El personaje %c quiere saber donde está el nivel %s", solicitud->solicitor ,solicitud->nivel_solicitado), "INFO");
 
 	info = crear_info_nivel(solicitud->nivel_solicitado);
 
 	if (strcmp(info->ip_nivel,"NIVEL NO ENCONTRADO") && agregar_sin_repetidos(&jugadores, solicitud->solicitor))
 	{
-		log_debug(logger_orquestador, "Se creó la estructura con la información", "DEBUG");
-		log_info(logger_orquestador, "Entro un nuevo personaje al juego", "INFO");
+		log_info(logger_orquestador, string_from_format("%c entra al juego!", solicitud->solicitor), "INFO");
 	}
 
 	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, logger_orquestador);

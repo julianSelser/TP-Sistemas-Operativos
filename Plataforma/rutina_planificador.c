@@ -27,7 +27,6 @@
 
 #include "serial.h"
 
-//todo: faltan todos los logeos
 void rutina_planificador(parametro *info)
 {
 	int i;
@@ -54,7 +53,7 @@ void rutina_planificador(parametro *info)
 
 		sem_wait(sem_cola_vacia);
 		sem_wait(sem_cola_listos);
-		personaje = desencolar(listos, "listos", info->logger_planificador);
+		personaje = desencolar(listos, "Listos", logger_planificador);
 		sem_post(sem_cola_listos);
 
 		for(i=0; i<(int)quantum ; i++)
@@ -68,19 +67,19 @@ void rutina_planificador(parametro *info)
 
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
-				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje, string_from_format("%c de bloqueados",resultado->recurso_de_bloqueo), info->logger_planificador);
+				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje, string_from_format("Bloqueados por %c",resultado->recurso_de_bloqueo), logger_planificador);
 				sem_post(sem_cola_bloqueados);
 				//sem_wait(sem_cola_vacia);
 				break;
 			}
 		}
-		log_info(info->logger_planificador, string_from_format("%s recibio Quantum", personaje->nombre), "INFO", info->logger_planificador);
+		log_info(logger_planificador, string_from_format("%s recibio Quantum", personaje->nombre), "INFO", logger_planificador);
 
 		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
 		if(!desconexion && !resultado->bloqueado)
 		{
 			sem_wait(sem_cola_listos);
-			encolar(listos, personaje, "listos", info->logger_planificador);
+			encolar(listos, personaje, "Listos", logger_planificador);
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
 			free(resultado);
@@ -95,19 +94,18 @@ void rutina_planificador(parametro *info)
 
 void rutina_escucha(parametro *info)
 {
-	DESGLOSE_INFO(info);
+	DESGLOCE_INFO_ESCUCHA(info);
 
 	int socketNuevoPersonaje;
-	int socketEscucha = init_socket_escucha(info->puerto, 1, info->logger_planificador);
+	int socketEscucha = init_socket_escucha(info->puerto, 1, logger_planificador);
 
-	printf("\n escuchando por personajes en el planificador...\n\n");
 	while (1)
 	{
 		if ((socketNuevoPersonaje = accept(socketEscucha, NULL, 0)) < 0)/* todo log:Error al aceptar conexion entrante */exit(1);
 		else {
 			t_nodo_personaje *personaje = armar_nodo_personaje( recibir(socketNuevoPersonaje, ENVIO_DE_DATOS_AL_PLANIFICADOR) ,socketNuevoPersonaje);
 			sem_wait(sem_cola_listos);
-			encolar(listos, personaje, "listos", info->logger_planificador);
+			encolar(listos, personaje, "Listos", logger_planificador);
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
 		}
@@ -130,41 +128,42 @@ t_nodo_personaje *armar_nodo_personaje(t_datos_delPersonaje_alPlanificador *dato
 }
 
 
-//wrappers por claridad
+//encolar agrega "data" al final de la "cola" y logea la cola con el nombre especificado (que_cola) con los datos de la "cola"
 void encolar(t_list *cola, void *data, char *que_cola, t_log *logger){
 	t_link_element *aux;
-	char *lista = strdup(" ");
+	char *lista = strdup("");
 
 	list_add(cola, data);
 
 	for(aux=cola->head; aux!=NULL ; aux=aux->next){
-		string_append(&lista, "->");
 		string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
+		if(aux->next!=NULL)	string_append(&lista, "->");
 	}
 
-	if(logger!=NULL && strcmp(lista," ")){//ojo, el strcmp esta bien sin ==0
-		log_info(logger, string_from_format("Se ha modificado la cola de %s al ser agregado un personaje", que_cola), "INFO");
-		log_info(logger, lista, "INFO");
+	if(logger!=NULL && strcmp(lista,"")){//ojo, el strcmp esta bien sin ==0
+		log_info(logger, string_from_format("%s: %s", que_cola, lista), "INFO");
 	}
 	free(lista);
 }
 
+//encolar remueve y devuelve los datos al principio de la "cola" y logea la cola con el nombre especificado (que_cola) con los datos de la "cola"
+//notar que no se van a logear colas vacias, ya hay suficiente output en pantalla...
 void *desencolar(t_list *cola, char *que_cola, t_log *logger){
 	t_link_element *aux;
-	char *lista = strdup(" ");
+	char *lista = strdup("");
+	void *element = list_remove(cola, 0);
 
 	for(aux=cola->head; aux!=NULL ; aux=aux->next){
-		string_append(&lista, "->");
 		string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
+		if(aux->next!=NULL)	string_append(&lista, "->");
 	}
 
-	if(logger!=NULL && strcmp(lista," ")){//ojo, el strcmp esta bien sin ==0
-		log_info(logger, string_from_format("Se ha modificado la cola de %s al ser removido un personaje", que_cola), "INFO");
-		log_info(logger, lista, "INFO");
+	if(logger!=NULL && strcmp(lista,"") && element!=NULL){//ojo, el strcmp esta bien sin ==0
+		log_info(logger, string_from_format("Desencolando a %s! %s: %s",  ((t_nodo_personaje*)element)->nombre, que_cola, lista), "INFO");
 	}
 	free(lista);
 
-	return list_remove(cola, 0);
+	return element;
 }
 
 
