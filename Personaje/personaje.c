@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 	char ** plan_de_niveles;  //vectores paralelos
 	int cantidad_niveles;
 	int niveles_completados;
-	int i;
+	int i = 0;
 
 
 
@@ -92,13 +92,11 @@ int main(int argc, char **argv) {
 
 	temp_ip_puerto_orq = config_get_string_value(configuracion, "orquestador");
 	ip_puerto_orquestador = malloc(strlen(temp_ip_puerto_orq)+1);
-	strcpy(ip_puerto_orquestador, temp_ip_puerto_orq); //guardo el orquestador aca
+	strcpy(ip_puerto_orquestador, temp_ip_puerto_orq);
 	ip_puerto_separados = string_split(ip_puerto_orquestador, ":");
-	free(ip_puerto_orquestador); // ya no los uso
-	free(temp_ip_puerto_orq);
+	free(ip_puerto_orquestador);
 
-	//este comentario lo dejo julian, muchachos: el comentario de la linea siguiente estuvo siem
-	ip_orquestador = malloc(strlen(ip_puerto_separados[0])+1); // aca el +1 tiene que estar afuera
+	ip_orquestador = malloc(strlen(ip_puerto_separados[0])+1);
 	strcpy(ip_orquestador, ip_puerto_separados[0]);
 	puerto_orquestador = atoi(ip_puerto_separados[1]);
 	free(ip_puerto_separados);
@@ -106,12 +104,11 @@ int main(int argc, char **argv) {
 	temp_nombre = config_get_string_value(configuracion, "nombre");
 	nombre = malloc(strlen(temp_nombre)+1);
 	strcpy(nombre,temp_nombre);
-	free(temp_nombre);
 
 	contador_vidas = max_vidas = config_get_int_value(configuracion, "vidas");
 	simbolo = (config_get_string_value(configuracion,"simbolo"))[0];
 
-	temp_plan_niveles = config_get_string_value(configuracion, "planDeNiveles");
+	temp_plan_niveles = strdup(config_get_string_value(configuracion, "planDeNiveles"));
 	cantidad_niveles = string_count(temp_plan_niveles, ',') + 1;
 	plan_de_niveles = string_split(temp_plan_niveles, ",");
 	free(temp_plan_niveles);
@@ -121,11 +118,9 @@ int main(int argc, char **argv) {
 	string_append(&log_name,".log"); // queda : nombre.log
 
 	logger = log_create(log_name, "PERSONAJE", 1, LOG_LEVEL_TRACE);
-	free(log_name);//hacer free a log_name???????? seh
+	free(log_name);
 
 	ip_orquestador = isspace(*ip_orquestador)?(ip_orquestador+1):ip_orquestador;
-
-	i=0;
 
 	recursos_por_nivel = malloc(cantidad_niveles * sizeof(char)); // conozco e el tamaño de char*?
 
@@ -426,6 +421,7 @@ int main(int argc, char **argv) {
 			//REINICIAR PLAN DE NIVELES
 			niveles_completados=0;
 			log_info(logger, "Game over - reiniciando plan de niveles","INFO");
+			contador_vidas=config_get_int_value(configuracion,"vidas");
 		}
 
 
@@ -444,10 +440,8 @@ int main(int argc, char **argv) {
 	notificacion_plan_terminado->personaje = strdup(nombre);  // revisar q le voy a mandar al orquestador
 	enviar(socket_orquestador,NOTIF_PLAN_TERMINADO,notificacion_plan_terminado,logger);
 
-	//	printf("%s\n",recursos_por_nivel[3]); que es esta linea????
-
 	log_info(logger, "Victoria!", "INFO");
-	//todo log destroy!
+	config_destroy(configuracion);
 
 	return 0;
 }
