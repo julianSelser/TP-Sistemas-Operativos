@@ -38,10 +38,10 @@ int reset = 0;
 int game_over = 0;
 int contador_vidas;
 
-int conf_es_valida(t_config * configuracion);
-void dar_vida();
-void morir();
 int llego();
+void morir();
+void dar_vida();
+int conf_es_valida(t_config * configuracion);
 int buscar_paso(int * posicion, int * destino, int * prox_paso);
 
 int main(int argc, char **argv) {
@@ -440,7 +440,8 @@ int main(int argc, char **argv) {
 	log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
 
 	//ELABORAR NOTIFICACION DE PLAN TERMINADO
-	notificacion_plan_terminado->personaje=strdup(nombre);  // revisar q le voy a mandar al orquestador
+	notificacion_plan_terminado->char_id = simbolo;
+	notificacion_plan_terminado->personaje = strdup(nombre);  // revisar q le voy a mandar al orquestador
 	enviar(socket_orquestador,NOTIF_PLAN_TERMINADO,notificacion_plan_terminado,logger);
 
 	//	printf("%s\n",recursos_por_nivel[3]); que es esta linea????

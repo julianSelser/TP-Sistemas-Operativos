@@ -321,7 +321,8 @@ void *deserializar_personaje_condenado(char *buffer){
 //18
 void *deserializar_notificacion_plan_terminado(char *buffer){
 	t_notificacion_plan_terminado *termino = malloc(sizeof(t_notificacion_plan_terminado));
-	termino->personaje = strdup(buffer);
+	termino->char_id = *buffer;
+	termino->personaje = strdup(buffer+sizeof(char));
 	return termino;
 }
 
@@ -555,9 +556,10 @@ char *srlz_personaje_condenado(void *data, int *tamanio){
 //18
 char *srlz_notificacion_plan_terminado(void *data,int *tamanio){
 	t_notificacion_plan_terminado *d = data;
-	char *buffer = malloc( strlen(d->personaje)+1 );
+	char *buffer = malloc( *tamanio = sizeof(char) + strlen(d->personaje)+1 );
 
-	memcpy(buffer, d->personaje, *tamanio = strlen(d->personaje)+1 );
+	memcpy(buffer, &d->char_id, sizeof(char));
+	memcpy(buffer+sizeof(char), d->personaje, strlen(d->personaje)+1 );
 
 	free(d->personaje);
 	free(d);

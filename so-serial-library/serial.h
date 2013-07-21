@@ -153,6 +153,7 @@
 
 	//18 - struct del mensaje que envia el personaje al orquestador cuando termino su plan de nivel...ojo con este...
 	typedef struct{
+		char char_id;
 		char * personaje;
 	} __attribute__((packed)) t_notificacion_plan_terminado;
 

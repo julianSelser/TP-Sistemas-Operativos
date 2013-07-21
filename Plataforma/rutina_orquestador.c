@@ -39,7 +39,7 @@
 t_list * lista_niveles;
 t_log * logger_orquestador;
 char * jugadores;
-int cant_personajes_victoriosos;
+char * jugadores_que_terminaron;
 
 static int puerto_planif = 23000;
 
@@ -56,8 +56,8 @@ void rutina_orquestador(/*?*/)
 	inotify_add_watch(inotify_fd, (char*)get_current_dir_name(), IN_MODIFY);
 
 	//inicializamos las variables globales
-	jugadores=strdup("");//es lo mismo que jugadores=malloc(1);jugadores[0]='\0';
-	cant_personajes_victoriosos = 0;
+	jugadores = strdup("");
+	jugadores_que_terminaron = strdup(""); //es lo mismo que jugadores=malloc(1);jugadores[0]='\0';
 	lista_niveles=list_create();
 	log_info(logger_orquestador, "El orquestador esta comienza a esperar niveles", "INFO");
 
@@ -144,11 +144,9 @@ void manejar_peticion(int socket){
 										manejar_anuncio_nivel(socket);
 										break;
 	default:
-			printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));
-			//todo esto deberia loguearse como error
 			log_error(logger_orquestador,"Mensaje  inexistente !","ERROR");
 			break;
-	} //end switch
+	}
 }
 
 void manejar_anuncio_nivel(int socket_nivel)
@@ -372,7 +370,7 @@ void manejar_sol_recovery(int socket) //todo testear
 
 	t_solicitud_recupero_deadlock * solicitud;
 	t_notif_eleccion_de_victima * respuesta;
-	t_personaje_condenado * condena;
+	t_personaje_condenado * condena=malloc(sizeof(t_personaje_condenado));;
 
 	nivel=ubicar_nivel_por_socket(socket, &ID_victima);
 
@@ -394,8 +392,7 @@ void manejar_sol_recovery(int socket) //todo testear
 
 	enviar(socket, NOTIF_ELECCION_VICTIMA, respuesta, logger_orquestador);
 
-	condena=malloc(sizeof(t_personaje_condenado));
-	//todo ponerle algo adentro a este mensaje?
+	condena->condenado = true;
 
 	enviar(victima->socket, NOTIF_PERSONAJE_CONDENADO, condena, logger_orquestador);
 	close(victima->socket); //todo es buena idea hacer esto?
@@ -448,9 +445,9 @@ void manejar_plan_terminado(int socket)
 
 	log_info(logger_orquestador, string_from_format("%s terminó su plan de niveles!", notificacion->personaje), "INFO");
 
-	cant_personajes_victoriosos++;
+	agregar_sin_repetidos(&jugadores_que_terminaron, notificacion->char_id);
 
-	if (cant_personajes_victoriosos == strlen(jugadores))
+	if (strlen(jugadores_que_terminaron) == strlen(jugadores))
 	{
 		log_info(logger_orquestador, "Todos los personajes terminaron su plan de niveles! Terminando el hilo orquestador...", "INFO");
 		pthread_exit(NULL);
