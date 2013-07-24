@@ -455,7 +455,7 @@ void rutina_inotify(int inotify_fd)
 {
 	int offset = 0;
 	char buffer[BUF_LEN];
-	int length = read(inotify_fd, buffer, BUF_LEN);usleep(1000);
+	int length = read(inotify_fd, buffer, BUF_LEN);usleep(100000);
 	if (length < 0) {
 		perror("read");//todo logear este error, no usemos perror
 	}
