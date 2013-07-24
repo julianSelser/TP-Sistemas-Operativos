@@ -720,9 +720,8 @@ int init_socket_escucha(int puerto, int optval, t_log *logger){
 	return socketEscucha;
 }
 
-
-//OJO: esta funcion solo deberia ser usada dentro de un select()
+//cuidado con esta funcion: solo usenla cuando saben que tienen que recibir algo (por ejemplo en select)
 bool is_connected(int socket){
 	char buffer[1];
-	return recv(socket, buffer, sizeof buffer, MSG_PEEK|MSG_DONTWAIT)>0;
+	return recv(socket, buffer, sizeof buffer, MSG_PEEK)>0;
 }

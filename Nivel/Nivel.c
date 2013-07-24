@@ -589,7 +589,7 @@ void levantar_config(int argc, char ** argv){
 	strcpy(log_name, nombre);
 
 	string_append(&log_name, ".log");
-	logger = log_create(log_name, "NIVEL", false, LOG_LEVEL_TRACE);
+	logger = log_create(log_name, nombre, false, LOG_LEVEL_TRACE);
 
 	//podra el personaje reutilizar este codigo?
 	temp_ip_puerto_orq = config_get_string_value(configuracion, "orquestador");

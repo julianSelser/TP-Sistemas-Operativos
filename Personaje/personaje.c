@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
 	strcpy(log_name, nombre);
 	string_append(&log_name,".log"); // queda : nombre.log
 
-	logger = log_create(log_name, "PERSONAJE", 1, LOG_LEVEL_TRACE);
+	logger = log_create(log_name, nombre, 1, LOG_LEVEL_TRACE);
 	free(log_name);
 
 	ip_orquestador = isspace(*ip_orquestador)?(ip_orquestador+1):ip_orquestador;
@@ -495,7 +495,7 @@ int llego(int pos[],int dest[]){
 
 void dar_vida(){
 	contador_vidas++;
-	log_info(logger, string_from_format("El personaje aumenta sus vidas a %d gracias a la señal SIGUSR1 !",contador_vidas),"INFO");
+	log_info(logger, string_from_format("Aumenté mis vidas a %d gracias a la señal SIGUSR1 !",contador_vidas),"INFO");
 }
 
 void morir(){
@@ -504,7 +504,7 @@ void morir(){
 		if(contador_vidas>0) contador_vidas--;
 		else game_over=1;
 
-		log_info(logger, string_from_format("SIGTERM detectada, el personaje morirá, quedan %d vidas",contador_vidas ),"INFO");
+		log_info(logger, string_from_format("SIGTERM, %s muere, le quedan %d vidas", nombre, contador_vidas ),"INFO");
 
 		siglongjmp(ctx1,1);
 	}

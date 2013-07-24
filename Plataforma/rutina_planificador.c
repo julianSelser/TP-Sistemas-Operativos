@@ -30,14 +30,16 @@
 void rutina_planificador(parametro *info)
 {
 	int i;
-	char buf[100];
-	//esto liberarlo, lo que llega por "recibir" es responsabilidad del usuario
-	//(estas variables contendran de-serializaciones)
 	t_turno_concluido *resultado;
 	t_nodo_personaje *personaje;
 
-	//desglose del "parametro info" en su log, colas y semaforos, macro en el .h
-	DESGLOSE_INFO(info);
+	//desgloce del parametro
+	t_log *logger_planificador = info->logger_planificador;
+	t_list *bloqueados = info->colas[BLOQUEADOS];
+	t_list *listos = info->colas[LISTOS];
+	sem_t *sem_cola_listos = &info->semaforos[0];
+	sem_t *sem_cola_vacia = &info->semaforos[1];
+	sem_t *sem_cola_bloqueados = &info->semaforos[2];
 
     sem_init(sem_cola_listos, 0, 1);
     sem_init(sem_cola_vacia, 0, 0);
@@ -59,7 +61,7 @@ void rutina_planificador(parametro *info)
 		for(i=0; i<(int)quantum ; i++)
 		{
 			if(( desconexion = enviar(personaje->socket, NOTIF_MOVIMIENTO_PERMITIDO, armarMSG_mov_permitido(), logger_planificador) < 0 )) break;
-			if(( desconexion = recv(personaje->socket, buf, 100, MSG_PEEK)<=0 )) break;//nadie vio esta linea, la escribio roberto
+			if(( desconexion = !is_connected(personaje->socket) )) break;
 
 			resultado = recibir(personaje->socket,NOTIF_TURNO_CONCLUIDO);
 
@@ -67,17 +69,17 @@ void rutina_planificador(parametro *info)
 
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
-				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje, string_from_format("Bloqueados por %c",resultado->recurso_de_bloqueo), logger_planificador);
+				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje, string_from_format("%s quedó esperando %c, bloqueados por %c", personaje->nombre, resultado->recurso_de_bloqueo, resultado->recurso_de_bloqueo), logger_planificador);
 				sem_post(sem_cola_bloqueados);
-				//sem_wait(sem_cola_vacia);
 				break;
 			}
 		}
-		log_info(logger_planificador, string_from_format("%s recibio Quantum", personaje->nombre), "INFO", logger_planificador);
 
 		//si el personaje no quedo bloqueado y no se desconecto: reencolar; sino liberar el nodo
 		if(!desconexion && !resultado->bloqueado)
 		{
+			log_info(logger_planificador, string_from_format("%s recibio Quantum!", personaje->nombre), "INFO", logger_planificador);
+
 			sem_wait(sem_cola_listos);
 			encolar(listos, personaje, "Listos", logger_planificador);
 			sem_post(sem_cola_listos);
@@ -94,7 +96,11 @@ void rutina_planificador(parametro *info)
 
 void rutina_escucha(parametro *info)
 {
-	DESGLOCE_INFO_ESCUCHA(info);
+	//desgloce del parametro
+	t_log *logger_planificador = info->logger_planificador;
+	t_list *listos = info->colas[LISTOS];
+	sem_t *sem_cola_listos = &info->semaforos[0];
+	sem_t *sem_cola_vacia = &info->semaforos[1];
 
 	int socketNuevoPersonaje;
 	int socketEscucha = init_socket_escucha(info->puerto, 1, logger_planificador);
@@ -113,7 +119,7 @@ void rutina_escucha(parametro *info)
 }
 
 
-// funcion que toma el deserializado del mensaje crudo del personaje al conectarse al planificador
+//funcion que toma el deserializado del mensaje crudo del personaje al conectarse al planificador
 //y lo convierte en un nodo personaje para usar en las listas; tambien libera los datos del mensaje
 t_nodo_personaje *armar_nodo_personaje(t_datos_delPersonaje_alPlanificador *datos, int socket)
 {
@@ -140,7 +146,8 @@ void encolar(t_list *cola, void *data, char *que_cola, t_log *logger){
 		if(aux->next!=NULL)	string_append(&lista, "->");
 	}
 
-	if(logger!=NULL && strcmp(lista,"")){//ojo, el strcmp esta bien sin ==0
+	if(logger!=NULL && strcmp(lista,""))//ojo, el strcmp esta bien sin ==0
+	{
 		log_info(logger, string_from_format("%s: %s", que_cola, lista), "INFO");
 	}
 	free(lista);
