@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 
 	ip_orquestador = isspace(*ip_orquestador)?(ip_orquestador+1):ip_orquestador;
 
-	recursos_por_nivel = malloc(cantidad_niveles * sizeof(char)); // conozco e el tamaño de char*?
+	recursos_por_nivel = malloc(cantidad_niveles * sizeof(char*));
 
 	while(i<cantidad_niveles)
 	{
@@ -336,6 +336,7 @@ int main(int argc, char **argv) {
 					log_info(logger, "Se obtuvo el recurso!", "INFO");
 					//y despues no necesita hacer mas nada!
 					turno_concluido->bloqueado=0;
+					turno_concluido->recurso_de_bloqueo = proximo_recurso;
 					enviar(socket_planificador,NOTIF_TURNO_CONCLUIDO,turno_concluido,logger);
 
 				}
@@ -384,6 +385,7 @@ int main(int argc, char **argv) {
 			else if(!llego(posicion, destino)) //si NO llegó a destino (no hacer nada más)
 			{
 				turno_concluido->bloqueado=0;
+				turno_concluido->recurso_de_bloqueo = proximo_recurso;
 				enviar(socket_planificador,NOTIF_TURNO_CONCLUIDO,turno_concluido,logger);				
 			}
 
