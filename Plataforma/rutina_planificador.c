@@ -27,11 +27,14 @@
 
 #include "serial.h"
 
+__thread t_nodo_personaje *personaje=NULL;
+__thread parametro *est;
+__thread pthread_t hilo_escucha;
+
 void rutina_planificador(parametro *info)
 {
 	int i;
 	t_turno_concluido *resultado;
-	t_nodo_personaje *personaje;
 
 	//desgloce del parametro
 	t_log *logger_planificador = info->logger_planificador;
@@ -45,9 +48,11 @@ void rutina_planificador(parametro *info)
     sem_init(sem_cola_vacia, 0, 0);
     sem_init(sem_cola_bloqueados, 0, 1);
 
-	//crea el hilo que escuchara personajes
-	pthread_t hilo_escucha;
+	est = info;
+	signal(SIGTERM, cerrar_planificador);//recien a partir de este punto me interesa bloquearla
+
 	pthread_create(&hilo_escucha, NULL,(void*)rutina_escucha, info);
+
 
 	while(1)
 	{
@@ -69,7 +74,7 @@ void rutina_planificador(parametro *info)
 
 			if((resultado->bloqueado)){
 				sem_wait(sem_cola_bloqueados);
-				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo) , personaje, string_from_format("%s quedó esperando %c, bloqueados por %c", personaje->nombre, resultado->recurso_de_bloqueo, resultado->recurso_de_bloqueo), logger_planificador);
+				encolar(buscar_lista_de_recurso(bloqueados,resultado->recurso_de_bloqueo), personaje, string_from_format("%s quedó esperando %c, bloqueados por %c", personaje->nombre, resultado->recurso_de_bloqueo, resultado->recurso_de_bloqueo), logger_planificador);
 				sem_post(sem_cola_bloqueados);
 				break;
 			}
@@ -107,11 +112,14 @@ void rutina_escucha(parametro *info)
 
 	while (1)
 	{
-		if ((socketNuevoPersonaje = accept(socketEscucha, NULL, 0)) < 0)/* todo log:Error al aceptar conexion entrante */exit(1);
+		if ((socketNuevoPersonaje = accept(socketEscucha, NULL, 0)) < 0) {
+			log_error(logger_planificador, "Error aceptando un personaje, saliendo...", "ERROR");
+			exit(1);
+		}
 		else {
-			t_nodo_personaje *personaje = armar_nodo_personaje( recibir(socketNuevoPersonaje, ENVIO_DE_DATOS_AL_PLANIFICADOR) ,socketNuevoPersonaje);
+			t_nodo_personaje *pje = armar_nodo_personaje( recibir(socketNuevoPersonaje, ENVIO_DE_DATOS_AL_PLANIFICADOR) ,socketNuevoPersonaje);
 			sem_wait(sem_cola_listos);
-			encolar(listos, personaje, "Listos", logger_planificador);
+			encolar(listos, pje, "Listos", logger_planificador);
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
 		}
@@ -123,54 +131,79 @@ void rutina_escucha(parametro *info)
 //y lo convierte en un nodo personaje para usar en las listas; tambien libera los datos del mensaje
 t_nodo_personaje *armar_nodo_personaje(t_datos_delPersonaje_alPlanificador *datos, int socket)
 {
-	t_nodo_personaje *personaje = malloc(sizeof(t_nodo_personaje));
+	t_nodo_personaje *pje = malloc(sizeof(t_nodo_personaje));
 
-	personaje->char_personaje = datos->char_personaje;
-	personaje->nombre = datos->nombre_personaje;
-	personaje->socket = socket;
+	pje->char_personaje = datos->char_personaje;
+	pje->nombre = datos->nombre_personaje;
+	pje->socket = socket;
 
 	free(datos);
-	return personaje;
+	return pje;
 }
 
 
 //encolar agrega "data" al final de la "cola" y logea la cola con el nombre especificado (que_cola) con los datos de la "cola"
 void encolar(t_list *cola, void *data, char *que_cola, t_log *logger){
-	t_link_element *aux;
-	char *lista = strdup("");
 
 	list_add(cola, data);
 
-	for(aux=cola->head; aux!=NULL ; aux=aux->next){
-		string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
-		if(aux->next!=NULL)	string_append(&lista, "->");
-	}
-
-	if(logger!=NULL && strcmp(lista,""))//ojo, el strcmp esta bien sin ==0
+	if(logger!=NULL)
 	{
-		log_info(logger, string_from_format("%s: %s", que_cola, lista), "INFO");
+		t_link_element *aux;
+		char *lista = strdup("");
+
+		for(aux=cola->head; aux!=NULL ; aux=aux->next){
+			string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
+			if(aux->next!=NULL)	string_append(&lista, "->");
+		}
+		if(strcmp(lista,""))//ojo, el strcmp esta bien sin ==0
+		{
+			log_info(logger, string_from_format("%s: %s", que_cola, lista), "INFO");
+		}
+		free(lista);
 	}
-	free(lista);
 }
 
 //encolar remueve y devuelve los datos al principio de la "cola" y logea la cola con el nombre especificado (que_cola) con los datos de la "cola"
 //notar que no se van a logear colas vacias, ya hay suficiente output en pantalla...
 void *desencolar(t_list *cola, char *que_cola, t_log *logger){
-	t_link_element *aux;
-	char *lista = strdup("");
+
 	void *element = list_remove(cola, 0);
 
-	for(aux=cola->head; aux!=NULL ; aux=aux->next){
-		string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
-		if(aux->next!=NULL)	string_append(&lista, "->");
-	}
+	if(logger!=NULL){
+		t_link_element *aux;
+		char *lista = strdup("");
 
-	if(logger!=NULL && strcmp(lista,"") && element!=NULL){//ojo, el strcmp esta bien sin ==0
-		log_info(logger, string_from_format("Desencolando a %s! %s: %s",  ((t_nodo_personaje*)element)->nombre, que_cola, lista), "INFO");
+		for(aux=cola->head; aux!=NULL ; aux=aux->next){
+			string_append(&lista,((t_nodo_personaje*)aux->data)->nombre);
+			if(aux->next!=NULL)	string_append(&lista, "->");
+		}
+		if(strcmp(lista,"") && element!=NULL){//ojo, el strcmp esta bien sin ==0
+			log_info(logger, string_from_format("Desencolando a %s! %s: %s",  ((t_nodo_personaje*)element)->nombre, que_cola, lista), "INFO");
+		}
+		free(lista);
 	}
-	free(lista);
-
 	return element;
+}
+
+
+void cerrar_planificador(){//la unica manera sana que encontre de que el personaje que esta desencolado se libere bien cuando cae un nivel
+
+	if(personaje!=NULL && !personaje_esta_en_colas()) encolar(est->colas[LISTOS], personaje, NULL, NULL);
+
+	list_destroy_and_destroy_elements(est->colas[LISTOS], personaje_destroyer);
+	list_destroy_and_destroy_elements(est->colas[BLOQUEADOS], bloqueados_destroyer);
+
+	log_destroy(est->logger_planificador);
+
+	sem_destroy(&est->semaforos[0]);
+	sem_destroy(&est->semaforos[1]);
+	sem_destroy(&est->semaforos[2]);
+
+	free(est);
+
+	pthread_cancel(hilo_escucha);
+	pthread_exit(NULL);
 }
 
 
@@ -181,3 +214,40 @@ t_mov_permitido *armarMSG_mov_permitido(){
 }
 
 
+void personaje_destroyer(void *data){
+	t_nodo_personaje *p = data;
+	close(p->socket);
+	free(p->nombre);
+	free(p);
+}
+
+
+void bloqueados_destroyer(void *data){
+	t_nodo_bloq_por_recurso *b = data;
+	list_destroy_and_destroy_elements(b->personajes, personaje_destroyer);
+	free(b);
+}
+
+
+bool personaje_esta_en_colas()//protip: no leer esta funcion
+{
+	t_link_element *aux;
+
+	for(aux=((t_list*)est->colas[LISTOS])->head; aux!=NULL && ((t_nodo_personaje*)aux->data)->socket!=personaje->socket; aux=aux->next);
+
+	if(aux!=NULL)
+		return true;
+	else
+		aux=((t_list*)est->colas[BLOQUEADOS])->head;
+
+	while(aux!=NULL)
+	{
+		t_link_element *a;
+
+		for(a=((t_nodo_bloq_por_recurso*)aux->data)->personajes->head; a!=NULL && ((t_nodo_personaje*)a->data)->socket!=personaje->socket; a=a->next);
+		if(a!=NULL) return true;
+
+		aux=aux->next;
+	}
+	return false;
+}

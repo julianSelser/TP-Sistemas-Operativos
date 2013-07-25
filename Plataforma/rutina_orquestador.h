@@ -35,11 +35,10 @@ void rutina_inotify(int inotify_fd);
 parametro *armar_parametro(t_nodo_nivel * nivel, t_log * logger);
 t_nodo_nivel * ubicar_nivel_por_socket(int socket, char *index);
 t_info_nivel_planificador * crear_info_nivel(char * nombre);
-t_nodo_personaje * extraer(char ID, t_list * lista_colas);
+t_nodo_personaje * extraer(char ID, t_list * lista_colas, int intentos);
 t_nodo_bloq_por_recurso * ubicar_cola_por_rec(t_list * lista_colas, char ID_rec);
 char decidir(char * involucrados);
 int agregar_sin_repetidos(char **string, char c);
-
 
 //manejador de peticiones
 void manejar_peticion(int socket);

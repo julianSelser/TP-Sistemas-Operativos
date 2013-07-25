@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <sys/inotify.h>
+#include <signal.h>
 
 #include "rutina_orquestador.h"
 #include "rutina_planificador.h"
@@ -67,7 +68,6 @@ void rutina_orquestador(/*?*/)
 	{
 		read_fds = maestro;
 		if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
-			perror("select");//todo loguear: error de select...que sentido tiene logear esto? si revienta aca mala leche
 			log_error(logger_orquestador,"Error de select!","ERRROR");
 			exit(1);
 		}
@@ -106,9 +106,10 @@ void rutina_orquestador(/*?*/)
 						t_nodo_nivel *nodo = ubicar_nivel_por_socket(i,&index)!=NULL? list_remove(lista_niveles, index) : NULL;
 						if(nodo!=NULL)
 						{
-							//TODO FALTAN LIBERAR TODAS LAS ESTRUCTURAS DE LOS PLANIFICADORES...lo hago si queda tiempo...alto memory leak
 							log_info(logger_orquestador, string_from_format("Cerrando el planificador del nivel: %s", nodo->nombre), "INFO");
-							pthread_cancel(nodo->hilo_planificador);
+
+							pthread_kill(nodo->hilo_planificador, SIGTERM);
+
 							free(nodo->nombre);
 							free(nodo->IP);
 							free(nodo);
@@ -117,7 +118,6 @@ void rutina_orquestador(/*?*/)
 						FD_CLR(i, &maestro);
 					}
 				}
-
 			} // fin actividad en socket
 		} // fin for
 	}
@@ -218,7 +218,7 @@ parametro *armar_parametro(t_nodo_nivel * nuevo_nivel, t_log * logger)
 	return p;
 }
 
-void manejar_sol_info(int socket) //todo testear
+void manejar_sol_info(int socket)
 {
 	t_info_nivel_planificador * info;
 	t_solicitud_info_nivel * solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
@@ -265,13 +265,15 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre)
 	}
 
 	log_info(logger_orquestador, string_from_format("Un personaje pidió por el nivel: %s  que NO EXISTIA", nombre), "INFO");
+	temp->puerto_nivel=0;
+	temp->puerto_planificador=0;
 	temp->ip_nivel = strdup("NIVEL NO ENCONTRADO");
 
 	return temp; //si sale por aca, no se encontro el nivel
 }
 
 
-void manejar_recs_liberados(int socket) //todo testear
+void manejar_recs_liberados(int socket)
 {
 	char * liberados;
 	char * resto;
@@ -358,29 +360,31 @@ void manejar_recs_liberados(int socket) //todo testear
 	enviar(nivel->socket, NOTIF_RECURSOS_REASIGNADOS, informe, logger_orquestador);
 }
 
-void manejar_sol_recovery(int socket) //todo testear
+void manejar_sol_recovery(int socket)
 {
-	char ID_victima;
+	char ID_victima, ID_victima_excepcional;
 	t_nodo_personaje * victima;
 	t_nodo_nivel * nivel;
 
 	t_solicitud_recupero_deadlock * solicitud;
 	t_notif_eleccion_de_victima * respuesta;
-	t_personaje_condenado * condena=malloc(sizeof(t_personaje_condenado));;
+	t_personaje_condenado * condena=malloc(sizeof(t_personaje_condenado));
 
-	nivel=ubicar_nivel_por_socket(socket, &ID_victima);
+	nivel=ubicar_nivel_por_socket(socket, NULL);
 
 	solicitud=recibir(socket, SOLICITUD_RECUPERO_DEADLOCK);
 	log_info(logger_orquestador, string_from_format("Hay un interbloqueo en el nivel %s, están involucrados los personajes %s", nivel->nombre, solicitud->pjes_deadlock));
 
 	ID_victima=decidir(solicitud->pjes_deadlock);
+	ID_victima_excepcional=decidir(solicitud->pjes_deadlock+1);//mecanismo en caso de no encontrar la primera victima
 
 	free(solicitud->pjes_deadlock);
 	free(solicitud);
 
 	sem_wait(nivel->sem_bloqueados);
-	victima=extraer(ID_victima, nivel->colas[BLOQUEADOS]);
+	if( (victima=extraer(ID_victima, nivel->colas[BLOQUEADOS], 3)) == NULL )	victima=extraer(ID_victima_excepcional, nivel->colas[BLOQUEADOS], 2);
 	sem_post(nivel->sem_bloqueados);
+
 	log_info(logger_orquestador, string_from_format("Se mató a %s para solucionar el interbloqueo", victima->nombre), "INFO");
 
 	respuesta=malloc(sizeof(t_notif_eleccion_de_victima));
@@ -391,7 +395,7 @@ void manejar_sol_recovery(int socket) //todo testear
 	condena->condenado = true;
 
 	enviar(victima->socket, NOTIF_PERSONAJE_CONDENADO, condena, logger_orquestador);
-	close(victima->socket); //todo es buena idea hacer esto?
+	close(victima->socket);
 	free(victima->nombre);
 	free(victima);
 }
@@ -401,7 +405,7 @@ char decidir(char * involucrados)
 	return involucrados[0];
 }
 
-t_nodo_personaje * extraer(char ID, t_list * lista_colas)
+t_nodo_personaje * extraer(char ID, t_list * lista_colas, int intentos)
 {
 	t_nodo_bloq_por_recurso * cola_actual;
 	int j=0;
@@ -430,7 +434,10 @@ t_nodo_personaje * extraer(char ID, t_list * lista_colas)
 		}
 		j++;
 	}
-	return NULL;  //pero en realidad debería ser una búsqueda segura y nunca llegar acá
+
+	//si no lo encontramos, esperamos 0,33 segundos y volvemos a intentar
+	usleep(333333);
+	return intentos>0? extraer(ID, lista_colas, intentos-1) : NULL;
 }
 
 void manejar_plan_terminado(int socket)
@@ -457,7 +464,7 @@ void rutina_inotify(int inotify_fd)
 	char buffer[BUF_LEN];
 	int length = read(inotify_fd, buffer, BUF_LEN);usleep(100000);
 	if (length < 0) {
-		perror("read");//todo logear este error, no usemos perror
+		log_error(logger_orquestador, "Error leyendo en inotify", "ERROR");
 	}
 
 	while (offset < length)
@@ -492,7 +499,7 @@ t_nodo_nivel * ubicar_nivel_por_socket(int socket, char *index)
 	while(i<cant_niveles)
 	{
 		t_nodo_nivel * nv_actual;
-		*index = i;
+		if(index!=NULL) *index = i;
 		nv_actual = (t_nodo_nivel *) list_get(lista_niveles, i);
 		if (nv_actual->socket == socket) return nv_actual;
 		i++;
@@ -540,3 +547,4 @@ int agregar_sin_repetidos(char **string, char c)
 
 	return true;
 }
+
