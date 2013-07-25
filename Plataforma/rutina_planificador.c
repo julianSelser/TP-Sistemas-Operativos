@@ -53,7 +53,6 @@ void rutina_planificador(parametro *info)
 
 	pthread_create(&hilo_escucha, NULL,(void*)rutina_escucha, info);
 
-
 	while(1)
 	{
 		bool desconexion = false;
@@ -90,10 +89,6 @@ void rutina_planificador(parametro *info)
 			sem_post(sem_cola_listos);
 			sem_post(sem_cola_vacia);
 			free(resultado);
-		}
-		else if(desconexion){
-			free(personaje->nombre);
-			free(personaje);
 		}
 	}
 }
@@ -187,9 +182,12 @@ void *desencolar(t_list *cola, char *que_cola, t_log *logger){
 }
 
 
-void cerrar_planificador(){//la unica manera sana que encontre de que el personaje que esta desencolado se libere bien cuando cae un nivel
+void cerrar_planificador(){
 
-	if(personaje!=NULL && !personaje_esta_en_colas()) encolar(est->colas[LISTOS], personaje, NULL, NULL);
+	sem_wait(&est->semaforos[0]);
+	sem_wait(&est->semaforos[2]);
+
+	if(personaje!=NULL && !personaje_esta_en_colas()) personaje_destroyer(personaje);
 
 	list_destroy_and_destroy_elements(est->colas[LISTOS], personaje_destroyer);
 	list_destroy_and_destroy_elements(est->colas[BLOQUEADOS], bloqueados_destroyer);
@@ -199,8 +197,6 @@ void cerrar_planificador(){//la unica manera sana que encontre de que el persona
 	sem_destroy(&est->semaforos[0]);
 	sem_destroy(&est->semaforos[1]);
 	sem_destroy(&est->semaforos[2]);
-
-	free(est);
 
 	pthread_cancel(hilo_escucha);
 	pthread_exit(NULL);
