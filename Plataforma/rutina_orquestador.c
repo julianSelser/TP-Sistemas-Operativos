@@ -382,22 +382,24 @@ void manejar_sol_recovery(int socket)
 	free(solicitud);
 
 	sem_wait(nivel->sem_bloqueados);
-	if( (victima=extraer(ID_victima, nivel->colas[BLOQUEADOS], 3)) == NULL )	victima=extraer(ID_victima_excepcional, nivel->colas[BLOQUEADOS], 2);
+	if( NULL == (victima=extraer(ID_victima, nivel->colas[BLOQUEADOS], 3)) )	victima=extraer(ID_victima_excepcional, nivel->colas[BLOQUEADOS], 2);
 	sem_post(nivel->sem_bloqueados);
 
-	log_info(logger_orquestador, string_from_format("Se mató a %s para solucionar el interbloqueo", victima->nombre), "INFO");
+	if(victima != NULL){
+		log_info(logger_orquestador, string_from_format("Se mató a %s para solucionar el interbloqueo", victima->nombre), "INFO");
 
-	respuesta=malloc(sizeof(t_notif_eleccion_de_victima));
-	respuesta->char_personaje=ID_victima;
+		respuesta=malloc(sizeof(t_notif_eleccion_de_victima));
+		respuesta->char_personaje=ID_victima;
 
-	enviar(socket, NOTIF_ELECCION_VICTIMA, respuesta, logger_orquestador);
+		enviar(socket, NOTIF_ELECCION_VICTIMA, respuesta, logger_orquestador);
 
-	condena->condenado = true;
+		condena->condenado = true;
 
-	enviar(victima->socket, NOTIF_PERSONAJE_CONDENADO, condena, logger_orquestador);
-	close(victima->socket);
-	free(victima->nombre);
-	free(victima);
+		enviar(victima->socket, NOTIF_PERSONAJE_CONDENADO, condena, logger_orquestador);
+		close(victima->socket);
+		free(victima->nombre);
+		free(victima);
+	}
 }
 
 char decidir(char * involucrados)
