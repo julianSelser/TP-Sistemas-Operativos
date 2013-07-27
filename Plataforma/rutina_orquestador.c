@@ -60,7 +60,7 @@ void rutina_orquestador(/*?*/)
 	jugadores = strdup("");
 	jugadores_que_terminaron = strdup(""); //es lo mismo que jugadores=malloc(1);jugadores[0]='\0';
 	lista_niveles=list_create();
-	log_info(logger_orquestador, "El orquestador esta comienza a esperar niveles", "INFO");
+	log_info(logger_orquestador, "El orquestador comienza a esperar niveles", "INFO");
 
 	FD_SETEO;//macro que setea los fd para select()
 
