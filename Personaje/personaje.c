@@ -1,5 +1,5 @@
 /*
- * personaje_trucho.c
+ * personaje.c
  *
  *  Created on: 29/06/2013
  *      Author: utnso
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 
 	if (!conf_es_valida(configuracion)) //ver que el archivo de config tenga todito
 	{
-		puts("Archivo de configuración incompleto o inválido.\n");
+		puts("Archivo de configuracion incompleto o invalido.\n");
 		return -2;
 	}
 
@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
 		log_info(logger, string_from_format("Proximo Nivel:%s",nivel_a_pedir), "INFO");
 
 		socket_orquestador = init_socket_externo(puerto_orquestador, ip_orquestador, logger);
-		log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");		// 1111111111111111111
+		log_debug(logger, "Conexion con hilo orquestador establecida", "DEBUG");		// 1111111111111111111
 
 		enviar(socket_orquestador,SOLICITUD_INFO_NIVEL,solicitud_info_nivel,logger);
 
@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 
-		log_debug(logger, "Recibida la información del nivel y el planificador", "DEBUG");
+		log_debug(logger, "Recibida la informacion del nivel y el planificador", "DEBUG");
 		close(socket_orquestador);
 		log_debug(logger, "Desconectado del hilo orquestador", "DEBUG");
 
@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
 
 				if (!rspt_solicitud_movimiento->aprobado) // esto se deberia cargar con el recibir asi q no hace falta inicializ.
 				{
-					log_error(logger, "Se intentó realizar un movimiento imposible", "ERROR");
+					log_error(logger, "Se intento realizar un movimiento imposible", "ERROR");
 					printf("SOLICITUD DE MOVIMIENTO DENEGADO");
 					exit(EXIT_FAILURE); //terminar anormalmente
 				}
@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
 				}
 				else if (!rpta_solicitud_instancia_recurso->concedido) //denegado
 				{
-					log_info(logger, "El personaje quedó a la espera del recurso", "INFO");
+					log_info(logger, "El personaje quedo a la espera del recurso", "INFO");
 
 					turno_concluido->bloqueado=1;
 					turno_concluido->recurso_de_bloqueo = proximo_recurso;
@@ -375,7 +375,7 @@ int main(int argc, char **argv) {
 						free(recibir(socket_planificador,NOTIF_RECURSO_CONCEDIDO));
 						recursos_obtenidos++;
 						sabe_donde_ir=0;
-						log_info(logger, "Finalmente se concedió el recurso! Personaje desbloqueado.", "INFO");
+						log_info(logger, "Finalmente se concedio el recurso! Personaje desbloqueado.", "INFO");
 					}
 				} //FIN CASO RECURSO DENEGADO
 				free(rpta_solicitud_instancia_recurso);
@@ -435,7 +435,7 @@ int main(int argc, char **argv) {
 
 	//ACCION: CONECTAR CON EL HILO ORQUESTADOR
 	socket_orquestador=init_socket_externo(puerto_orquestador,ip_orquestador,logger);
-	log_debug(logger, "Conexión con hilo orquestador establecida", "DEBUG");
+	log_debug(logger, "Conexion con hilo orquestador establecida", "DEBUG");
 
 	//ELABORAR NOTIFICACION DE PLAN TERMINADO
 	notificacion_plan_terminado->char_id = simbolo;
@@ -497,7 +497,7 @@ int llego(int pos[],int dest[]){
 
 void dar_vida(){
 	contador_vidas++;
-	log_info(logger, string_from_format("Aumenté mis vidas a %d gracias a la señal SIGUSR1 !",contador_vidas),"INFO");
+	log_info(logger, string_from_format("Aumente mis vidas a %d gracias a la senial SIGUSR1 !",contador_vidas),"INFO");
 }
 
 void morir(){
