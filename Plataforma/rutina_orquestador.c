@@ -47,7 +47,7 @@ static int puerto_planif = 23000;
 
 void rutina_orquestador(/*?*/)
 {
-	logger_orquestador = log_create("orquestador.log,", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
+	logger_orquestador = log_create("orquestador.log", "ORQUESTADOR", 1, LOG_LEVEL_TRACE);
 	int inotify_fd = inotify_init();
 	int socketEscucha = init_socket_escucha(10000, 1, logger_orquestador);
 	int i, nuevo_fd, fdmax = socketEscucha>inotify_fd?socketEscucha:inotify_fd;
@@ -144,7 +144,7 @@ void manejar_peticion(int socket){
 										manejar_anuncio_nivel(socket);
 										break;
 	default:
-			log_error(logger_orquestador,"Mensaje  inexistente !","ERROR");
+			log_error(logger_orquestador,"Mensaje inexistente!","ERROR");
 			break;
 	}
 }
@@ -223,7 +223,7 @@ void manejar_sol_info(int socket)
 	t_info_nivel_planificador * info;
 	t_solicitud_info_nivel * solicitud = recibir(socket, SOLICITUD_INFO_NIVEL);
 
-	log_info(logger_orquestador, string_from_format("El personaje %c quiere saber donde está el nivel %s", solicitud->solicitor ,solicitud->nivel_solicitado), "INFO");
+	log_info(logger_orquestador, string_from_format("El personaje %c quiere saber donde esta el nivel %s", solicitud->solicitor ,solicitud->nivel_solicitado), "INFO");
 
 	info = crear_info_nivel(solicitud->nivel_solicitado);
 
@@ -233,7 +233,7 @@ void manejar_sol_info(int socket)
 	}
 
 	enviar(socket, INFO_NIVEL_Y_PLANIFICADOR, info, logger_orquestador);
-	log_info(logger_orquestador, "Se respondió con la información", "INFO");
+	log_info(logger_orquestador, "Se respondio con la informacion", "INFO");
 
 	free(solicitud->nivel_solicitado);
 	free(solicitud);
@@ -264,7 +264,7 @@ t_info_nivel_planificador * crear_info_nivel(char * nombre)
 		i++;
 	}
 
-	log_info(logger_orquestador, string_from_format("Un personaje pidió por el nivel: %s  que NO EXISTIA", nombre), "INFO");
+	log_info(logger_orquestador, string_from_format("Un personaje pidio por el nivel: %s  que NO EXISTIA", nombre), "INFO");
 	temp->puerto_nivel=0;
 	temp->puerto_planificador=0;
 	temp->ip_nivel = strdup("NIVEL NO ENCONTRADO");
@@ -292,7 +292,7 @@ void manejar_recs_liberados(int socket)
 	reasignaciones=strdup("");
 
 	notificacion = recibir(socket, NOTIF_RECURSOS_LIBERADOS);
-	log_info(logger_orquestador, string_from_format("El nivel %s liberó los siguientes recursos: %s", nivel->nombre, notificacion->recursos_liberados), "INFO");
+	log_info(logger_orquestador, string_from_format("El nivel %s libero los siguientes recursos: %s", nivel->nombre, notificacion->recursos_liberados), "INFO");
 	liberados=notificacion->recursos_liberados;
 	free(notificacion); //aunque libere notificacion, liberados sigue existiendo
 
@@ -343,7 +343,7 @@ void manejar_recs_liberados(int socket)
 				encolar(nivel->colas[LISTOS], personaje, NULL, NULL); //paso el personaje a listos.
 				sem_post(nivel->sem_listos);
 				sem_post(nivel->sem_vacia);
-				log_info(logger_orquestador, string_from_format("Se liberó a %s, que estaba esperando un recurso %c", personaje->nombre, rec), "INFO");
+				log_info(logger_orquestador, string_from_format("Se libero a %s, que estaba esperando un recurso %c", personaje->nombre, rec), "INFO");
 			}
 		}
 
@@ -373,7 +373,7 @@ void manejar_sol_recovery(int socket)
 	nivel=ubicar_nivel_por_socket(socket, NULL);
 
 	solicitud=recibir(socket, SOLICITUD_RECUPERO_DEADLOCK);
-	log_info(logger_orquestador, string_from_format("Hay un interbloqueo en el nivel %s, están involucrados los personajes %s", nivel->nombre, solicitud->pjes_deadlock));
+	log_info(logger_orquestador, string_from_format("Hay un interbloqueo en el nivel %s, estan involucrados los personajes %s", nivel->nombre, solicitud->pjes_deadlock));
 
 	ID_victima=decidir(solicitud->pjes_deadlock);
 	ID_victima_excepcional=decidir(solicitud->pjes_deadlock+1);//mecanismo en caso de no encontrar la primera victima
@@ -386,7 +386,7 @@ void manejar_sol_recovery(int socket)
 	sem_post(nivel->sem_bloqueados);
 
 	if(victima != NULL){
-		log_info(logger_orquestador, string_from_format("Se mató a %s para solucionar el interbloqueo", victima->nombre), "INFO");
+		log_info(logger_orquestador, string_from_format("Se mato a %s para solucionar el interbloqueo", victima->nombre), "INFO");
 
 		respuesta=malloc(sizeof(t_notif_eleccion_de_victima));
 		respuesta->char_personaje=ID_victima;
@@ -448,7 +448,7 @@ void manejar_plan_terminado(int socket)
 
 	notificacion = recibir(socket, NOTIF_PLAN_TERMINADO);
 
-	log_info(logger_orquestador, string_from_format("%s terminó su plan de niveles!", notificacion->personaje), "INFO");
+	log_info(logger_orquestador, string_from_format("%s termino su plan de niveles!", notificacion->personaje), "INFO");
 
 	agregar_sin_repetidos(&jugadores_que_terminaron, notificacion->char_id);
 
