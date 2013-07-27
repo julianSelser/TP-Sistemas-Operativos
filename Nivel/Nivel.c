@@ -205,7 +205,7 @@ void manejar_peticion(int socket){
 										break;
 	default:
 			//printf("\n\n\nANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n\n\n", getnextmsg(socket));//todo esto deberia loguearse como error
-		  log_error(logger,string_from_format("ANTECION: MENSAJE NO CONSIDERADO, TIPO: %d\n", getnextmsg(socket)),"ERROR");
+		  log_error(logger,string_from_format("ATENCION: MENSAJE NO CONSIDERADO, TIPO: %d\n", getnextmsg(socket)),"ERROR");
 		break;
 	} //end switch
 	sem_post(&sem_general); //ya atendi el mensaje, permito detectar deadlock
@@ -376,7 +376,7 @@ void manejar_solicitud_instancia_recurso(int socket){
 		//buscar el personaje para asignarle el recurso concedido
 		for(aux=lista_personajes->head ; aux!=NULL && ((t_nodo_personaje*)aux->data)->socket!=socket ; aux=aux->next);
 
-		if(aux==NULL)	log_error(logger,"error: el personaje pidiendo un recruso no estaba en la lista","ERROR");
+		if(aux==NULL)	log_error(logger,"error: el personaje pidiendo un recurso no estaba en la lista","ERROR");
 		personaje = aux->data;
 
 		//buscar la necesidad a ser satisfecha para asignarla al personaje
@@ -387,14 +387,14 @@ void manejar_solicitud_instancia_recurso(int socket){
 		if(nec->asig < nec->max) nec->asig++;
 		else
 			/*todo loguear: un personaje esta pidiendo mas recursos que los inicialmente declarados*/
-		log_error(logger," un personaje esta pidiendo mas recursos que los inicialmente declarados","ERROR");
+		log_error(logger,"error: un personaje esta pidiendo mas recursos que los inicialmente declarados","ERROR");
 		restarRecurso(lista_items, caja->ID);
 		respuesta_solicitud_instancia->concedido = true;
 	}
 	else{
 		for(aux=lista_personajes->head ; aux!=NULL && ((t_nodo_personaje*)aux->data)->socket!=socket ; aux=aux->next);
 
-		if(aux==NULL)	log_error(logger,"error: el personaje pidiendo un recruso no estaba en la lista","ERROR");
+		if(aux==NULL)	log_error(logger,"error: el personaje esta pidiendo un recruso no estaba en la lista","ERROR");
 		personaje = aux->data;
 		personaje->bloqueado = true;
 
@@ -471,7 +471,7 @@ void manejar_recursos_reasignados(int socket){
 	for(c=reasignados->remanentes; *c!='\0' ; c++){
 		for(caux=lista_cajas->head ; caux!=NULL && ((t_caja*)caux->data)->ID!=*c ; caux=caux->next);
 		if(caux==NULL) /*todo loguear: no se encontro una caja para asignar el recurso */
-		log_error(logger,"error:no se encontro una caja para asignar el recurso","ERROR");
+		log_error(logger,"error: no se encontro una caja para asignar el recurso","ERROR");
 		caja = caux->data;
 		caja->disp++;
 
@@ -544,7 +544,7 @@ void *msg_datos_delNivel_alOrquestador(){
 
 int imprimir_nodo_caja(t_caja * nodo_caja)
 {
-	printf("Caja en (%d,%d) con %d %s, su símbolo es %c\n", nodo_caja->x, nodo_caja->y, nodo_caja->disp, nodo_caja->nombre, nodo_caja->ID);
+	printf("Caja en (%d,%d) con %d %s, su simbolo es %c\n", nodo_caja->x, nodo_caja->y, nodo_caja->disp, nodo_caja->nombre, nodo_caja->ID);
 	sleep(1);
 	return 0;
 }
@@ -575,7 +575,7 @@ void levantar_config(int argc, char ** argv){
 
 	if (!conf_es_valida(configuracion)) //ver que el archivo de config tenga todito
 	{
-		puts("Archivo de configuración incompleto o inválido.\n"); //todo: logear
+		puts("Archivo de configuracion incompleto o invalido.\n"); //todo: logear
 		exit(1);
 	}
 
